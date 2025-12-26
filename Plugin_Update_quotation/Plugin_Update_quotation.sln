@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.36602.28
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_Update_quotation", "Plugin_Update_quotation\Plugin_Update_quotation.csproj", "{9BEFE1E8-5806-43C9-8009-F5DE6CC90451}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9BEFE1E8-5806-43C9-8009-F5DE6CC90451}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BEFE1E8-5806-43C9-8009-F5DE6CC90451}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BEFE1E8-5806-43C9-8009-F5DE6CC90451}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BEFE1E8-5806-43C9-8009-F5DE6CC90451}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8CD3C221-FBE3-47BB-B23C-7CCB66047FC7}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_UpdateInsOrderNumber", "Action_UpdateInsOrderNumber\Action_UpdateInsOrderNumber.csproj", "{F8652F26-2150-4483-8184-71641194F372}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F8652F26-2150-4483-8184-71641194F372}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8652F26-2150-4483-8184-71641194F372}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8652F26-2150-4483-8184-71641194F372}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8652F26-2150-4483-8184-71641194F372}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D4BB887B-2258-4107-B037-922E7AC44CD8}
+	EndGlobalSection
+EndGlobal
