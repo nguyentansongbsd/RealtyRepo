@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_PaymentScheme_Approved", "Plugin_PaymentScheme_Approved\Plugin_PaymentScheme_Approved.csproj", "{570EB339-8136-4F77-AC62-5FA95C6D3676}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{570EB339-8136-4F77-AC62-5FA95C6D3676}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{570EB339-8136-4F77-AC62-5FA95C6D3676}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{570EB339-8136-4F77-AC62-5FA95C6D3676}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{570EB339-8136-4F77-AC62-5FA95C6D3676}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {55AFA3C3-B12B-4301-89C9-F5DB2505330E}
+	EndGlobalSection
+EndGlobal
