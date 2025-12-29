@@ -27,41 +27,47 @@ namespace Action_Queue_Reservation
             tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
             Entity queue = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(
-                "bsd_phaselaunch", "bsd_pricelist", "bsd_unit", "bsd_project"));
+                "bsd_phaselaunch", "bsd_pricelist", "bsd_unit", "bsd_project", "bsd_queuingfee"));
             Entity updateCurrentQueue = new Entity(target.LogicalName, target.Id);
             updateCurrentQueue["statuscode"] = new OptionSetValue(100000000);
             service.Update(updateCurrentQueue);
 
             EntityReference unitRef = queue.GetAttributeValue<EntityReference>("bsd_unit");
-            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-            <fetch>
-              <entity name=""bsd_opportunity"">
-                <attribute name=""statuscode"" />
-                <filter>
-                  <condition attribute=""bsd_unit"" operator=""eq"" value=""{unitRef.Id}"" />
-                  <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{target.Id}"" />
-                  <condition attribute=""statuscode"" operator=""ne"" value=""{100000005}"" />
-                  <condition attribute=""statuscode"" operator=""ne"" value=""{100000001}"" />
-                </filter>
-              </entity>
-            </fetch>";
-            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
-            foreach (var q in rs.Entities)
+            if (unitRef != null)
             {
-                Entity updateOther = new Entity(target.LogicalName, q.Id);
-                updateOther["statuscode"] = new OptionSetValue(100000002);
-                service.Update(updateOther);
-            }
-            Entity updateUnit = new Entity(unitRef.LogicalName, unitRef.Id);
-            updateUnit["statuscode"] = new OptionSetValue(100000003);
-            service.Update(updateUnit);
+                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                <fetch>
+                  <entity name=""bsd_opportunity"">
+                    <attribute name=""statuscode"" />
+                    <filter>
+                      <condition attribute=""bsd_unit"" operator=""eq"" value=""{unitRef.Id}"" />
+                      <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{target.Id}"" />
+                      <condition attribute=""statuscode"" operator=""ne"" value=""{100000005}"" />
+                      <condition attribute=""statuscode"" operator=""ne"" value=""{100000001}"" />
+                    </filter>
+                  </entity>
+                </fetch>";
+                EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+                foreach (var q in rs.Entities)
+                {
+                    Entity updateOther = new Entity(target.LogicalName, q.Id);
+                    updateOther["statuscode"] = new OptionSetValue(100000002);
+                    service.Update(updateOther);
+                }
 
+                Entity updateUnit = new Entity(unitRef.LogicalName, unitRef.Id);
+                updateUnit["statuscode"] = new OptionSetValue(100000003);
+                service.Update(updateUnit);
+                tracingService.Trace("1");
+            }
             Entity en_quote = new Entity("bsd_quote");
-            en_quote["statuscode"] = new OptionSetValue(100000000);
-            en_quote["bsd_phaseslaunchid"] = queue.GetAttributeValue<EntityReference>("bsd_phaselaunch");
-            en_quote["bsd_pricelevel"] = queue.GetAttributeValue<EntityReference>("bsd_pricelist");
-            en_quote["bsd_unitno"] = queue.GetAttributeValue<EntityReference>("bsd_unit");
-            en_quote["bsd_projectid"] = queue.GetAttributeValue<EntityReference>("bsd_project");
+            en_quote["bsd_opportunityid"] = target;
+            tracingService.Trace("2");
+            if (queue.Contains("bsd_queuingfee")) en_quote["bsd_bookingfee"] = queue.GetAttributeValue<Money>("bsd_queuingfee");
+            if (queue.Contains("bsd_phaselaunch")) en_quote["bsd_phaseslaunchid"] = queue.GetAttributeValue<EntityReference>("bsd_phaselaunch");
+            if (queue.Contains("bsd_pricelist")) en_quote["bsd_pricelevel"] = queue.GetAttributeValue<EntityReference>("bsd_pricelist");
+            if (queue.Contains("bsd_unit")) en_quote["bsd_unitno"] = queue.GetAttributeValue<EntityReference>("bsd_unit");
+            if (queue.Contains("bsd_project")) en_quote["bsd_projectid"] = queue.GetAttributeValue<EntityReference>("bsd_project");
             Guid guid = service.Create(en_quote);
             context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
         }
