@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using RealtyCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,10 +28,10 @@ namespace Plugin_PSDetail_CheckPercent
                 Entity target = (Entity)context.InputParameters["Target"];
                 Entity enIns = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_paymentscheme", "bsd_pricetype" }));
                 if (!enIns.Contains("bsd_paymentscheme"))
-                    throw new InvalidPluginExecutionException("There is no 'Payment Scheme'. Please check again.");
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_payment_scheme"));
 
                 if (!enIns.Contains("bsd_pricetype"))
-                    throw new InvalidPluginExecutionException("There is no 'Price Type'. Please check again.");
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_price_type"));
 
                 EntityReference refPS = (EntityReference)enIns["bsd_paymentscheme"];
                 int bsd_pricetype = ((OptionSetValue)enIns["bsd_pricetype"]).Value;
@@ -54,7 +55,7 @@ namespace Plugin_PSDetail_CheckPercent
                         sumPercent = (decimal)((AliasedValue)rs[0]["bsd_amountpercent"]).Value;
 
                     if (sumPercent > 100)
-                        throw new InvalidPluginExecutionException("The total percentage is greater than 100%. Please check again.");
+                        throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "check_percent_ins"));
                 }
 
                 traceService.Trace("done");
