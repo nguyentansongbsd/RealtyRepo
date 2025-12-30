@@ -12,7 +12,7 @@ namespace RealtyCommon
         public static string GetMessage(IOrganizationService service, IPluginExecutionContext context, string notificationName)
         {
             int userLanguageCode = GetLanguageCode(service, context);
-
+            var bac = 0;
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch>
               <entity name=""bsd_messageconfig"">
