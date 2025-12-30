@@ -1,6 +1,7 @@
 ﻿using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using RealtyCommon;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.IdentityModel.Metadata;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.Remoting.Contexts;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -18,6 +20,7 @@ namespace Plugin_Quote_CalculateMoney
         IOrganizationService service = null;
         IOrganizationServiceFactory factory = null;
         ITracingService trace = null;
+        IPluginExecutionContext context = null;
 
         void IPlugin.Execute(IServiceProvider serviceProvider)
         {
@@ -77,8 +80,9 @@ namespace Plugin_Quote_CalculateMoney
             {
                 Guid guid = Guid.Parse(input);
                 Entity pro = service.Retrieve("bsd_discount", guid, new ColumnSet(new string[1] { "bsd_method" }));
+                
                 if (pro == null)
-                    throw new InvalidPluginExecutionException(string.Format("Discount '{0}' dose not exist or deleted.", pro["bsd_name"]));
+                    throw new InvalidPluginExecutionException(string.Format("Discount '{0}' dose not exist or deleted.", pro["bsd_name"]) + MessageProvider.GetMessage(service, context, "check_percent_ins"));
                 if (!pro.Contains("bsd_method"))
                     throw new InvalidPluginExecutionException(string.Format("Please provide method for discount '{0}'!", pro["bsd_name"]));
                 int num = ((OptionSetValue)pro["bsd_method"]).Value;

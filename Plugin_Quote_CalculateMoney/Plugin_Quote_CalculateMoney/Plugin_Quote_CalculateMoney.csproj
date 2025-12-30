@@ -104,5 +104,6 @@
     <None Include="key.snk" />
     <None Include="packages.config" />
   </ItemGroup>
+  <Import Project="..\..\RealtyCommon\RealtyCommon\RealtyCommon.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
