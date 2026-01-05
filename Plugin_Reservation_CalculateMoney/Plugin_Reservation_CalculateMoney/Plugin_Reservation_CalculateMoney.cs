@@ -1,12 +1,11 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
-using RealtyCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-namespace Plugin_Quote_CalculateMoney
+namespace Plugin_Reservation_CalculateMoney
 {
-    public class Plugin_Quote_CalculateMoney : IPlugin
+    public class Plugin_Reservation_CalculateMoney : IPlugin
     {
         IOrganizationService service = null;
         IOrganizationServiceFactory factory = null;
@@ -54,7 +53,7 @@ namespace Plugin_Quote_CalculateMoney
             QueryExpression queryExpression = new QueryExpression("bsd_discounttransaction");
             queryExpression.ColumnSet = new ColumnSet(new string[0]);
             queryExpression.Criteria = new FilterExpression(LogicalOperator.And);
-            queryExpression.Criteria.AddCondition(new ConditionExpression("bsd_quote", ConditionOperator.Equal, idQuote));
+            queryExpression.Criteria.AddCondition(new ConditionExpression("bsd_reservationcontract", ConditionOperator.Equal, idQuote));
             EntityCollection entityCollection1 = this.service.RetrieveMultiple(queryExpression);
             Dictionary<Guid, string> dictionary = new Dictionary<Guid, string>();
             foreach (Entity entity in entityCollection1.Entities)
@@ -71,9 +70,9 @@ namespace Plugin_Quote_CalculateMoney
             {
                 Guid guid = Guid.Parse(input);
                 Entity pro = service.Retrieve("bsd_discount", guid, new ColumnSet(new string[1] { "bsd_method" }));
-                
+
                 if (pro == null)
-                    throw new InvalidPluginExecutionException(string.Format("Discount '{0}' dose not exist or deleted.", pro["bsd_name"]) + MessageProvider.GetMessage(service, context, "check_percent_ins"));
+                    throw new InvalidPluginExecutionException(string.Format("Discount '{0}' dose not exist or deleted.", pro["bsd_name"]));
                 if (!pro.Contains("bsd_method"))
                     throw new InvalidPluginExecutionException(string.Format("Please provide method for discount '{0}'!", pro["bsd_name"]));
                 int num = ((OptionSetValue)pro["bsd_method"]).Value;
@@ -143,7 +142,7 @@ namespace Plugin_Quote_CalculateMoney
                     trace.Trace("netSellingPrice: " + netSellingPrice);
                 }
                 rsv["bsd_discount"] = pro.ToEntityReference();
-                rsv["bsd_quote"] = enTarget.ToEntityReference();
+                rsv["bsd_reservationcontract"] = enTarget.ToEntityReference();
                 service.Create(rsv);
                 no++;
             }
