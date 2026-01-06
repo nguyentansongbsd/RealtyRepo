@@ -36,7 +36,8 @@ namespace Plugin_Queue_UpdatePriority
                     int stt = 0;
                     int sut = 0;
                     int dut = 0;
-                    getPriority(entityQueue, entityQueue.Id, ref stt, ref sut, ref dut);
+                    getPriority(entityQueue, entityQueue.Id, ref dut);
+                    getOrderNum(entityQueue, entityQueue.Id, ref stt, ref sut);
                     bool isHadQueueing = checkStsQueue(entityQueue, entityQueue.Id);
                     this._tracingService.Trace("Co queueing ? " + isHadQueueing);
                     Entity queueItem = new Entity(entityQueue.LogicalName);
@@ -56,7 +57,7 @@ namespace Plugin_Queue_UpdatePriority
                 }
             }
         }
-        private void getPriority(Entity enQueue, Guid queueId, ref int stt, ref int sut, ref int dut)
+        private void getPriority(Entity enQueue, Guid queueId, ref int dut)
         {
             string conditionUnit = enQueue.Contains("bsd_unit") ? $@"<condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enQueue["bsd_unit"]).Id}"" />" : $@"<condition attribute=""bsd_unit"" operator=""null"" />";
             string conditionProject = enQueue.Contains("bsd_project") ? $@"<condition attribute=""bsd_project"" operator=""eq"" value=""{((EntityReference)enQueue["bsd_project"]).Id}"" />" : "";
@@ -64,6 +65,33 @@ namespace Plugin_Queue_UpdatePriority
             <fetch aggregate=""true"">
               <entity name=""bsd_opportunity"">
                 <attribute name=""bsd_douutien"" alias=""douutien"" aggregate=""max"" />
+                <filter>
+                  {conditionUnit}
+                  {conditionProject}
+                  <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{queueId}"" />
+                  <condition attribute=""statuscode"" operator=""in"">
+                      <value>100000003</value>
+                      <value>100000004</value>
+                  </condition>
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if(result.Entities.Count > 0)
+            {
+                if (result.Entities[0].Attributes.Contains("douutien"))
+                {
+                    dut = ((AliasedValue)result.Entities[0]["douutien"]).Value != null ? (int)((AliasedValue)result.Entities[0]["douutien"]).Value : 0;
+                }
+            }
+        }
+        private void getOrderNum(Entity enQueue, Guid queueId, ref int stt, ref int sut)
+        {
+            string conditionUnit = enQueue.Contains("bsd_unit") ? $@"<condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enQueue["bsd_unit"]).Id}"" />" : $@"<condition attribute=""bsd_unit"" operator=""null"" />";
+            string conditionProject = enQueue.Contains("bsd_project") ? $@"<condition attribute=""bsd_project"" operator=""eq"" value=""{((EntityReference)enQueue["bsd_project"]).Id}"" />" : "";
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch aggregate=""true"">
+              <entity name=""bsd_opportunity"">
                 <attribute name=""bsd_sothutu"" alias=""sothutu"" aggregate=""max"" />
                 <attribute name=""bsd_souutien"" alias=""souutien"" aggregate=""max"" />
                 <filter>
@@ -74,7 +102,7 @@ namespace Plugin_Queue_UpdatePriority
               </entity>
             </fetch>";
             EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
-            if(result.Entities.Count > 0)
+            if (result.Entities.Count > 0)
             {
                 if (result.Entities[0].Attributes.Contains("sothutu"))
                 {
@@ -83,10 +111,6 @@ namespace Plugin_Queue_UpdatePriority
                 if (result.Entities[0].Attributes.Contains("souutien"))
                 {
                     sut = ((AliasedValue)result.Entities[0]["souutien"]).Value != null ? (int)((AliasedValue)result.Entities[0]["souutien"]).Value : 0;
-                }
-                if (result.Entities[0].Attributes.Contains("douutien"))
-                {
-                    dut = ((AliasedValue)result.Entities[0]["douutien"]).Value != null ? (int)((AliasedValue)result.Entities[0]["douutien"]).Value : 0;
                 }
             }
         }

@@ -26,25 +26,119 @@ namespace Action_MatchUnit_Approve
             try
             {
                 this.targetEntityRef = (EntityReference)_context.InputParameters["Target"];
+                Entity enMatchUnit = this._service.Retrieve(this.targetEntityRef.LogicalName, this.targetEntityRef.Id, new ColumnSet("bsd_queue",
+                    "bsd_unit", "bsd_pricelist", "bsd_usableareasqm", "bsd_builtupareasqm", "bsd_usableunitprice", "bsd_builtupunitprice",
+                    "bsd_price", "bsd_project"));
 
-                UpdateMatchUnit();
+                DateTime dateApprove = DateTime.Now;
+                UpdateMatchUnit(dateApprove);
+                UpdateQueue(enMatchUnit, dateApprove);
+                UpdatePriorityQueueProject(enMatchUnit);
             }
             catch (Exception ex)
             {
                 throw new InvalidPluginExecutionException(ex.Message);
             }
         }
-        private void UpdateMatchUnit()
+        // Cập nhật thông tin Ráp căn
+        private void UpdateMatchUnit(DateTime dateApprove)
         {
+            this._tracingService.Trace("Start Update Match Unit");    
             Entity matchUnit = new Entity(this.targetEntityRef.LogicalName, this.targetEntityRef.Id);
             matchUnit["statuscode"] = new OptionSetValue(100000001); // Approved
             matchUnit["bsd_approver"] = new EntityReference("systemuser", this._context.UserId);
-            matchUnit["bsd_approvedate"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, this._service);
+            matchUnit["bsd_approvedate"] = RetrieveLocalTimeFromUTCTime(dateApprove, this._service);
             this._service.Update(matchUnit);
+            this._tracingService.Trace("End Update Match Unit");
         }
-        private void UpdateQueue()
+        // Cập nhật thông tin vào bản ghi Giữ chỗ
+        private void UpdateQueue(Entity enMatchUnit, DateTime dateApprove)
         {
-            // To do
+            this._tracingService.Trace("Start Update Queue");
+            int sut = 0;
+            int dut = 0;
+            getPriority(enMatchUnit, ref sut, ref dut);
+            Entity queue = new Entity(((EntityReference)enMatchUnit["bsd_queue"]).LogicalName, ((EntityReference)enMatchUnit["bsd_queue"]).Id);
+            queue["bsd_unit"] = enMatchUnit.Contains("bsd_unit") ? enMatchUnit["bsd_unit"] : null;
+            queue["bsd_pricelist"] = enMatchUnit.Contains("bsd_pricelist") ? enMatchUnit["bsd_pricelist"] : null;
+            queue["bsd_usableareasqm"] = enMatchUnit.Contains("bsd_usableareasqm") ? enMatchUnit["bsd_usableareasqm"] : null;
+            queue["bsd_builtupareasqm"] = enMatchUnit.Contains("bsd_builtupareasqm") ? enMatchUnit["bsd_builtupareasqm"] : null;
+            queue["bsd_usableunitprice"] = enMatchUnit.Contains("bsd_usableunitprice") ? enMatchUnit["bsd_usableunitprice"] : null;
+            queue["bsd_builtupunitprice"] = enMatchUnit.Contains("bsd_builtupunitprice") ? enMatchUnit["bsd_builtupunitprice"] : null;
+            queue["bsd_price"] = enMatchUnit.Contains("bsd_price") ? enMatchUnit["bsd_price"] : null;
+            queue["bsd_dateorder"] = RetrieveLocalTimeFromUTCTime(dateApprove, this._service);
+            queue["bsd_souutien"] = sut;
+            queue["bsd_douutien"] = dut;
+            this._service.Update(queue);
+            this._tracingService.Trace("End Update Queue");
+        }
+        // Lấy số ưu tiên và độ ưu tiên
+        private void getPriority(Entity enMatchUnit, ref int sut, ref int dut)
+        {
+            if (!enMatchUnit.Contains("bsd_unit")) return;
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_opportunity"">
+                <attribute name=""bsd_douutien"" />
+                <attribute name=""bsd_souutien"" />
+                <filter>
+                  <condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enMatchUnit["bsd_unit"]).Id}"" />
+                  <condition attribute=""statuscode"" operator=""in"">
+                      <value>100000003</value>
+                      <value>100000004</value>
+                      <value>100000005</value>
+                  </condition>
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (result.Entities.Count > 0) // Case da co Giu cho
+            {
+                var SUT_Max = result.Entities.Max(x => (int)x["bsd_souutien"]);
+                var DUT_Max = result.Entities.Where(x=> ((OptionSetValue)x["statuscode"]).Value == 100000003 || ((OptionSetValue)x["statuscode"]).Value == 100000004).Max(x => (int)x["bsd_douutien"]);
+                sut = SUT_Max + 1;
+                dut = DUT_Max + 1;
+            }
+            else // Case chua co Giu cho
+            {
+                sut = 1;
+                dut = 1;
+            }
+        }
+        // Cập nhật thông tin ưu tiên vào giữ chỗ dự án còn lại
+        private void UpdatePriorityQueueProject(Entity enMatchUnit)
+        {
+            if (!enMatchUnit.Contains("bsd_project")) return;
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_opportunity"">
+                <attribute name=""bsd_name"" />
+                <attribute name=""bsd_douutien"" />
+                <filter>
+                  <condition attribute=""bsd_project"" operator=""eq"" value=""{((EntityReference)enMatchUnit["bsd_project"]).Id}"" />
+                  <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{((EntityReference)enMatchUnit["bsd_queue"]).Id}"" />                  
+                  <condition attribute=""bsd_unit"" operator=""null"" />
+                  <condition attribute=""bsd_queueforproject"" operator=""eq"" value=""1"" />
+                </filter>
+                <filter>
+                  <condition attribute=""statuscode"" operator=""in"">
+                    <value>100000003</value>
+                  </condition>
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (result.Entities.Count > 0)
+            {
+                foreach (var item in result.Entities.OrderBy(x => x.GetAttributeValue<int>("bsd_douutien")))
+                {
+                    Entity queueProject = new Entity(item.LogicalName, item.Id);
+                    if ((int)item["bsd_douutien"] == 2)// Neu do uu tien = 2 thi cap nhat lai trang thai thanh queuing va giam do uu tien = 1. với các GC khác thì chỉ giảm độ ưu tiên và không thay đổi status
+                        queueProject["statuscode"] = new OptionSetValue(100000004); // 100000004 - Queuing
+                    queueProject["bsd_douutien"] = (int)item["bsd_douutien"] - 1;
+                    this._service.Update(queueProject);
+                }
+            }
         }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
