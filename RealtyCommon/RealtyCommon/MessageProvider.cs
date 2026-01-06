@@ -9,7 +9,7 @@ namespace RealtyCommon
 {
     public static class MessageProvider
     {
-        public static string GetMessage(IOrganizationService service, IPluginExecutionContext context, string notificationName)
+        public static string GetMessage(IOrganizationService service, IPluginExecutionContext context, string notificationName, IDictionary<string, object> parameters = null)
         {
             int userLanguageCode = GetLanguageCode(service, context);
 
@@ -36,7 +36,17 @@ namespace RealtyCommon
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
             {
-                return (string)rs.Entities[0]["bsd_name"];
+                string msg = (string)rs.Entities[0]["bsd_name"];
+
+                if (parameters != null && parameters.Count > 0)
+                {
+                    foreach (var kv in parameters)
+                    {
+                        msg = msg.Replace("{" + kv.Key + "}", kv.Value?.ToString());
+                    }
+                }
+
+                return msg;
             }
 
             return "Message not found, please check 'Message Config' again.";
