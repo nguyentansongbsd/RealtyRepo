@@ -28,7 +28,7 @@ namespace Action_Queue_Reservation
             tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
             Entity queue = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(
-                "bsd_phaselaunch", "bsd_pricelist", "bsd_unit", "bsd_project", "bsd_queuingfee"));
+                "bsd_phaselaunch", "bsd_pricelist", "bsd_unit", "bsd_project", "bsd_queuingfee", "bsd_customerid", "bsd_queuingfeepaid"));
             Entity updateCurrentQueue = new Entity(target.LogicalName, target.Id);
             updateCurrentQueue["statuscode"] = new OptionSetValue(100000000);
             service.Update(updateCurrentQueue);
@@ -85,7 +85,7 @@ namespace Action_Queue_Reservation
                               <attribute name=""bsd_name"" alias=""name"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
                               <filter>
-                                <condition attribute=""statuscode"" operator=""eq"" value=""{1}"" />
+                                <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
                                 <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
                               </filter>
                             </link-entity>
@@ -116,7 +116,7 @@ namespace Action_Queue_Reservation
                           <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <filter>
-                                <condition attribute=""statuscode"" operator=""eq"" value=""{1}"" />
+                                <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
                                 <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
                               </filter>
                             </link-entity>
@@ -168,6 +168,8 @@ namespace Action_Queue_Reservation
             if (queue.Contains("bsd_pricelist")) en_quote["bsd_pricelevel"] = queue.GetAttributeValue<EntityReference>("bsd_pricelist");
             if (queue.Contains("bsd_unit")) en_quote["bsd_unitno"] = queue.GetAttributeValue<EntityReference>("bsd_unit");
             if (queue.Contains("bsd_project")) en_quote["bsd_projectid"] = queue.GetAttributeValue<EntityReference>("bsd_project");
+            if (queue.Contains("bsd_customerid")) en_quote["bsd_customerid"] = queue.GetAttributeValue<EntityReference>("bsd_customerid");
+            if (queue.Contains("bsd_queuingfeepaid")) en_quote["bsd_totalamountpaid"] = queue.GetAttributeValue<Money>("bsd_queuingfeepaid");
             Guid guid = service.Create(en_quote);
             context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
         }
