@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using RealtyCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,7 +60,8 @@ namespace Action_UpdateInsOrderNumber
                     traceService.Trace("done");
                 }
                 else
-                    throw new InvalidPluginExecutionException("Không có đợt nào tồn tại. Xin vui lòng kiểm tra lại");
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_ins_exist"));
+
             }
             catch (Exception ex)
             {

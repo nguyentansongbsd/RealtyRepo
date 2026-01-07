@@ -49,7 +49,7 @@ namespace Action_UpdateQuote
                       <entity name=""bsd_paymentschemedetail"">
                         <attribute name=""bsd_name"" />
                         <filter>
-                          <condition attribute=""bsd_quotation"" operator=""eq"" value=""{target.Id}"" />
+                          <condition attribute=""bsd_reservation"" operator=""eq"" value=""{target.Id}"" />
                           <condition attribute=""statecode"" operator=""eq"" value=""0"" />
                         </filter>
                       </entity>
