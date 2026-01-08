@@ -6,11 +6,12 @@ using RealtyCommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Action_Resv_GenPMS
+namespace Action_ReservationContract_PSGen
 {
-    public class Action_Resv_GenPMS : IPlugin
+    public class Action_ReservationContract_PSGen : IPlugin
     {
         IPluginExecutionContext context = null;
         IOrganizationService service = null;
@@ -31,33 +32,33 @@ namespace Action_Resv_GenPMS
 
                 factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                 service = factory.CreateOrganizationService(context.UserId);
-                Entity enQuote = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(true));
+                Entity enHD = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(true));
 
                 traceS.Trace("2");
 
                 List<Entity> listCreateIns = new List<Entity>();
-                //decimal phiBaoTriPaid = GetPhiBaoTri(enQuote);
+                //decimal phiBaoTriPaid = GetPhiBaoTri(enHD);
                 decimal phiBaoTriPaid = 0;
 
                 listCalendar = GetHoliday();
 
-                //int bsd_typeunit = ((OptionSetValue)enQuote["bsd_typeunit"]).Value;
+                //int bsd_typeunit = ((OptionSetValue)enHD["bsd_typeunit"]).Value;
                 //traceS.Trace("bsd_typeunit " + bsd_typeunit);
 
-                if (!enQuote.Contains("bsd_paymentscheme"))
+                if (!enHD.Contains("bsd_paymentscheme"))
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_payment_scheme"));
-                EntityReference refPS = (EntityReference)enQuote["bsd_paymentscheme"];
+                EntityReference refPS = (EntityReference)enHD["bsd_paymentscheme"];
                 //if (bsd_typeunit == 100000000)//thấp tầng
                 //{
-                //    if (!enQuote.Contains("bsd_paymentscheme"))
+                //    if (!enHD.Contains("bsd_paymentscheme"))
                 //        throw new InvalidPluginExecutionException("Vui lòng chọn tiến độ thanh toán.");
-                //    refPS = (EntityReference)enQuote["bsd_paymentscheme"];
+                //    refPS = (EntityReference)enHD["bsd_paymentscheme"];
                 //}
                 //else
                 //{
-                //    if (!enQuote.Contains("bsd_paymentschemeland"))
+                //    if (!enHD.Contains("bsd_paymentschemeland"))
                 //        throw new InvalidPluginExecutionException("Vui lòng chọn tiến độ thanh toán.");
-                //    refPS = (EntityReference)enQuote["bsd_paymentschemeland"];
+                //    refPS = (EntityReference)enHD["bsd_paymentschemeland"];
                 //}
 
                 Entity enPS = service.Retrieve(refPS.LogicalName, refPS.Id, new ColumnSet(new string[] { "bsd_interestratemaster", "bsd_name" }));
@@ -68,30 +69,30 @@ namespace Action_Resv_GenPMS
 
                 //if (bsd_typeunit == 100000000)//thấp tầng
                 //{
-                //    int bsd_loaibangtinhgia = enQuote.Contains("bsd_loaibangtinhgia") ? ((OptionSetValue)enQuote["bsd_loaibangtinhgia"]).Value : -999;
+                //    int bsd_loaibangtinhgia = enHD.Contains("bsd_loaibangtinhgia") ? ((OptionSetValue)enHD["bsd_loaibangtinhgia"]).Value : -999;
                 //    traceS.Trace("bsd_loaibangtinhgia " + bsd_loaibangtinhgia);
                 //    switch (bsd_loaibangtinhgia)
                 //    {
                 //        case 100000006: //đất
-                //            GenPaymentScheme(ref enQuote, enPS, 100000000, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//đất
+                //            GenPaymentScheme(ref enHD, enPS, 100000000, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//đất
                 //            break;
                 //        case 100000007: //đất móng
-                //            GenPaymentScheme(ref enQuote, enPS, 100000000, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//đất
-                //            GenPaymentScheme(ref enQuote, enPS, 100000001, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//móng
+                //            GenPaymentScheme(ref enHD, enPS, 100000000, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//đất
+                //            GenPaymentScheme(ref enHD, enPS, 100000001, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//móng
                 //            break;
                 //        case 100000005: //đất nhà
-                //            GenPaymentScheme(ref enQuote, enPS, 100000000, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//đất
-                //            GenPaymentScheme(ref enQuote, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//nhà
+                //            GenPaymentScheme(ref enHD, enPS, 100000000, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//đất
+                //            GenPaymentScheme(ref enHD, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//nhà
                 //            break;
                 //    }
                 //}
                 //else //cao tầng
                 //{
-                //    GenPaymentScheme(ref enQuote, enPS, 100000003, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//cao tầng
+                //    GenPaymentScheme(ref enHD, enPS, 100000003, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//cao tầng
                 //}
 
-                //GenPaymentScheme(ref enQuote, enPS, 100000003, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//cao tầng
-                GenPaymentScheme(ref enQuote, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday);//cao tầng
+                //GenPaymentScheme(ref enHD, enPS, 100000003, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//cao tầng
+                GenPaymentScheme(ref enHD, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday);//cao tầng
 
 
                 if (listCreateIns.Count > 0)
@@ -123,30 +124,30 @@ namespace Action_Resv_GenPMS
                 decimal tmpTotalAmountPaid = 0;
                 decimal tmpDepositAmount = 0;
                 decimal tmpAmountWasPaid = 0;
-                if (enQuote.Contains("bsd_totalamountpaid"))
+                if (enHD.Contains("bsd_totalamountpaid"))
                 {
-                    if (enQuote.Contains("bsd_depositfee"))
+                    if (enHD.Contains("bsd_depositfee"))
                     {
-                        tmpTotalAmountPaid = ((Money)enQuote["bsd_totalamountpaid"]).Value;
-                        tmpDepositAmount = ((Money)enQuote["bsd_depositfee"]).Value;
+                        tmpTotalAmountPaid = ((Money)enHD["bsd_totalamountpaid"]).Value;
+                        tmpDepositAmount = ((Money)enHD["bsd_depositfee"]).Value;
                         tmpAmountWasPaid = tmpTotalAmountPaid - tmpDepositAmount;
                         amountwaspaid = tmpAmountWasPaid < 0 ? tmpTotalAmountPaid : tmpAmountWasPaid;
                     }
                     else
                     {
-                        amountwaspaid = ((Money)enQuote["bsd_totalamountpaid"]).Value;
+                        amountwaspaid = ((Money)enHD["bsd_totalamountpaid"]).Value;
                     }
                 }
                 #endregion
 
                 decimal depositAmount = 0;
-                if (enQuote.Contains("bsd_totalamountpaid") && enQuote.Contains("bsd_depositfee"))
+                if (enHD.Contains("bsd_totalamountpaid") && enHD.Contains("bsd_depositfee"))
                 {
                     depositAmount = tmpAmountWasPaid < 0 ? tmpTotalAmountPaid : tmpDepositAmount;
                 }
 
                 List<Entity> listUpdateIns = new List<Entity>();
-                UpdateMoney(enQuote, depositAmount, tmpAmountWasPaid, ref amountwaspaid, ref listUpdateIns);
+                UpdateMoney(enHD, depositAmount, tmpAmountWasPaid, ref amountwaspaid, ref listUpdateIns);
 
                 if (listUpdateIns.Count > 0)
                     BulkUpdate(listUpdateIns);
@@ -158,15 +159,15 @@ namespace Action_Resv_GenPMS
                 throw new InvalidPluginExecutionException(ex.Message);
             }
         }
-        //private void GenPaymentScheme(ref Entity enQuote, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday, decimal interestPercent)
-        private void GenPaymentScheme(ref Entity enQuote, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday)
+        //private void GenPaymentScheme(ref Entity enHD, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday, decimal interestPercent)
+        private void GenPaymentScheme(ref Entity enHD, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday)
         {
             traceS.Trace("vào GenPaymentScheme");
             decimal sumper = 0;
             decimal sumamount = 0;
-            //bsd_freightamount = enQuote.Contains("bsd_freightamount") ? ((Money)enQuote["bsd_freightamount"]).Value : 0;
-            //bsd_managementfee = enQuote.Contains("bsd_managementfee") ? ((Money)enQuote["bsd_managementfee"]).Value : 0;
-            decimal amountCalcIns = enQuote.Contains("bsd_totalamount") ? ((Money)enQuote["bsd_totalamount"]).Value : 0;
+            //bsd_freightamount = enHD.Contains("bsd_freightamount") ? ((Money)enHD["bsd_freightamount"]).Value : 0;
+            //bsd_managementfee = enHD.Contains("bsd_managementfee") ? ((Money)enHD["bsd_managementfee"]).Value : 0;
+            decimal amountCalcIns = enHD.Contains("bsd_totalamount") ? ((Money)enHD["bsd_totalamount"]).Value : 0;
 
             traceS.Trace("4.2");
 
@@ -232,7 +233,7 @@ namespace Action_Resv_GenPMS
 
                 if (i_dueCalMethod == 100000002 && !gotEstimateDate) //Estimate handove date
                 {
-                    d_estimate = get_EstimatehandoverDate(enQuote);
+                    d_estimate = get_EstimatehandoverDate(enHD);
                     gotEstimateDate = true;
                     traceS.Trace($"d_estimate {d_estimate}");
                 }
@@ -241,11 +242,11 @@ namespace Action_Resv_GenPMS
                 {
                     //traceS.Trace("4.6");
 
-                    //CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enQuote, amountCalcIns,
+                    //CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enHD, amountCalcIns,
                     //    f_ESmaintenancefees, f_ESmanagementfee, bsd_managementfee, bsd_freightamount, type, ref sumper,
                     //    ref sumamount, amountBeforeDiscount, isLastIns, phiBaoTriPaid, graceday, interestPercent, amountVATBeforeDiscount, amountVATAfterDiscount, ref sumVAT, typeGen,
                     //    ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster);
-                    CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enQuote, amountCalcIns,
+                    CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enHD, amountCalcIns,
                         f_ESmaintenancefees, f_ESmanagementfee, bsd_managementfee, bsd_freightamount, type, ref sumper,
                         ref sumamount, isLastIns, phiBaoTriPaid, graceday, typeGen,
                         ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster, wordTemplateList);
@@ -254,11 +255,11 @@ namespace Action_Resv_GenPMS
                 {
                     //traceS.Trace("4.9.1");
 
-                    //CreatePaymentPhase_fixDate(ref orderNumber, bsd_managementfee, bsd_freightamount, listInsMaster.Entities[i], enQuote,
+                    //CreatePaymentPhase_fixDate(ref orderNumber, bsd_managementfee, bsd_freightamount, listInsMaster.Entities[i], enHD,
                     //    amountCalcIns, f_lastinstallment, f_es, f_ESmaintenancefees, f_ESmanagementfee, type, ref sumper, ref sumamount,
                     //    amountBeforeDiscount, isLastIns, phiBaoTriPaid, graceday, interestPercent, amountVATBeforeDiscount, amountVATAfterDiscount, ref sumVAT, typeGen,
                     //    ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns);
-                    CreatePaymentPhase_fixDate(ref orderNumber, bsd_managementfee, bsd_freightamount, listInsMaster.Entities[i], enQuote,
+                    CreatePaymentPhase_fixDate(ref orderNumber, bsd_managementfee, bsd_freightamount, listInsMaster.Entities[i], enHD,
                         amountCalcIns, f_lastinstallment, f_es, f_ESmaintenancefees, f_ESmanagementfee, type, ref sumper, ref sumamount,
                         isLastIns, phiBaoTriPaid, graceday, typeGen, ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns,
                         i_dueCalMethod, d_estimate, wordTemplateList);
@@ -275,12 +276,12 @@ namespace Action_Resv_GenPMS
             return (decimal)tax["bsd_value"];
         }
 
-        //private void CreatePaymentPhase(Entity PM, ref int orderNumber, Entity en, Entity enQuote, decimal amountCalcIns,
+        //private void CreatePaymentPhase(Entity PM, ref int orderNumber, Entity en, Entity enHD, decimal amountCalcIns,
         //    bool f_ESmaintenancefees, bool f_ESmanagementfee, decimal bsd_managementfee, decimal bsd_maintenancefees, int typePrice,
         //    ref decimal sumper, ref decimal sumamount, decimal amountBeforeDiscount, bool isLastIns, decimal phiBaoTriPaid, int graceday,
         //    decimal interestPercent, decimal amountVATBeforeDiscount, decimal amountVATAfterDiscount, ref decimal sumVAT, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull,
         //    ref int indexInsValueNull, ref decimal valuePer, ref List<Entity> listCreateIns, EntityCollection listInsMaster)
-        private void CreatePaymentPhase(Entity enPS, ref int orderNumber, Entity en, Entity enQuote, decimal amountCalcIns,
+        private void CreatePaymentPhase(Entity enPS, ref int orderNumber, Entity en, Entity enHD, decimal amountCalcIns,
         bool f_ESmaintenancefees, bool f_ESmanagementfee, decimal bsd_managementfee, decimal bsd_maintenancefees, int typePrice,
         ref decimal sumper, ref decimal sumamount, bool isLastIns, decimal phiBaoTriPaid, int graceday,
         int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull,
@@ -324,10 +325,10 @@ namespace Action_Resv_GenPMS
             tmp["bsd_ordernumber"] = orderNumber;
             tmp["bsd_name"] = "Đợt " + orderNumber;
             //tmp["bsd_code"] = string.Format("{0}-{1:ddMMyyyyhhmmssff}", tmp["bsd_name"], DateTime.UtcNow);
-            tmp["bsd_reservation"] = enQuote.ToEntityReference();
+            tmp["bsd_reservationcontract"] = enHD.ToEntityReference();
             tmp["bsd_paymentscheme"] = en["bsd_paymentscheme"];
             //tmp["bsd_project"] = en.Contains("bsd_project") ? en["bsd_project"] : null;
-            tmp["bsd_project"] = enQuote.Contains("bsd_projectid") ? enQuote["bsd_projectid"] : null;
+            tmp["bsd_project"] = enHD.Contains("bsd_projectid") ? enHD["bsd_projectid"] : null;
             tmp["bsd_amountwaspaid"] = new Money(0);
             tmp["bsd_pricetype"] = new OptionSetValue(typePrice);
             tmp["bsd_gracedays"] = graceday;
@@ -341,7 +342,7 @@ namespace Action_Resv_GenPMS
             tmp["bsd_official"] = en.Contains("bsd_official") ? en["bsd_official"] : false;
             tmp["bsd_gopdot"] = en.Contains("bsd_gopdot") ? en["bsd_gopdot"] : false;
 
-            tmp["bsd_duedate"] = calculateDuedate(enQuote, en, listCreateIns, listInsMaster, orderNumber == 1);
+            tmp["bsd_duedate"] = calculateDuedate(enHD, en, listCreateIns, listInsMaster, orderNumber == 1);
 
             tmp["bsd_calendartype"] = en.Contains("bsd_calendartype") ? en["bsd_calendartype"] : null;
             tmp["bsd_waiveramount"] = new Money(0);
@@ -426,12 +427,12 @@ namespace Action_Resv_GenPMS
             //traceS.Trace("ra CreatePaymentPhase");
         }
 
-        //private void CreatePaymentPhase_fixDate(ref int orderNumber, decimal bsd_managementfee, decimal bsd_maintenancefees, Entity en, Entity enQuote,
+        //private void CreatePaymentPhase_fixDate(ref int orderNumber, decimal bsd_managementfee, decimal bsd_maintenancefees, Entity en, Entity enHD,
         //    decimal amountCalcIns, bool f_last, bool f_es, bool f_ESmaintenancefees, bool f_ESmanagementfee, int typePrice, ref decimal sumper,
         //    ref decimal sumamount, decimal amountBeforeDiscount, bool isLastIns, decimal phiBaoTriPaid, int graceday, decimal interestPercent,
         //    decimal amountVATBeforeDiscount, decimal amountVATAfterDiscount, ref decimal sumVAT, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull, ref int indexInsValueNull,
         //    ref decimal valuePer, ref List<Entity> listCreateIns)
-        private void CreatePaymentPhase_fixDate(ref int orderNumber, decimal bsd_managementfee, decimal bsd_maintenancefees, Entity en, Entity enQuote,
+        private void CreatePaymentPhase_fixDate(ref int orderNumber, decimal bsd_managementfee, decimal bsd_maintenancefees, Entity en, Entity enHD,
         decimal amountCalcIns, bool f_last, bool f_es, bool f_ESmaintenancefees, bool f_ESmanagementfee, int typePrice, ref decimal sumper,
         ref decimal sumamount, bool isLastIns, decimal phiBaoTriPaid, int graceday, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull,
         ref int indexInsValueNull, ref decimal valuePer, ref List<Entity> listCreateIns, int i_dueCalMethod, DateTime? d_estimate, EntityCollection wordTemplateList)
@@ -444,10 +445,10 @@ namespace Action_Resv_GenPMS
             tmp["bsd_ordernumber"] = orderNumber;
             tmp["bsd_name"] = "Đợt " + orderNumber;
             //tmp["bsd_code"] = string.Format("{0}-{1:ddMMyyyyhhmmssff}", tmp["bsd_name"], DateTime.UtcNow);
-            tmp["bsd_reservation"] = enQuote.ToEntityReference();
+            tmp["bsd_reservationcontract"] = enHD.ToEntityReference();
             tmp["bsd_paymentscheme"] = en["bsd_paymentscheme"];
             //tmp["bsd_project"] = en.Contains("bsd_project") ? en["bsd_project"] : null;
-            tmp["bsd_project"] = enQuote.Contains("bsd_projectid") ? enQuote["bsd_projectid"] : null;
+            tmp["bsd_project"] = enHD.Contains("bsd_projectid") ? enHD["bsd_projectid"] : null;
             tmp["bsd_amountwaspaid"] = new Money(0);
             tmp["bsd_depositamount"] = new Money(0);
             tmp["bsd_pricetype"] = new OptionSetValue(typePrice);
@@ -520,7 +521,7 @@ namespace Action_Resv_GenPMS
             //traceS.Trace("ra CreatePaymentPhase_fixDate");
         }
 
-        private DateTime calculateDuedate(Entity enQuote, Entity enIns, List<Entity> listCreateIns, EntityCollection listInsMaster, bool isFirstIns)
+        private DateTime calculateDuedate(Entity enHD, Entity enIns, List<Entity> listCreateIns, EntityCollection listInsMaster, bool isFirstIns)
         {
             traceS.Trace("calculateDuedate đầu function");
             bool flag = false;
@@ -528,16 +529,9 @@ namespace Action_Resv_GenPMS
 
             if (isFirstIns)
             {
-                if (!enQuote.Contains("bsd_ngaydatcoc"))
-                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_ngaydatcoc_reservation"));
-                date = CalcDate(enIns, (DateTime)enQuote["bsd_ngaydatcoc"], ref flag);
-
-                if (enQuote.Contains("statuscode") && ((OptionSetValue)enQuote["statuscode"]).Value == 100000000) //reservation
-                {
-                    if (!enQuote.Contains("bsd_reservationtime"))
-                        throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_reservationtime_reservation"));
-                    date = CalcDate(enIns, (DateTime)enQuote["bsd_reservationtime"], ref flag);
-                }
+                if (!enHD.Contains("bsd_racontractsigndate"))
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_racontractsigndate"));
+                date = CalcDate(enIns, (DateTime)enHD["bsd_racontractsigndate"], ref flag);
             }
             else
             {
@@ -596,9 +590,9 @@ namespace Action_Resv_GenPMS
             return date;
         }
 
-        private DateTime get_EstimatehandoverDate(Entity enQuote)
+        private DateTime get_EstimatehandoverDate(Entity enHD)
         {
-            if (!enQuote.Contains("bsd_unitno"))
+            if (!enHD.Contains("bsd_unitno"))
                 throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitinformation"));
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
@@ -607,7 +601,7 @@ namespace Action_Resv_GenPMS
                 <attribute name=""bsd_estimatehandoverdate"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
-                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{((EntityReference)enQuote["bsd_unitno"]).Id}"" />
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{((EntityReference)enHD["bsd_unitno"]).Id}"" />
                   <condition attribute=""bsd_estimatehandoverdate"" operator=""not-null"" />
                 </filter>
               </entity>
@@ -616,12 +610,12 @@ namespace Action_Resv_GenPMS
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
                 return (DateTime)rs.Entities[0]["bsd_estimatehandoverdate"];
             else
-                return get_EstimateFromProject(enQuote);
+                return get_EstimateFromProject(enHD);
         }
 
-        private DateTime get_EstimateFromProject(Entity enQuote)
+        private DateTime get_EstimateFromProject(Entity enHD)
         {
-            if (!enQuote.Contains("bsd_projectid"))
+            if (!enHD.Contains("bsd_projectid"))
                 throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_project"));
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
@@ -630,7 +624,7 @@ namespace Action_Resv_GenPMS
                 <attribute name=""bsd_estimatehandoverdate"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
-                  <condition attribute=""bsd_projectid"" operator=""eq"" value=""{((EntityReference)enQuote["bsd_projectid"]).Id}"" />
+                  <condition attribute=""bsd_projectid"" operator=""eq"" value=""{((EntityReference)enHD["bsd_projectid"]).Id}"" />
                   <condition attribute=""bsd_estimatehandoverdate"" operator=""not-null"" />
                 </filter>
               </entity>
@@ -744,7 +738,7 @@ namespace Action_Resv_GenPMS
             return convertedDate;
         }
 
-        private void UpdateMoney(Entity enQuote, decimal depositAmount, decimal tmpAmountWasPaid, ref decimal amountwaspaid, ref List<Entity> listUpdateIns)
+        private void UpdateMoney(Entity enHD, decimal depositAmount, decimal tmpAmountWasPaid, ref decimal amountwaspaid, ref List<Entity> listUpdateIns)
         {
             traceS.Trace("UpdateMoney");
             var fetchXmlKhongGop = $@"
@@ -757,7 +751,7 @@ namespace Action_Resv_GenPMS
                             <attribute name='bsd_maintenancefeepaid' />
                             <attribute name='bsd_maintenancefeeremaining' />
                             <filter type='and'>
-                              <condition attribute='bsd_reservation' operator='eq' value='{enQuote.Id}'/>
+                              <condition attribute='bsd_reservationcontract' operator='eq' value='{enHD.Id}'/>
                               <condition attribute='statecode' operator='eq' value='0'/>
                             </filter>
                             <order attribute='bsd_duedate' />
@@ -770,11 +764,11 @@ namespace Action_Resv_GenPMS
 
             foreach (var item in lstKhongGop.Entities)
             {
-                UpdateMoney_Detail(item, enQuote, depositAmount, tmpAmountWasPaid, ref amountwaspaid, ref isFirst, ref listUpdateIns);
+                UpdateMoney_Detail(item, enHD, depositAmount, tmpAmountWasPaid, ref amountwaspaid, ref isFirst, ref listUpdateIns);
             }
         }
 
-        private void UpdateMoney_Detail(Entity item, Entity enQuote, decimal depositAmount, decimal tmpAmountWasPaid, ref decimal amountwaspaid, ref bool isFirst, ref List<Entity> listUpdateIns)
+        private void UpdateMoney_Detail(Entity item, Entity enHD, decimal depositAmount, decimal tmpAmountWasPaid, ref decimal amountwaspaid, ref bool isFirst, ref List<Entity> listUpdateIns)
         {
             if ((int)item["bsd_ordernumber"] == 1)
             {
@@ -899,7 +893,7 @@ namespace Action_Resv_GenPMS
             }
         }
 
-        private decimal GetPhiBaoTri(Entity enOE)
+        private decimal GetPhiBaoTri(Entity enHD)
         {
             traceS.Trace("GetPhiBaoTri");
 
@@ -910,7 +904,7 @@ namespace Action_Resv_GenPMS
                 <attribute name=""bsd_amountpay"" alias=""sumAmount"" aggregate=""sum"" />
                 <filter>
                   <condition attribute=""bsd_paymenttype"" operator=""eq"" value=""100000002"" />
-                  <condition attribute=""bsd_reservation"" operator=""eq"" value=""{enOE.Id}"" />
+                  <condition attribute=""bsd_reservationcontract"" operator=""eq"" value=""{enHD.Id}"" />
                   <condition attribute=""statuscode"" operator=""eq"" value=""100000000"" />
                 </filter>
               </entity>

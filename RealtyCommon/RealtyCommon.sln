@@ -9,9 +9,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_PSDetail_CheckPercen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_UpdateInsOrderNumber", "..\Action_UpdateInsOrderNumber\Action_UpdateInsOrderNumber\Action_UpdateInsOrderNumber.csproj", "{F8652F26-2150-4483-8184-71641194F372}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Resv_GenPMS", "..\Action_Resv_GenPMS\Action_Resv_GenPMS\Action_Resv_GenPMS.csproj", "{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_ReservationContract_PSGen", "..\Action_ReservationContract_PSGen\Action_ReservationContract_PSGen\Action_ReservationContract_PSGen.csproj", "{370A37F7-4625-4A6F-B0B3-54836D90A7D3}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
+		RealtyCommon\RealtyCommon.projitems*{370a37f7-4625-4a6f-b0b3-54836d90a7d3}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{50b386f7-9c2f-4637-89bf-9ecbfbab1d22}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{f40097b7-73bf-46b8-94ce-f6a56911f625}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{f8652f26-2150-4483-8184-71641194f372}*SharedItemsImports = 4
 	EndGlobalSection
@@ -28,6 +34,14 @@ Global
 		{F8652F26-2150-4483-8184-71641194F372}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8652F26-2150-4483-8184-71641194F372}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8652F26-2150-4483-8184-71641194F372}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

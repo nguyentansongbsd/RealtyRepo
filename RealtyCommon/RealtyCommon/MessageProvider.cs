@@ -49,7 +49,7 @@ namespace RealtyCommon
                 return msg;
             }
 
-            return "Message not found, please check 'Message Config' again.";
+            return $"Message {notificationName} not found, please check 'Message Config' again.";
         }
 
         private static int GetLanguageCode(IOrganizationService service, IPluginExecutionContext context)
