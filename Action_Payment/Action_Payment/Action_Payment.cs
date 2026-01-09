@@ -19,50 +19,107 @@ namespace Action_Payment
         EntityReference Target = null;
         public void Execute(IServiceProvider serviceProvider)
         {
-            this._context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
-            this._serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
-            this._service = _serviceFactory.CreateOrganizationService(this._context.UserId);
-            this._tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+            _context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+            _serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+            _service = _serviceFactory.CreateOrganizationService(_context.UserId);
+            _tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
-            this.Target = this._context.InputParameters["Target"] as EntityReference;
-            Entity enPayment = this._service.Retrieve(this.Target.LogicalName, this.Target.Id, new ColumnSet("bsd_units",
-                "bsd_project", "bsd_queue", "bsd_amountpay", "bsd_outstandingbalance", "bsd_amountwaspaid"));
+            Target = _context.InputParameters["Target"] as EntityReference;
+            Entity enPayment = getTarget();
+            if (!enPayment.Contains("bsd_paymenttype"))
+            {
+                throw new InvalidPluginExecutionException("No Payment Type value");
+            }
+            var paymentType = (PaymentType)((OptionSetValue)enPayment["bsd_paymenttype"]).Value;
+
+            switch (paymentType)
+            {
+                case PaymentType.QueuingFee:
+                    // logic Queuing fee
+                    updateQueue(enPayment);
+                    break;
+
+                case PaymentType.DepositFee:
+                    // logic Deposit fee
+                    break;
+
+                case PaymentType.Installment:
+                    // logic Installment
+                    break;
+
+                case PaymentType.InterestCharge:
+                    // logic Interest Charge
+                    break;
+
+                case PaymentType.Fees:
+                    // logic Fees
+                    break;
+
+                case PaymentType.Other:
+                    // logic Other
+                    break;
+
+                default:
+                    throw new InvalidPluginExecutionException("Unsupported Payment Type");
+            }
+            // cập nhật sts = Paid cho phiếu thu và ghi nhận ngày + người thanh toán
             updatePayment();
-            updateQueue(enPayment);
         }
+        //get target entity Payment
+        private Entity getTarget()
+        {
+            return _service.Retrieve(Target.LogicalName, Target.Id,
+                new ColumnSet(
+                    "bsd_units",
+                    "bsd_project",
+                    "bsd_queue",
+                    "bsd_quotationreservation",
+                    "bsd_reservationcontract",
+                    "bsd_optionentry",
+                    "bsd_paymenttype",
+                    "bsd_transactiontype",
+                    "bsd_paymentactualtime",
+                    "bsd_amountpay",
+                    "bsd_outstandingbalance",
+                    "bsd_amountwaspaid"
+                )
+            );
+        }
+        // cập nhật sts = Paid cho phiếu thu và ghi nhận ngày + người thanh toán
         private void updatePayment()
         {
             try
             {
-                Entity enUpdatePayment = new Entity(this.Target.LogicalName, this.Target.Id);
+                Entity enUpdatePayment = new Entity(Target.LogicalName, Target.Id);
                 enUpdatePayment["statuscode"] = new OptionSetValue(100000000);
-                enUpdatePayment["bsd_confirmeddate"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, this._service);
-                enUpdatePayment["bsd_confirmperson"] = new EntityReference("systemuser", this._context.UserId);
-                this._service.Update(enUpdatePayment);
+                enUpdatePayment["bsd_confirmeddate"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, _service);
+                enUpdatePayment["bsd_confirmperson"] = new EntityReference("systemuser", _context.UserId);
+                _service.Update(enUpdatePayment);
             }
             catch (Exception ex)
             {
                 throw new InvalidPluginExecutionException(ex.Message);
             }
         }
-        private void updateQueue(Entity enPayment) 
-        {             
+        // xử lý thanh toán với case queue
+        private void updateQueue(Entity enPayment)
+        {
             try
             {
                 if (!enPayment.Contains("bsd_queue")) return;
-                this._tracingService.Trace("Updating Queue Record...");
+                _tracingService.Trace("Updating Queue Record...");
                 decimal amountPay = enPayment.Contains("bsd_amountpay") ? ((Money)enPayment["bsd_amountpay"]).Value : 0;
                 decimal amountWasPaid = enPayment.Contains("bsd_amountwaspaid") ? ((Money)enPayment["bsd_amountwaspaid"]).Value : 0;
                 decimal totalPaid = amountWasPaid + amountPay;
                 decimal queuingFee = getQueuingFee(enPayment);
 
                 Entity enQueue = new Entity(((EntityReference)enPayment["bsd_queue"]).LogicalName, ((EntityReference)enPayment["bsd_queue"]).Id);
-                if(totalPaid == queuingFee)
+                if (totalPaid == queuingFee)
                     enQueue["bsd_collectedqueuingfee"] = true;
-                enQueue["bsd_dateorder"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, this._service);
+                enQueue["bsd_dateorder"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, _service);
                 enQueue["bsd_queuingfeepaid"] = new Money(totalPaid);
-                this._service.Update(enQueue);
-                this._tracingService.Trace("Queue Record Updated.");
+                _service.Update(enQueue);
+                _tracingService.Trace("Queue Record Updated.");
             }
             catch (Exception ex)
             {
@@ -72,8 +129,8 @@ namespace Action_Payment
         private decimal getQueuingFee(Entity enPayment)
         {
             if (!enPayment.Contains("bsd_queue")) return 0;
-            Entity enQueue = this._service.Retrieve(((EntityReference)enPayment["bsd_queue"]).LogicalName, ((EntityReference)enPayment["bsd_queue"]).Id, new ColumnSet("bsd_queuingfee"));
-            if(!enQueue.Contains("bsd_queuingfee")) return 0;
+            Entity enQueue = _service.Retrieve(((EntityReference)enPayment["bsd_queue"]).LogicalName, ((EntityReference)enPayment["bsd_queue"]).Id, new ColumnSet("bsd_queuingfee"));
+            if (!enQueue.Contains("bsd_queuingfee")) return 0;
             return ((Money)enQueue["bsd_queuingfee"]).Value;
         }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
@@ -90,7 +147,6 @@ namespace Action_Payment
 
             return response.LocalTime;
         }
-
         private int? RetrieveCurrentUsersSettings(IOrganizationService service)
         {
             var currentUserSettings = service.RetrieveMultiple(
@@ -103,6 +159,15 @@ namespace Action_Payment
                 }
             }).Entities[0].ToEntity<Entity>();
             return (int?)currentUserSettings.Attributes["timezonecode"];
+        }
+        private enum PaymentType
+        {
+            QueuingFee = 100000000,
+            DepositFee = 100000001,
+            Installment = 100000002,
+            InterestCharge = 100000003,
+            Fees = 100000004,
+            Other = 100000005
         }
     }
 }
