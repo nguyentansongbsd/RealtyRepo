@@ -30,17 +30,30 @@ namespace Action_Payment
             {
                 throw new InvalidPluginExecutionException("No Payment Type value");
             }
+            if (!enPayment.Contains("bsd_amountpay"))
+            {
+                throw new InvalidPluginExecutionException("No Amount Pay value");
+            }
+            if (!enPayment.Contains("bsd_paymentactualtime"))
+            {
+                throw new InvalidPluginExecutionException("No Receipt Date value");
+            }
             var paymentType = (PaymentType)((OptionSetValue)enPayment["bsd_paymenttype"]).Value;
-
+            decimal amountPay = ((Money)enPayment["bsd_amountpay"]).Value;
             switch (paymentType)
             {
                 case PaymentType.QueuingFee:
                     // logic Queuing fee
-                    updateQueue(enPayment);
+                    updateQueue(enPayment, amountPay);
                     break;
 
                 case PaymentType.DepositFee:
                     // logic Deposit fee
+                    if (!enPayment.Contains("bsd_quotationreservation"))
+                    {
+                        throw new InvalidPluginExecutionException("No Quotation Reservation value");
+                    }
+                    deposit(enPayment, (EntityReference)enPayment["bsd_quotationreservation"], amountPay);
                     break;
 
                 case PaymentType.Installment:
@@ -85,6 +98,54 @@ namespace Action_Payment
                 )
             );
         }
+        // case thanh toán tiền cọc
+        private void deposit(Entity enPayment, EntityReference enrDeposit, decimal amountPay)
+        {
+            Entity enDeposit = _service.Retrieve(enrDeposit.LogicalName, enrDeposit.Id,
+                new ColumnSet(
+                    "bsd_depositfee",
+                    "bsd_totalamountpaid"
+                )
+            );
+            decimal depositfee = enDeposit.Contains("bsd_depositfee") ? ((Money)enDeposit["bsd_depositfee"]).Value : 0;
+            decimal totalamountpaid = enDeposit.Contains("bsd_totalamountpaid") ? ((Money)enDeposit["bsd_totalamountpaid"]).Value : 0;
+            decimal balance = depositfee - totalamountpaid;
+            if (balance <= 0) throw new InvalidPluginExecutionException("The deposit has been paid in full.");
+            if (amountPay > balance) throw new InvalidPluginExecutionException("The amount payable is more than the deposit required.");
+            Entity upDeposit = new Entity(enrDeposit.LogicalName, enrDeposit.Id);
+            upDeposit["bsd_totalamountpaid"] = new Money(depositfee);
+            upDeposit["bsd_deposittime"] = enPayment["bsd_paymentactualtime"];
+            _service.Update(upDeposit);
+
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_paymentschemedetail"">
+                <attribute name=""bsd_paymentschemedetailid"" />
+                <attribute name=""bsd_amountofthisphase"" />
+                <attribute name=""bsd_depositamount"" />
+                <attribute name=""bsd_amountwaspaid"" />
+                <attribute name=""bsd_balance"" />
+                <filter>
+                  <condition attribute=""statecode"" operator=""eq"" value=""{0}"" />
+                  <condition attribute=""bsd_reservation"" operator=""eq"" value=""{enrDeposit.Id}"" />
+                  <condition attribute=""bsd_ordernumber"" operator=""eq"" value=""{1}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection enIntallment = _service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (enIntallment.Entities.Count == 0) throw new InvalidPluginExecutionException("Installment not found.");
+            foreach (Entity entity in enIntallment.Entities)
+            {
+                decimal bsd_amountofthisphase = entity.Contains("bsd_amountofthisphase") ? ((Money)entity["bsd_amountofthisphase"]).Value : 0;
+                decimal bsd_depositamount = entity.Contains("bsd_depositamount") ? ((Money)entity["bsd_depositamount"]).Value : 0;
+                decimal bsd_amountwaspaid = entity.Contains("bsd_amountwaspaid") ? ((Money)entity["bsd_amountwaspaid"]).Value : 0;
+                decimal bsd_balance = entity.Contains("bsd_balance") ? ((Money)entity["bsd_balance"]).Value : 0;
+                Entity upIntallment = new Entity(entity.LogicalName, entity.Id);
+                upIntallment["bsd_depositamount"] = new Money(bsd_depositamount + amountPay);
+                upIntallment["bsd_balance"] = new Money(bsd_amountofthisphase - bsd_depositamount - amountPay - bsd_amountwaspaid);
+                _service.Update(upIntallment);
+            }
+        }
         // cập nhật sts = Paid cho phiếu thu và ghi nhận ngày + người thanh toán
         private void updatePayment()
         {
@@ -102,13 +163,12 @@ namespace Action_Payment
             }
         }
         // xử lý thanh toán với case queue
-        private void updateQueue(Entity enPayment)
+        private void updateQueue(Entity enPayment, decimal amountPay)
         {
             try
             {
                 if (!enPayment.Contains("bsd_queue")) return;
                 _tracingService.Trace("Updating Queue Record...");
-                decimal amountPay = enPayment.Contains("bsd_amountpay") ? ((Money)enPayment["bsd_amountpay"]).Value : 0;
                 decimal amountWasPaid = enPayment.Contains("bsd_amountwaspaid") ? ((Money)enPayment["bsd_amountwaspaid"]).Value : 0;
                 decimal totalPaid = amountWasPaid + amountPay;
                 decimal queuingFee = getQueuingFee(enPayment);
