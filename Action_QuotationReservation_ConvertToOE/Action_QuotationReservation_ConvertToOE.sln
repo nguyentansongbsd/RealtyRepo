@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_QuotationReservation_ConvertToOE", "Action_QuotationReservation_ConvertToOE\Action_QuotationReservation_ConvertToOE.csproj", "{708F3E3B-6D53-4465-89CB-6899512EA772}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\RealtyCommon\RealtyCommon\RealtyCommon.projitems*{708f3e3b-6d53-4465-89cb-6899512ea772}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {554D6366-8618-4060-87CA-39D8B8605F3B}
+	EndGlobalSection
+EndGlobal

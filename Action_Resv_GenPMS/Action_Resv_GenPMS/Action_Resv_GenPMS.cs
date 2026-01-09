@@ -118,35 +118,21 @@ namespace Action_Resv_GenPMS
                 #endregion
                 traceS.Trace("6");
 
-                #region source mới
-                decimal amountwaspaid = 0;
-                decimal tmpTotalAmountPaid = 0;
-                decimal tmpDepositAmount = 0;
-                decimal tmpAmountWasPaid = 0;
+                decimal totalAmountPaid = 0;
+                decimal depositFeePaid = 0;
                 if (enQuote.Contains("bsd_totalamountpaid"))
                 {
+                    totalAmountPaid = ((Money)enQuote["bsd_totalamountpaid"]).Value;
+
                     if (enQuote.Contains("bsd_depositfee"))
                     {
-                        tmpTotalAmountPaid = ((Money)enQuote["bsd_totalamountpaid"]).Value;
-                        tmpDepositAmount = ((Money)enQuote["bsd_depositfee"]).Value;
-                        tmpAmountWasPaid = tmpTotalAmountPaid - tmpDepositAmount;
-                        amountwaspaid = tmpAmountWasPaid < 0 ? tmpTotalAmountPaid : tmpAmountWasPaid;
+                        decimal depositFee = ((Money)enQuote["bsd_depositfee"]).Value;
+                        depositFeePaid = totalAmountPaid - depositFee < 0 ? totalAmountPaid : depositFee;
                     }
-                    else
-                    {
-                        amountwaspaid = ((Money)enQuote["bsd_totalamountpaid"]).Value;
-                    }
-                }
-                #endregion
-
-                decimal depositAmount = 0;
-                if (enQuote.Contains("bsd_totalamountpaid") && enQuote.Contains("bsd_depositfee"))
-                {
-                    depositAmount = tmpAmountWasPaid < 0 ? tmpTotalAmountPaid : tmpDepositAmount;
                 }
 
                 List<Entity> listUpdateIns = new List<Entity>();
-                UpdateMoney(enQuote, depositAmount, tmpAmountWasPaid, ref amountwaspaid, ref listUpdateIns);
+                UpdateMoney(enQuote, depositFeePaid, totalAmountPaid, ref listUpdateIns);
 
                 if (listUpdateIns.Count > 0)
                     BulkUpdate(listUpdateIns);
@@ -744,7 +730,7 @@ namespace Action_Resv_GenPMS
             return convertedDate;
         }
 
-        private void UpdateMoney(Entity enQuote, decimal depositAmount, decimal tmpAmountWasPaid, ref decimal amountwaspaid, ref List<Entity> listUpdateIns)
+        private void UpdateMoney(Entity enQuote, decimal depositFeePaid, decimal totalAmountPaid, ref List<Entity> listUpdateIns)
         {
             traceS.Trace("UpdateMoney");
             var fetchXmlKhongGop = $@"
@@ -766,137 +752,57 @@ namespace Action_Resv_GenPMS
                           </entity>
                         </fetch>";
             var lstKhongGop = service.RetrieveMultiple(new FetchExpression(fetchXmlKhongGop.ToString()));
-            bool isFirst = true;
-
+            decimal amountwaspaid = totalAmountPaid;
             foreach (var item in lstKhongGop.Entities)
             {
-                UpdateMoney_Detail(item, enQuote, depositAmount, tmpAmountWasPaid, ref amountwaspaid, ref isFirst, ref listUpdateIns);
+                UpdateMoney_Detail(item, depositFeePaid, ref amountwaspaid, ref listUpdateIns);
             }
         }
 
-        private void UpdateMoney_Detail(Entity item, Entity enQuote, decimal depositAmount, decimal tmpAmountWasPaid, ref decimal amountwaspaid, ref bool isFirst, ref List<Entity> listUpdateIns)
+        private void UpdateMoney_Detail(Entity item, decimal depositFeePaid, ref decimal amountwaspaid, ref List<Entity> listUpdateIns)
         {
+
+            Entity enUpdate = new Entity(item.LogicalName, item.Id);
+            #region reset
+            enUpdate["bsd_depositamount"] = new Money(0);
+            enUpdate["bsd_amountwaspaid"] = new Money(0);
+            enUpdate["statuscode"] = new OptionSetValue(100000000);
+            enUpdate["bsd_balance"] = item["bsd_amountofthisphase"];
+            #endregion
+
+            decimal bsd_amountofthisphase = item.Contains("bsd_amountofthisphase") ? ((Money)item["bsd_amountofthisphase"]).Value : 0;
+            decimal tmp = bsd_amountofthisphase - amountwaspaid;
             if ((int)item["bsd_ordernumber"] == 1)
             {
-                //int bsd_pricetype = item.Contains("bsd_pricetype") ? ((OptionSetValue)item["bsd_pricetype"]).Value : 0;
-                Entity enHandover = new Entity();
-                enHandover.LogicalName = item.LogicalName;
-                enHandover.Id = item.Id;
+                enUpdate["bsd_depositamount"] = new Money(depositFeePaid);
+            }
 
-                #region reset
-                enHandover["bsd_depositamount"] = new Money(0);
-                enHandover["bsd_amountwaspaid"] = new Money(0);
-                enHandover["statuscode"] = new OptionSetValue(100000000);
-                enHandover["bsd_balance"] = item["bsd_amountofthisphase"];
-                #endregion
+            if (tmp < 0)
+            {
+                enUpdate["bsd_amountwaspaid"] = new Money(bsd_amountofthisphase);
+                enUpdate["statuscode"] = new OptionSetValue(100000001);
+                enUpdate["bsd_balance"] = new Money(0);
 
-                #region 14/8/2023
-                decimal bsd_depositfee = 0;
-                if (isFirst)
-                {
-                    bsd_depositfee = depositAmount;
-                    isFirst = false;
-                }
-                #endregion
-                enHandover["bsd_depositamount"] = new Money(bsd_depositfee);
-
-                #region 14/8/2023
-                decimal tmp = 0;
-                if (tmpAmountWasPaid < 0)
-                    tmp = ((Money)item["bsd_amountofthisphase"]).Value - amountwaspaid;
-                else
-                    tmp = ((Money)item["bsd_amountofthisphase"]).Value - amountwaspaid - bsd_depositfee;
-                #endregion
-
-                if (tmp < 0)
-                {
-                    decimal tmp02 = ((Money)item["bsd_amountofthisphase"]).Value - bsd_depositfee;
-                    enHandover["bsd_amountwaspaid"] = new Money(tmp02);
-                    enHandover["statuscode"] = new OptionSetValue(100000001);
-                    enHandover["bsd_balance"] = new Money(0);
-                    //amountwaspaid = amountwaspaid - tmp02;
-
-                    #region 14/8/2023
-                    if (tmpAmountWasPaid < 0)
-                        amountwaspaid = amountwaspaid - tmp02 - bsd_depositfee;
-                    else
-                        amountwaspaid = amountwaspaid - tmp02;
-                    #endregion
-                }
-                else
-                {
-                    if (tmp == 0)
-                    {
-                        enHandover["statuscode"] = new OptionSetValue(100000001);
-                        enHandover["bsd_balance"] = new Money(0);
-                    }
-                    else
-                    {
-                        enHandover["bsd_balance"] = new Money(tmp);
-                    }
-
-                    #region 14/8/2023
-                    if (tmpAmountWasPaid < 0)
-                        enHandover["bsd_amountwaspaid"] = new Money(amountwaspaid - bsd_depositfee);
-                    else
-                        enHandover["bsd_amountwaspaid"] = new Money(amountwaspaid);
-                    #endregion
-
-                    amountwaspaid = 0;
-                }
-
-                decimal bsd_maintenancefeepaid = item.Contains("bsd_maintenancefeepaid") ? ((Money)item["bsd_maintenancefeepaid"]).Value : 0;
-                decimal bsd_maintenancefeeremaining = item.Contains("bsd_maintenancefeeremaining") ? ((Money)item["bsd_maintenancefeeremaining"]).Value : 0;
-                enHandover["bsd_maintenancefeesstatus"] = bsd_maintenancefeepaid > 0 && bsd_maintenancefeeremaining <= 0 ? true : false;
-                //service.Update(enHandover);
-                listUpdateIns.Add(enHandover);
+                amountwaspaid = amountwaspaid - bsd_amountofthisphase;
             }
             else
             {
-                Entity enUpdate = new Entity();
-                enUpdate.LogicalName = item.LogicalName;
-                enUpdate.Id = item.Id;
-
-                #region reset
-                enUpdate["bsd_depositamount"] = new Money(0);
-                enUpdate["bsd_amountwaspaid"] = new Money(0);
-                enUpdate["statuscode"] = new OptionSetValue(100000000);
-                enUpdate["bsd_balance"] = item["bsd_amountofthisphase"];
-                #endregion
-
-                if (amountwaspaid > 0)
+                if (tmp == 0)
                 {
-                    decimal amount = item.Contains("bsd_amountofthisphase") ? ((Money)item["bsd_amountofthisphase"]).Value : 0;
-                    decimal tmp = amount - amountwaspaid;
-                    if (tmp < 0)
-                    {
-                        enUpdate["bsd_amountwaspaid"] = new Money(amount);
-                        enUpdate["statuscode"] = new OptionSetValue(100000001);
-                        enUpdate["bsd_balance"] = new Money(0);
-                        amountwaspaid = amountwaspaid - amount;
-                    }
-                    else
-                    {
-                        if (tmp == 0)
-                        {
-                            enUpdate["statuscode"] = new OptionSetValue(100000001);
-                            enUpdate["bsd_balance"] = new Money(0);
-                        }
-                        else
-                        {
-                            enUpdate["bsd_balance"] = new Money(tmp);
-                        }
-                        enUpdate["bsd_amountwaspaid"] = new Money(amountwaspaid);
-                        amountwaspaid = 0;
-                    }
+                    enUpdate["statuscode"] = new OptionSetValue(100000001);
                 }
 
-                decimal bsd_maintenancefeepaid = item.Contains("bsd_maintenancefeepaid") ? ((Money)item["bsd_maintenancefeepaid"]).Value : 0;
-                decimal bsd_maintenancefeeremaining = item.Contains("bsd_maintenancefeeremaining") ? ((Money)item["bsd_maintenancefeeremaining"]).Value : 0;
-                enUpdate["bsd_maintenancefeesstatus"] = bsd_maintenancefeepaid > 0 && bsd_maintenancefeeremaining <= 0 ? true : false;
-                //service.Update(enUpdate);
-                listUpdateIns.Add(enUpdate);
+                enUpdate["bsd_amountwaspaid"] = new Money(amountwaspaid);
+                enUpdate["bsd_balance"] = new Money(tmp);
+
+                amountwaspaid = 0;
             }
+
+            decimal bsd_maintenancefeepaid = item.Contains("bsd_maintenancefeepaid") ? ((Money)item["bsd_maintenancefeepaid"]).Value : 0;
+            decimal bsd_maintenancefeeremaining = item.Contains("bsd_maintenancefeeremaining") ? ((Money)item["bsd_maintenancefeeremaining"]).Value : 0;
+            enUpdate["bsd_maintenancefeesstatus"] = bsd_maintenancefeepaid > 0 && bsd_maintenancefeeremaining <= 0 ? true : false;
+            //service.Update(enHandover);
+            listUpdateIns.Add(enUpdate);
         }
 
         private decimal GetPhiBaoTri(Entity enOE)

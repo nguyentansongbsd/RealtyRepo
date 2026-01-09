@@ -13,11 +13,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Resv_GenPMS", "..\Ac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_ReservationContract_PSGen", "..\Action_ReservationContract_PSGen\Action_ReservationContract_PSGen\Action_ReservationContract_PSGen.csproj", "{370A37F7-4625-4A6F-B0B3-54836D90A7D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_QuotationReservation_ConvertToOE", "..\Action_QuotationReservation_ConvertToOE\Action_QuotationReservation_ConvertToOE\Action_QuotationReservation_ConvertToOE.csproj", "{708F3E3B-6D53-4465-89CB-6899512EA772}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_ReservationContract_ConvertToOE", "..\Action_ReservationContract_ConvertToOE\Action_ReservationContract_ConvertToOE\Action_ReservationContract_ConvertToOE.csproj", "{CAC3D054-9AD4-4AA9-BE4F-DB9D0997976B}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
 		RealtyCommon\RealtyCommon.projitems*{370a37f7-4625-4a6f-b0b3-54836d90a7d3}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{50b386f7-9c2f-4637-89bf-9ecbfbab1d22}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{708f3e3b-6d53-4465-89cb-6899512ea772}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{cac3d054-9ad4-4aa9-be4f-db9d0997976b}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{f40097b7-73bf-46b8-94ce-f6a56911f625}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{f8652f26-2150-4483-8184-71641194f372}*SharedItemsImports = 4
 	EndGlobalSection
@@ -42,6 +48,14 @@ Global
 		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{370A37F7-4625-4A6F-B0B3-54836D90A7D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{708F3E3B-6D53-4465-89CB-6899512EA772}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAC3D054-9AD4-4AA9-BE4F-DB9D0997976B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAC3D054-9AD4-4AA9-BE4F-DB9D0997976B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAC3D054-9AD4-4AA9-BE4F-DB9D0997976B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAC3D054-9AD4-4AA9-BE4F-DB9D0997976B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
