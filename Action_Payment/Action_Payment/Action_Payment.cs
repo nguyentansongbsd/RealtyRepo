@@ -113,8 +113,9 @@ namespace Action_Payment
             if (balance <= 0) throw new InvalidPluginExecutionException("The deposit has been paid in full.");
             if (amountPay > balance) throw new InvalidPluginExecutionException("The amount payable is more than the deposit required.");
             Entity upDeposit = new Entity(enrDeposit.LogicalName, enrDeposit.Id);
-            upDeposit["bsd_totalamountpaid"] = new Money(depositfee);
-            upDeposit["bsd_deposittime"] = enPayment["bsd_paymentactualtime"];
+            totalamountpaid += amountPay;
+            upDeposit["bsd_totalamountpaid"] = new Money(totalamountpaid);
+            if (totalamountpaid == depositfee) upDeposit["bsd_deposittime"] = enPayment["bsd_paymentactualtime"];
             _service.Update(upDeposit);
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
