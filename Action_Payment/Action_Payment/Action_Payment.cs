@@ -58,6 +58,16 @@ namespace Action_Payment
 
                 case PaymentType.Installment:
                     // logic Installment
+                    if (!enPayment.Contains("bsd_transactiontype"))
+                    {
+                        throw new InvalidPluginExecutionException("No Transaction Type value");
+                    }
+                    int bsd_transactiontype = ((OptionSetValue)enPayment["bsd_transactiontype"]).Value;
+                    if (bsd_transactiontype == 100000000 && !enPayment.Contains("bsd_reservationcontract"))
+                        throw new InvalidPluginExecutionException("No Reservation Contract value");
+                    else if (bsd_transactiontype == 100000001 && !enPayment.Contains("bsd_optionentry"))
+                        throw new InvalidPluginExecutionException("No Optionentry value");
+                    installment(enPayment, (bsd_transactiontype == 100000000 ? (EntityReference)enPayment["bsd_reservationcontract"] : (EntityReference)enPayment["bsd_optionentry"]), amountPay);
                     break;
 
                 case PaymentType.InterestCharge:
@@ -97,6 +107,87 @@ namespace Action_Payment
                     "bsd_amountwaspaid"
                 )
             );
+        }
+        // case thanh toán tiền đợt
+        private void installment(Entity enPayment, EntityReference enrHD, decimal amountPay)
+        {
+            Entity enHD = _service.Retrieve(enrHD.LogicalName, enrHD.Id,
+                new ColumnSet(
+                    "bsd_totalamount",
+                    "bsd_totalamountpaid"
+                )
+            );
+            decimal totalamount = enHD.Contains("bsd_totalamount") ? ((Money)enHD["bsd_totalamount"]).Value : 0;
+            decimal totalamountpaid = enHD.Contains("bsd_totalamountpaid") ? ((Money)enHD["bsd_totalamountpaid"]).Value : 0;
+            decimal balance = totalamount - totalamountpaid;
+            //_tracingService.Trace("totalamount " + totalamount);
+            //_tracingService.Trace("totalamountpaid " + totalamountpaid);
+            //_tracingService.Trace("balance " + balance);
+            //_tracingService.Trace("amountPay " + amountPay);
+            if (balance <= 0) throw new InvalidPluginExecutionException("The installment has been paid in full.");
+            if (amountPay > balance) throw new InvalidPluginExecutionException("The amount payable is more than the installment required.");
+            Entity upHD = new Entity(enrHD.LogicalName, enrHD.Id);
+            totalamountpaid += amountPay;
+            upHD["bsd_totalamountpaid"] = new Money(totalamountpaid);
+            decimal percenPaid = Math.Round((totalamountpaid / totalamount * 100), 2, MidpointRounding.AwayFromZero);
+            upHD["bsd_totalpercent"] = percenPaid;
+            _service.Update(upHD);
+            string nameField = enrHD.LogicalName == "bsd_reservationcontract" ? "bsd_reservationcontract" : "bsd_optionentry";
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_paymentschemedetail"">
+                <attribute name=""bsd_paymentschemedetailid"" />
+                <attribute name=""bsd_amountofthisphase"" />
+                <attribute name=""bsd_depositamount"" />
+                <attribute name=""bsd_amountwaspaid"" />
+                <attribute name=""bsd_balance"" />
+                <attribute name=""bsd_interestchargestatus"" />
+                <attribute name=""bsd_interestchargeamount"" />
+                <attribute name=""bsd_ordernumber"" />
+                <filter>
+                  <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
+                  <condition attribute=""{nameField}"" operator=""eq"" value=""{enrHD.Id}"" />
+                </filter>
+                <order attribute=""bsd_ordernumber"" />
+              </entity>
+            </fetch>";
+            EntityCollection enIntallment = _service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (enIntallment.Entities.Count == 0) throw new InvalidPluginExecutionException("Installment not found.");
+            //_tracingService.Trace("enIntallment " + enIntallment.Entities.Count);
+            foreach (Entity entity in enIntallment.Entities)
+            {
+                decimal bsd_amountofthisphase = entity.Contains("bsd_amountofthisphase") ? ((Money)entity["bsd_amountofthisphase"]).Value : 0;
+                decimal bsd_depositamount = entity.Contains("bsd_depositamount") ? ((Money)entity["bsd_depositamount"]).Value : 0;
+                decimal bsd_amountwaspaid = entity.Contains("bsd_amountwaspaid") ? ((Money)entity["bsd_amountwaspaid"]).Value : 0;
+                decimal bsd_balance = bsd_amountofthisphase - bsd_depositamount - bsd_amountwaspaid;
+                Entity upIntallment = new Entity(entity.LogicalName, entity.Id);
+                if (amountPay <= bsd_balance)
+                {
+                    upIntallment["bsd_amountwaspaid"] = new Money(bsd_amountwaspaid + amountPay);
+                    upIntallment["bsd_balance"] = new Money(bsd_balance - amountPay);
+                    int bsd_interestchargestatus = entity.Contains("bsd_interestchargestatus") ? ((OptionSetValue)entity["bsd_interestchargestatus"]).Value : 0;
+                    decimal bsd_interestchargeamount = entity.Contains("bsd_interestchargeamount") ? ((Money)entity["bsd_interestchargeamount"]).Value : 0;
+                    if (amountPay == bsd_balance && ((bsd_interestchargestatus == 100000001 && bsd_interestchargeamount > 0) || (bsd_interestchargestatus == 100000000 && bsd_interestchargeamount <= 0)))
+                        upIntallment["statuscode"] = new OptionSetValue(100000001);
+                    amountPay -= bsd_balance;
+                }
+                else
+                {
+                    upIntallment["bsd_amountwaspaid"] = new Money(bsd_amountwaspaid + bsd_balance);
+                    upIntallment["bsd_balance"] = new Money(0);
+                    int bsd_interestchargestatus = entity.Contains("bsd_interestchargestatus") ? ((OptionSetValue)entity["bsd_interestchargestatus"]).Value : 0;
+                    decimal bsd_interestchargeamount = entity.Contains("bsd_interestchargeamount") ? ((Money)entity["bsd_interestchargeamount"]).Value : 0;
+                    if ((bsd_interestchargestatus == 100000001 && bsd_interestchargeamount > 0) || (bsd_interestchargestatus == 100000000 && bsd_interestchargeamount <= 0))
+                        upIntallment["statuscode"] = new OptionSetValue(100000001);
+                    amountPay -= bsd_balance;
+                }
+                _service.Update(upIntallment);
+                if (amountPay <= 0) break;
+            }
+            if (amountPay > 0)
+            {
+                throw new InvalidPluginExecutionException("The amount payable is more than the installment required.");
+            }
         }
         // case thanh toán tiền cọc
         private void deposit(Entity enPayment, EntityReference enrDeposit, decimal amountPay)
