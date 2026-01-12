@@ -38,13 +38,14 @@ namespace Action_ReservationContract_ConvertToOE
                 EntityReference refProduct = (EntityReference)enRC["bsd_unitno"];
                 Entity enProduct = service.Retrieve(refProduct.LogicalName, refProduct.Id, new ColumnSet(new string[] { "statuscode", "bsd_unittype" }));
                 int statusProduct = enProduct.Contains("statuscode") ? ((OptionSetValue)enProduct["statuscode"]).Value : -99;
-                //if (statusProduct != 100000003) //Deposited
-                //    throw new InvalidPluginExecutionException("Trạng thái Unit Number không hợp lệ. Vui lòng kiểm tra lại.");
+                if (statusProduct != 100000006) //Reserve
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_unit"));
 
                 Guid idOE = CreateOE(enRC, target, refProduct, enProduct);
                 MapCoowner(target, idOE);
                 MapPaymentSchemeDetail(target, idOE);
                 UpdateReservationContract(target);
+                UpdateUnit(refProduct);
 
                 context.OutputParameters["id"] = idOE.ToString();
             }
@@ -161,8 +162,17 @@ namespace Action_ReservationContract_ConvertToOE
             traceService.Trace("UpdateReservationContract");
 
             Entity upReservationContract = new Entity(target.LogicalName, target.Id);
-            upReservationContract["statuscode"] = new OptionSetValue(100000005);    //Convert to Option Entry
+            upReservationContract["statuscode"] = new OptionSetValue(100000005);    //Convert to SPA
             service.Update(upReservationContract);
+        }
+
+        private void UpdateUnit(EntityReference refProduct)
+        {
+            traceService.Trace("UpdateUnit");
+
+            Entity upUnit = new Entity(refProduct.LogicalName, refProduct.Id);
+            upUnit["statuscode"] = new OptionSetValue(100000008);    //In Contract
+            service.Update(upUnit);
         }
     }
 }
