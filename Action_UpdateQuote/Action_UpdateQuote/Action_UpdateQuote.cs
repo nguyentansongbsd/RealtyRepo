@@ -72,14 +72,17 @@ namespace Action_UpdateQuote
                 }
                 if (str1 == "cancel")
                 {
+                    checkpayment(quote.Id, service);
                     if (quote.Contains("bsd_opportunityid")){
                         Entity queue = service.Retrieve(((EntityReference)quote["bsd_opportunityid"]).LogicalName, ((EntityReference)quote["bsd_opportunityid"]).Id, new ColumnSet(true));
                         Entity up_queue = new Entity(queue.LogicalName, queue.Id);
+                        
                         tracingService.Trace("vào if cancel");
                         up_quote["statuscode"] = new OptionSetValue(100000002);
                         up_quote["bsd_canceldate"] = DateTime.Today;
                         up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_quote);
+                        
                         OptionSetValue statusCode = entity_unit.GetAttributeValue<OptionSetValue>("statuscode");
                         if (statusCode != null && statusCode.Value != 100000004)
                         {
@@ -92,6 +95,7 @@ namespace Action_UpdateQuote
                     else
                     {
                         tracingService.Trace("vào else cancel");
+                        
                         up_quote["statuscode"] = new OptionSetValue(100000002);
                         up_quote["bsd_canceldate"] = DateTime.Today;
                         up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
@@ -120,7 +124,27 @@ namespace Action_UpdateQuote
                 throw new InvalidPluginExecutionException(ex.Message);
             }
         }
+        private void checkpayment(Guid quoteId, IOrganizationService service)
+        {
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_payment"">
+                <filter>
+                  <condition attribute=""statuscode"" operator=""in"">
+                    <value>{1}</value>
+                    <value>{100000000}</value>
+                  </condition>
+                  <condition attribute=""bsd_quotationreservation"" operator=""eq"" value=""{quoteId}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
 
+            if (rs.Entities.Count > 0)
+            {
+                throw new InvalidPluginExecutionException("The transaction has an invalid receipt. Please check again.");
+            }
+        }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
             int? timeZoneCode = RetrieveCurrentUsersSettings(service);
