@@ -19,18 +19,19 @@ namespace Action_Queue_Cancel
         EntityReference Target = null;
         public void Execute(IServiceProvider serviceProvider)
         {
-            
+
             this._context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
             this._serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             this._service = _serviceFactory.CreateOrganizationService(this._context.UserId);
             this._tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
             this.Target = this._context.InputParameters["Target"] as EntityReference;
-            Entity enQueue = this._service.Retrieve(this.Target.LogicalName, this.Target.Id, new ColumnSet("bsd_unit",
-                "bsd_collectedqueuingfee", "bsd_project", "bsd_douutien"));
+            Entity enQueue = this._service.Retrieve(this.Target.LogicalName, this.Target.Id, new ColumnSet("bsd_unit", "bsd_collectedqueuingfee", "bsd_project", "bsd_customerid", "bsd_douutien", "bsd_queuingfeepaid", "bsd_name"));
             CancelQueue(this.Target);
             if (enQueue.Contains("bsd_unit"))
                 UpdateUnit((EntityReference)enQueue["bsd_unit"]);
+            if (enQueue.Contains("bsd_queuingfeepaid"))
+                create_Refund(enQueue);
             UpdatePriority(enQueue);
         }
         private void CancelQueue(EntityReference target)
@@ -42,7 +43,7 @@ namespace Action_Queue_Cancel
                 queue["statecode"] = new OptionSetValue(1); // Canceled
                 queue["statuscode"] = new OptionSetValue(100000005); // Canceled
                 queue["bsd_canceller"] = new EntityReference("systemuser", this._context.UserId);
-                queue["bsd_cancelleddate"] = RetrieveLocalTimeFromUTCTime(DateTime.Now,this._service);
+                queue["bsd_cancelleddate"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, this._service);
                 this._service.Update(queue);
                 _tracingService.Trace("End Cancel Queue");
             }
@@ -109,18 +110,18 @@ namespace Action_Queue_Cancel
                     enQueue_NewProority["statuscode"] = new OptionSetValue(100000004); // Queuing
                     this._service.Update(enQueue_NewProority);
                 }
-                else if((int)enQueue["bsd_douutien"] == 1 && priority != 1)
+                else if ((int)enQueue["bsd_douutien"] == 1 && priority != 1)
                 {
                     enQueue_NewProority["bsd_douutien"] = priority;
                     this._service.Update(enQueue_NewProority);
                 }
-                else if((int)enQueue["bsd_douutien"] != 1)
+                else if ((int)enQueue["bsd_douutien"] != 1)
                 {
                     var priorityCurrent = (int)enQueue["bsd_douutien"];
                     if (priorityCurrent < (int)item["bsd_douutien"])
                     {
                         int flag = priorityCurrent + 1;
-                        priority = flag == (int)item["bsd_douutien"] ?  priorityCurrent : priority;
+                        priority = flag == (int)item["bsd_douutien"] ? priorityCurrent : priority;
                         enQueue_NewProority["bsd_douutien"] = priority;
                         this._service.Update(enQueue_NewProority);
                     }
@@ -128,6 +129,26 @@ namespace Action_Queue_Cancel
 
                 priority++;
             }
+        }
+        private void create_Refund(Entity enQueue)
+        {
+            Entity creRefund = new Entity("bsd_refund");
+            string nameUnit = (string)enQueue["bsd_name"];
+            //if (enQueue.Contains("bsd_unit"))
+            //{
+            //    Entity enUnit = this._service.Retrieve(((EntityReference)enQueue["bsd_unit"]).LogicalName, ((EntityReference)enQueue["bsd_unit"]).Id, new ColumnSet("bsd_name"));
+            //    if (enUnit.Contains("bsd_name")) nameUnit = (string)enUnit["bsd_name"];
+            //}
+            creRefund["bsd_name"] = "Booking Refund - " + nameUnit;
+            creRefund["bsd_customer"] = enQueue.Contains("bsd_customerid") ? (EntityReference)enQueue["bsd_customerid"] : null;
+            creRefund["bsd_project"] = enQueue.Contains("bsd_project") ? (EntityReference)enQueue["bsd_project"] : null;
+            creRefund["bsd_refundtype"] = new OptionSetValue(100000003);
+            creRefund["bsd_unitno"] = enQueue.Contains("bsd_unit") ? (EntityReference)enQueue["bsd_unit"] : null;
+            creRefund["bsd_queue"] = enQueue.ToEntityReference();
+            decimal bsd_queuingfeepaid = ((Money)enQueue["bsd_queuingfeepaid"]).Value;
+            creRefund["bsd_totalamountpaid"] = new Money(bsd_queuingfeepaid);
+            creRefund["bsd_refundableamount"] = new Money(bsd_queuingfeepaid);
+            _service.Create(creRefund);
         }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
