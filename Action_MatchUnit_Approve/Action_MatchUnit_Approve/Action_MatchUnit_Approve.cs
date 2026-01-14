@@ -57,7 +57,9 @@ namespace Action_MatchUnit_Approve
             this._tracingService.Trace("Start Update Queue");
             int sut = 0;
             int dut = 0;
+            bool isHasStsQueuing = CheckStsQueuingWithUnit(enMatchUnit);
             getPriority(enMatchUnit, ref sut, ref dut);
+            this._tracingService.Trace($"sut: {sut}, dut: {dut}");
             Entity queue = new Entity(((EntityReference)enMatchUnit["bsd_queue"]).LogicalName, ((EntityReference)enMatchUnit["bsd_queue"]).Id);
             queue["bsd_unit"] = enMatchUnit.Contains("bsd_unit") ? enMatchUnit["bsd_unit"] : null;
             queue["bsd_pricelist"] = enMatchUnit.Contains("bsd_pricelist") ? enMatchUnit["bsd_pricelist"] : null;
@@ -69,6 +71,7 @@ namespace Action_MatchUnit_Approve
             queue["bsd_dateorder"] = RetrieveLocalTimeFromUTCTime(dateApprove, this._service);
             queue["bsd_souutien"] = sut;
             queue["bsd_douutien"] = dut;
+            queue["statuscode"] = isHasStsQueuing == true ? new OptionSetValue(100000003) : new OptionSetValue(100000004); // 100000003 - Wariting, 100000004 - Queuing
             this._service.Update(queue);
             this._tracingService.Trace("End Update Queue");
         }
@@ -81,6 +84,7 @@ namespace Action_MatchUnit_Approve
               <entity name=""bsd_opportunity"">
                 <attribute name=""bsd_douutien"" />
                 <attribute name=""bsd_souutien"" />
+                <attribute name=""statuscode"" />
                 <filter>
                   <condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enMatchUnit["bsd_unit"]).Id}"" />
                   <condition attribute=""statuscode"" operator=""in"">
@@ -92,10 +96,31 @@ namespace Action_MatchUnit_Approve
               </entity>
             </fetch>";
             EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
+            this._tracingService.Trace("fetch: " + fetchXml);
             if (result.Entities.Count > 0) // Case da co Giu cho
             {
-                var SUT_Max = result.Entities.Max(x => (int)x["bsd_souutien"]);
-                var DUT_Max = result.Entities.Where(x=> ((OptionSetValue)x["statuscode"]).Value == 100000003 || ((OptionSetValue)x["statuscode"]).Value == 100000004).Max(x => (int)x["bsd_douutien"]);
+                int SUT_Max = 0;
+                int DUT_Max = 0;
+                SUT_Max = result.Entities
+                    .Where(x => x.Contains("bsd_souutien") && x["bsd_souutien"] != null)
+                    .Select(x => (int)x["bsd_souutien"])
+                    .DefaultIfEmpty(0)
+                    .Max();
+
+                DUT_Max = result.Entities
+                    .Where(x =>
+                        x.Contains("bsd_douutien") &&
+                        x["bsd_douutien"] != null &&
+                        x.Contains("statuscode") &&
+                        (
+                            ((OptionSetValue)x["statuscode"]).Value == 100000003 ||
+                            ((OptionSetValue)x["statuscode"]).Value == 100000004
+                        )
+                    )
+                    .Select(x => (int)x["bsd_douutien"])
+                    .DefaultIfEmpty(0)
+                    .Max();
+                this._tracingService.Trace($"SUT_Max: {SUT_Max}, DUT_Max: {DUT_Max}");
                 sut = SUT_Max + 1;
                 dut = DUT_Max + 1;
             }
@@ -140,6 +165,25 @@ namespace Action_MatchUnit_Approve
                 }
             }
         }
+        private bool CheckStsQueuingWithUnit(Entity enMatchUnit)
+        {
+            if (!enMatchUnit.Contains("bsd_unit")) return false;
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_opportunity"">
+                <attribute name=""bsd_name"" />
+                <filter>
+                  <condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enMatchUnit["bsd_unit"]).Id}"" />
+                  <condition attribute=""statuscode"" operator=""eq"" value=""100000004"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (result.Entities.Count > 0)
+                return true;
+            return false;
+        }
+
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
             int? timeZoneCode = RetrieveCurrentUsersSettings(service);
@@ -156,7 +200,6 @@ namespace Action_MatchUnit_Approve
             //var utcTime = utcTime.ToString("MM/dd/yyyy HH:mm:ss");
             //var localDateOnly = response.LocalTime.ToString("dd-MM-yyyy");
         }
-
         private int? RetrieveCurrentUsersSettings(IOrganizationService service)
         {
             var currentUserSettings = service.RetrieveMultiple(
