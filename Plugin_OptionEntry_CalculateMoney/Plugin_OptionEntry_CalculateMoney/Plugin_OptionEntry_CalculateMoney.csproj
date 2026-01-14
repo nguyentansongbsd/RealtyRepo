@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}</ProjectGuid>
+    <ProjectGuid>{B8709026-6241-4E39-980F-1E571DFB69C3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Action_Resv_GenPMS</RootNamespace>
-    <AssemblyName>Action_Resv_GenPMS</AssemblyName>
+    <RootNamespace>Plugin_OptionEntry_CalculateMoney</RootNamespace>
+    <AssemblyName>Plugin_OptionEntry_CalculateMoney</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -61,13 +61,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Action_Resv_GenPMS.cs" />
+    <Compile Include="Plugin_OptionEntry_CalculateMoney.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />
     <None Include="packages.config" />
   </ItemGroup>
-  <Import Project="..\..\RealtyCommon\RealtyCommon\RealtyCommon.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

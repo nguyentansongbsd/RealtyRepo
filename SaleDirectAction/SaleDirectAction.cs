@@ -380,6 +380,7 @@ namespace SaleDirectAction
                           <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
+                              <attribute name=""bsd_depositamount"" alias=""depositamount"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
@@ -399,6 +400,9 @@ namespace SaleDirectAction
                         Guid phaseId = (Guid)aliased.Value;
 
                         entity2["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
+                        var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
+                        Money moneyValue = (Money)aliased_money.Value;
+                        entity2["bsd_depositfee"] = moneyValue;
                     }
                     var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">
@@ -474,6 +478,7 @@ namespace SaleDirectAction
                           <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
+                              <attribute name=""bsd_depositamount"" alias=""depositamount"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
@@ -493,7 +498,9 @@ namespace SaleDirectAction
                         Guid phaseId = (Guid)aliased.Value;
 
                         entity2["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
-                        
+                        var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
+                        Money moneyValue = (Money)aliased_money.Value;
+                        entity2["bsd_depositfee"] = moneyValue;
                     }
                     var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">
@@ -589,6 +596,7 @@ namespace SaleDirectAction
                           <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
+                              <attribute name=""bsd_depositamount"" alias=""depositamount"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
@@ -608,7 +616,9 @@ namespace SaleDirectAction
                         Guid phaseId = (Guid)aliased.Value;
 
                         enReContract["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
-
+                        var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
+                        Money moneyValue = (Money)aliased_money.Value;
+                        enReContract["bsd_depositfee"] = moneyValue;
                     }
                     var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">

@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{50B386F7-9C2F-4637-89BF-9ECBFBAB1D22}</ProjectGuid>
+    <ProjectGuid>{58EAECB6-FF20-4B13-A2CC-2A52DFB4C088}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Action_Resv_GenPMS</RootNamespace>
-    <AssemblyName>Action_Resv_GenPMS</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <RootNamespace>Plugin_OptionEntry_Approved</RootNamespace>
+    <AssemblyName>Plugin_OptionEntry_Approved</AssemblyName>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -61,13 +61,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Action_Resv_GenPMS.cs" />
+    <Compile Include="Plugin_OptionEntry_Approved.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="key.snk" />
     <None Include="packages.config" />
   </ItemGroup>
-  <Import Project="..\..\RealtyCommon\RealtyCommon\RealtyCommon.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -12,7 +12,6 @@ namespace Action_UpdateQuote
         {
             ITracingService tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
             tracingService.Trace("=== START Action_UpdateQuote ===");
-
             try
             {
                 IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
@@ -37,9 +36,8 @@ namespace Action_UpdateQuote
                 tracingService.Trace("Quote retrieved successfully.");
 
                 Entity up_quote = new Entity(quote.LogicalName, quote.Id);
-                
-                Entity entity_unit = service.Retrieve(((EntityReference)quote["bsd_unitno"]).LogicalName, ((EntityReference)quote["bsd_unitno"]).Id, new ColumnSet(true));
-                Entity up_unit = new Entity(entity_unit.LogicalName, entity_unit.Id);
+                    Entity entity_unit = service.Retrieve(((EntityReference)quote["bsd_unitno"]).LogicalName, ((EntityReference)quote["bsd_unitno"]).Id, new ColumnSet(true));
+                    Entity up_unit = new Entity(entity_unit.LogicalName, entity_unit.Id);
                 if (str1 == "confirm")
                 {
                     // Fetch Tiến độ thanh toán
@@ -74,16 +72,42 @@ namespace Action_UpdateQuote
                 }
                 if (str1 == "cancel")
                 {
-                    up_quote["statuscode"] = new OptionSetValue(100000002);
-                    up_quote["bsd_canceldate"] = DateTime.Today;
-                    up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
-                    service.Update(up_quote);
-                    OptionSetValue statusCode = entity_unit.GetAttributeValue<OptionSetValue>("statuscode");
-                    if (statusCode != null && statusCode.Value != 100000004)
-                    {
-                        up_unit["statuscode"] = new OptionSetValue(100000000);
-                        service.Update(up_unit);
+                    checkpayment(quote.Id, service);
+                    if (quote.Contains("bsd_opportunityid")){
+                        Entity queue = service.Retrieve(((EntityReference)quote["bsd_opportunityid"]).LogicalName, ((EntityReference)quote["bsd_opportunityid"]).Id, new ColumnSet(true));
+                        Entity up_queue = new Entity(queue.LogicalName, queue.Id);
+                        
+                        tracingService.Trace("vào if cancel");
+                        up_quote["statuscode"] = new OptionSetValue(100000002);
+                        up_quote["bsd_canceldate"] = DateTime.Today;
+                        up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
+                        service.Update(up_quote);
+                        
+                        OptionSetValue statusCode = entity_unit.GetAttributeValue<OptionSetValue>("statuscode");
+                        if (statusCode != null && statusCode.Value != 100000004)
+                        {
+                            up_unit["statuscode"] = new OptionSetValue(100000000);
+                            service.Update(up_unit);
+                        }
+                        up_queue["statuscode"] = new OptionSetValue(100000004);
+                        service.Update(up_queue);
                     }
+                    else
+                    {
+                        tracingService.Trace("vào else cancel");
+                        
+                        up_quote["statuscode"] = new OptionSetValue(100000002);
+                        up_quote["bsd_canceldate"] = DateTime.Today;
+                        up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
+                        service.Update(up_quote);
+                        OptionSetValue statusCode = entity_unit.GetAttributeValue<OptionSetValue>("statuscode");
+                        if (statusCode != null && statusCode.Value != 100000004)
+                        {
+                            up_unit["statuscode"] = new OptionSetValue(100000000);
+                            service.Update(up_unit);
+                        }
+                    }
+                    
                 }
 
 
@@ -100,7 +124,27 @@ namespace Action_UpdateQuote
                 throw new InvalidPluginExecutionException(ex.Message);
             }
         }
+        private void checkpayment(Guid quoteId, IOrganizationService service)
+        {
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_payment"">
+                <filter>
+                  <condition attribute=""statuscode"" operator=""in"">
+                    <value>{1}</value>
+                    <value>{100000000}</value>
+                  </condition>
+                  <condition attribute=""bsd_quotationreservation"" operator=""eq"" value=""{quoteId}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
 
+            if (rs.Entities.Count > 0)
+            {
+                throw new InvalidPluginExecutionException("The transaction has an invalid receipt. Please check again.");
+            }
+        }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
             int? timeZoneCode = RetrieveCurrentUsersSettings(service);
