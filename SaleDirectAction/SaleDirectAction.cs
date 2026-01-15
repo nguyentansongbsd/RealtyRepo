@@ -681,7 +681,7 @@ namespace SaleDirectAction
                     //if (enUnit.Contains("bsd_maintenancefeespercent"))
                     //{
                     //    entity2["bsd_maintenancefeespercent"] = enUnit["bsd_maintenancefeespercent"];
-
+                    //
                     //}
                     //if (enUnit.Contains("bsd_maintenancefees"))
                     //{
