@@ -673,6 +673,7 @@ namespace SaleDirectAction
                     //entity2["transactioncurrencyid"] = enUnit["transactioncurrencyid"];
                     enReContract["bsd_unitno"] = (object)entityReference1;
                     enReContract["statuscode"] = new OptionSetValue(1);
+                    enReContract["bsd_landvaluededuction"] = new Money(0);
                     if (enUnit.Contains("bsd_taxcode"))
                     {
                         enReContract["bsd_taxcode"] = enUnit["bsd_taxcode"];
