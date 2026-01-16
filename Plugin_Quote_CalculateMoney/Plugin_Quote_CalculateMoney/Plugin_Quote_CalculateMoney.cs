@@ -105,7 +105,7 @@ namespace Plugin_Quote_CalculateMoney
                 int type = ((OptionSetValue)pro["bsd_type"]).Value;
                 int num = ((OptionSetValue)pro["bsd_method"]).Value;
                 Entity rsv = new Entity("bsd_discounttransaction");
-                rsv["bsd_no"] = no.ToString();
+                rsv["bsd_no"] = no;
                 trace.Trace("name discount: " + pro["bsd_name"]);
                 if (num == 100000001)//percent
                 {
