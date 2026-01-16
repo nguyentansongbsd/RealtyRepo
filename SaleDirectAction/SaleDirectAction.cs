@@ -667,7 +667,7 @@ namespace SaleDirectAction
                             }
                         }
                     }
-                    updateUnit["statuscode"] = new OptionSetValue(100000006);//Reserve
+                    updateUnit["statuscode"] = new OptionSetValue(100000006);//Retyỷg
                     service.Update(updateUnit);
                     enReContract["bsd_name"] = enUnit["bsd_name"];
                     enReContract["bsd_projectid"] = enUnit["bsd_projectcode"];
