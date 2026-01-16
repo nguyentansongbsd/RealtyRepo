@@ -13,6 +13,10 @@ namespace Action_ReservationContract_Update
         {
             ITracingService tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
             tracingService.Trace("=== START Action_ReservationContract_Update ===");
+            Entity quote = null;
+            Entity up_quote = null;
+            Entity entity_unit = null;
+            Entity up_unit = null;
             try
             {
                 IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
@@ -37,10 +41,18 @@ namespace Action_ReservationContract_Update
                 tracingService.Trace("Quote retrieved successfully.");
 
                 Entity up_RA_Contract = new Entity(RA_Contract.LogicalName, RA_Contract.Id);
-                Entity entity_unit = service.Retrieve(((EntityReference)RA_Contract["bsd_unitno"]).LogicalName, ((EntityReference)RA_Contract["bsd_unitno"]).Id, new ColumnSet(true));
-                Entity up_unit = new Entity(entity_unit.LogicalName, entity_unit.Id);
-                Entity quote = service.Retrieve(((EntityReference)RA_Contract["bsd_quoteid"]).LogicalName, ((EntityReference)RA_Contract["bsd_quoteid"]).Id, new ColumnSet(true));
-                Entity up_quote = new Entity(entity_unit.LogicalName, entity_unit.Id);
+                if (RA_Contract.Contains("bsd_unitno"))
+                {
+                     entity_unit = service.Retrieve(((EntityReference)RA_Contract["bsd_unitno"]).LogicalName, ((EntityReference)RA_Contract["bsd_unitno"]).Id, new ColumnSet(true));
+                     up_unit = new Entity(entity_unit.LogicalName, entity_unit.Id);
+                }
+                if (RA_Contract.Contains("bsd_quoteid"))
+                {
+                    quote = service.Retrieve(((EntityReference)RA_Contract["bsd_quoteid"]).LogicalName, ((EntityReference)RA_Contract["bsd_quoteid"]).Id, new ColumnSet(true));
+                    up_quote = new Entity(quote.LogicalName, quote.Id);
+                }
+
+       
                 if (str1 == "cancel")
                 {
                     checkpayment(RA_Contract.Id, service);
