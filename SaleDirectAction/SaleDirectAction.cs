@@ -464,6 +464,7 @@ namespace SaleDirectAction
                 }
                 else if(str1 == "Reservation")
                 {
+
                     Entity enUnit = RetrieveValidUnit(entityReference1.Id);
                     Entity updateUnit = new Entity("bsd_product", entityReference1.Id);
                     Entity entity2 = new Entity("bsd_quote");
@@ -678,11 +679,15 @@ namespace SaleDirectAction
                     {
                         enReContract["bsd_taxcode"] = enUnit["bsd_taxcode"];
                     }
-                    //if (enUnit.Contains("bsd_maintenancefeespercent"))
-                    //{
-                    //    entity2["bsd_maintenancefeespercent"] = enUnit["bsd_maintenancefeespercent"];
-                    //
-                    //}
+                    if (enUnit.Contains("bsd_numberofmonthspaidmf"))
+                    {
+                        enReContract["bsd_numberofmonthspaidmf"] = enUnit["bsd_numberofmonthspaidmf"];
+                    }
+                    if (enUnit.Contains("bsd_managementfee"))
+                    {
+                        enReContract["bsd_managementfee"] = enUnit["bsd_maintenancefeespercent"];
+
+                    }
                     //if (enUnit.Contains("bsd_maintenancefees"))
                     //{
                     //    entity2["bsd_maintenancefees"] = enUnit["bsd_maintenancefees"];
@@ -692,6 +697,35 @@ namespace SaleDirectAction
                     enReContract["bsd_netusablearea"] = enUnit.Contains("bsd_netsaleablearea") ? enUnit["bsd_netsaleablearea"] : Decimal.Zero;
                     enReContract["bsd_constructionarea"] = enUnit.Contains("bsd_constructionarea") ? enUnit["bsd_constructionarea"] : Decimal.Zero;
                     //Entity entity3 = service.Retrieve(((EntityReference)enUnit["bsd_projectcode"]).LogicalName, ((EntityReference)enUnit["bsd_projectcode"]).Id, new ColumnSet(true));
+                    int nextNumber = 1;
+                    string fetchMaxCode = $@"
+                    <fetch top='1'>
+                      <entity name='bsd_reservationcontract'>
+                        <attribute name='bsd_reservationnumber' />
+                        <order attribute='bsd_reservationnumber' descending='true' />
+                      </entity>
+                    </fetch>";
+
+                    EntityCollection lastRecords = service.RetrieveMultiple(new FetchExpression(fetchMaxCode));
+
+                    if (lastRecords.Entities.Count > 0)
+                    {
+                        // Lấy chuỗi RSC-00000001
+                        string lastCode = lastRecords.Entities[0].GetAttributeValue<string>("bsd_reservationnumber");
+
+                        if (!string.IsNullOrEmpty(lastCode))
+                        {
+                            // Cắt bỏ phần chữ "RSC-", chỉ lấy phần số "00000001"
+                            string numericPart = lastCode.Replace("RSC-", "");
+                            if (int.TryParse(numericPart, out int lastNumber))
+                            {
+                                nextNumber = lastNumber + 1;
+                            }
+                        }
+                    }
+                    // Gán mã mới vào entity: Ví dụ RSC-00000002
+                    enReContract["bsd_racontractsigndate"] = DateTime.Today;
+                    enReContract["bsd_reservationnumber"] = "RSC-" + nextNumber.ToString("D8");
                     Guid guid = service.Create(enReContract);
                     context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
                 }
