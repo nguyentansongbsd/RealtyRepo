@@ -24,7 +24,7 @@ namespace Action_UpdatePriceList_Approve
 
                 EntityReference refUpdatePriceList = (EntityReference)context.InputParameters["Target"];
                 Entity enUpdatePriceList = service.Retrieve(refUpdatePriceList.LogicalName, refUpdatePriceList.Id, new ColumnSet(new string[] { "bsd_product", "bsd_pricelist",
-                                                                    "bsd_usableareaunitpricenew", "bsd_pricenew", "bsd_builtupunitpricenew", "bsd_powerautomate", "bsd_paprocess"}));
+                                            "bsd_usableareaunitpricenew", "bsd_pricenew", "bsd_builtupunitpricenew", "bsd_powerautomate", "bsd_paprocess", "bsd_productpricelevel"}));
 
                 if (!enUpdatePriceList.Contains("bsd_pricelist"))
                     throw new InvalidPluginExecutionException("Không có dữ liệu 'Price list'. Vui lòng kiểm tra lại.");
@@ -32,8 +32,12 @@ namespace Action_UpdatePriceList_Approve
                 if (!enUpdatePriceList.Contains("bsd_product"))
                     throw new InvalidPluginExecutionException("Không có dữ liệu 'Product'. Vui lòng kiểm tra lại.");
 
+                if (!enUpdatePriceList.Contains("bsd_productpricelevel"))
+                    throw new InvalidPluginExecutionException("Không có dữ liệu 'Price List Item'. Vui lòng kiểm tra lại.");
+
                 EntityReference refProduct = (EntityReference)enUpdatePriceList["bsd_product"];
                 EntityReference refPriceList = (EntityReference)enUpdatePriceList["bsd_pricelist"];
+                EntityReference refPLI = (EntityReference)enUpdatePriceList["bsd_productpricelevel"];
 
                 if (CheckValidProduct(refProduct))
                     throw new InvalidPluginExecutionException("The unit’s status does not permit updating the price list.");
@@ -48,7 +52,7 @@ namespace Action_UpdatePriceList_Approve
                 if (isPA && enUpdatePriceList.Contains("bsd_paprocess") && (string)enUpdatePriceList["bsd_paprocess"] != paProcess)
                     throw new InvalidPluginExecutionException("Record này đang được thực hiện ở tiến trình khác. Vui lòng kiểm tra lại.");
 
-                UpPriceListItem(refProduct, refPriceList, enUpdatePriceList);
+                UpPriceListItem(refPLI, enUpdatePriceList);
                 UpProduct(refProduct, refPriceList, enUpdatePriceList);
                 UpUpdatePriceList(enUpdatePriceList, userId);
 
@@ -93,33 +97,15 @@ namespace Action_UpdatePriceList_Approve
             service.Update(enUp);
         }
 
-        private void UpPriceListItem(EntityReference refProduct, EntityReference refPriceList, Entity enUpdatePriceList)
+        private void UpPriceListItem(EntityReference refPLI, Entity enUpdatePriceList)
         {
             traceService.Trace("UpPriceListItem");
 
-            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-            <fetch top=""1"">
-              <entity name=""bsd_productpricelevel"">
-                <attribute name=""bsd_productpricelevelid"" />
-                <attribute name=""bsd_name"" />
-                <filter>
-                    <condition attribute=""bsd_pricelevel"" operator=""eq"" value=""{refPriceList.Id}"" />
-                    <condition attribute=""bsd_product"" operator=""eq"" value=""{refProduct.Id}"" />
-                </filter>
-              </entity>
-            </fetch>";
-            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
-            if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
-            {
-                foreach (var item in rs.Entities)
-                {
-                    Entity enUp = new Entity(item.LogicalName, item.Id);
-                    enUp["bsd_usableareaunitprice"] = enUpdatePriceList.Contains("bsd_usableareaunitpricenew") ? enUpdatePriceList["bsd_usableareaunitpricenew"] : null;
-                    enUp["bsd_price"] = enUpdatePriceList.Contains("bsd_pricenew") ? enUpdatePriceList["bsd_pricenew"] : null;
-                    enUp["bsd_builtupunitprice"] = enUpdatePriceList.Contains("bsd_builtupunitpricenew") ? enUpdatePriceList["bsd_builtupunitpricenew"] : null;
-                    service.Update(enUp);
-                }
-            }
+            Entity enUp = new Entity(refPLI.LogicalName, refPLI.Id);
+            enUp["bsd_usableareaunitprice"] = enUpdatePriceList.Contains("bsd_usableareaunitpricenew") ? enUpdatePriceList["bsd_usableareaunitpricenew"] : null;
+            enUp["bsd_price"] = enUpdatePriceList.Contains("bsd_pricenew") ? enUpdatePriceList["bsd_pricenew"] : null;
+            enUp["bsd_builtupunitprice"] = enUpdatePriceList.Contains("bsd_builtupunitpricenew") ? enUpdatePriceList["bsd_builtupunitpricenew"] : null;
+            service.Update(enUp);
         }
 
         private void UpProduct(EntityReference refProduct, EntityReference refPriceList, Entity enUpdatePriceList)

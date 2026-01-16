@@ -21,13 +21,13 @@ namespace Plugin_UpdatePriceList_CreateUpdate
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enUpdatePriceList = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_product", "bsd_pricelist", "bsd_usableareaunitpricenew" }));
-
-                if (!enUpdatePriceList.Contains("bsd_pricelist"))
-                    throw new InvalidPluginExecutionException("Không có dữ liệu 'Price list'. Vui lòng kiểm tra lại.");
+                Entity enUpdatePriceList = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_product", "bsd_usableareaunitpricenew", "bsd_productpricelevel" }));
 
                 if (!enUpdatePriceList.Contains("bsd_product"))
                     throw new InvalidPluginExecutionException("Không có dữ liệu 'Product'. Vui lòng kiểm tra lại.");
+
+                if (!enUpdatePriceList.Contains("bsd_productpricelevel"))
+                    throw new InvalidPluginExecutionException("Không có dữ liệu 'Price List Item'. Vui lòng kiểm tra lại.");
 
                 EntityReference refProduct = (EntityReference)enUpdatePriceList["bsd_product"];
                 if ("Create".Equals(context.MessageName) && CheckValidProduct(refProduct))
@@ -35,37 +35,19 @@ namespace Plugin_UpdatePriceList_CreateUpdate
 
                 decimal bsd_usableareaunitpricenew = enUpdatePriceList.Contains("bsd_usableareaunitpricenew") ? ((Money)enUpdatePriceList["bsd_usableareaunitpricenew"]).Value : 0;
 
-                EntityReference refPriceList = (EntityReference)enUpdatePriceList["bsd_pricelist"];
-                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                <fetch top=""1"">
-                  <entity name=""bsd_productpricelevel"">
-                    <attribute name=""bsd_productpricelevelid"" />
-                    <attribute name=""bsd_name"" />
-                    <attribute name=""bsd_netusablearea"" />
-                    <attribute name=""bsd_builtuparea"" />
-                    <filter>
-                        <condition attribute=""bsd_pricelevel"" operator=""eq"" value=""{refPriceList.Id}"" />
-                        <condition attribute=""bsd_product"" operator=""eq"" value=""{refProduct.Id}"" />
-                    </filter>
-                  </entity>
-                </fetch>";
-                EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
-                if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
-                {
-                    foreach (var item in rs.Entities)
-                    {
-                        decimal bsd_netusablearea = item.Contains("bsd_netusablearea") ? (decimal)item["bsd_netusablearea"] : 0;
+                EntityReference refPLI = (EntityReference)enUpdatePriceList["bsd_productpricelevel"];
+                Entity enPLI = service.Retrieve(refPLI.LogicalName, refPLI.Id, new ColumnSet(new string[] { "bsd_name", "bsd_netusablearea", "bsd_builtuparea" }));
 
-                        Entity enUp = new Entity(enUpdatePriceList.LogicalName, enUpdatePriceList.Id);
-                        decimal bsd_pricenew = bsd_netusablearea * bsd_usableareaunitpricenew;
-                        enUp["bsd_pricenew"] = new Money(bsd_pricenew);
+                decimal bsd_netusablearea = enPLI.Contains("bsd_netusablearea") ? (decimal)enPLI["bsd_netusablearea"] : 0;
 
-                        decimal bsd_builtuparea = item.Contains("bsd_builtuparea") ? (decimal)item["bsd_builtuparea"] : 0;
-                        decimal bsd_builtupunitprice = bsd_builtuparea != 0 ? bsd_pricenew / bsd_builtuparea : 0;
-                        enUp["bsd_builtupunitpricenew"] = new Money(bsd_builtupunitprice);
-                        service.Update(enUp);
-                    }
-                }
+                Entity enUp = new Entity(enUpdatePriceList.LogicalName, enUpdatePriceList.Id);
+                decimal bsd_pricenew = bsd_netusablearea * bsd_usableareaunitpricenew;
+                enUp["bsd_pricenew"] = new Money(bsd_pricenew);
+
+                decimal bsd_builtuparea = enPLI.Contains("bsd_builtuparea") ? (decimal)enPLI["bsd_builtuparea"] : 0;
+                decimal bsd_builtupunitprice = bsd_builtuparea != 0 ? bsd_pricenew / bsd_builtuparea : 0;
+                enUp["bsd_builtupunitpricenew"] = new Money(bsd_builtupunitprice);
+                service.Update(enUp);
 
                 traceService.Trace("done");
             }
