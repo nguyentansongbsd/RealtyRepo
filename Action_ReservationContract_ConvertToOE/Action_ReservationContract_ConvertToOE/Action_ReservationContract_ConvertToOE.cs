@@ -29,7 +29,7 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_queuingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_queue", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid", "bsd_discountcheck", "bsd_discountdraw",
-                "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_waivermanafeemonth", "bsd_totalamountpaid", "bsd_totalpercent",
+                "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
                 "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
                 if (status != 100000002) //Director Approval
@@ -95,7 +95,6 @@ namespace Action_ReservationContract_ConvertToOE
             newOE["bsd_freightamount"] = GetValidFieldValue(enRC, "bsd_freightamount");
             newOE["bsd_numberofmonthspaidmf"] = GetValidFieldValue(enRC, "bsd_numberofmonthspaidmf");
             newOE["bsd_managementfee"] = GetValidFieldValue(enRC, "bsd_managementfee");
-            newOE["bsd_waivermanafeemonth"] = GetValidFieldValue(enRC, "bsd_waivermanafeemonth");
 
             newOE["bsd_discountcheck"] = GetValidFieldValue(enRC, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enRC, "bsd_discountdraw");
