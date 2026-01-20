@@ -24,7 +24,8 @@ namespace Action_QuotationReservation_ConvertToOE
                 Entity enReservation = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_unitno", "bsd_projectid",
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_bookingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_opportunityid", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
-                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount", "bsd_discountcheck", "bsd_discountdraw"}));
+                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount", "bsd_discountcheck", "bsd_discountdraw", "bsd_maintenancefees",
+                "bsd_totalamountpaid"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
                 if (status != 667980002) //Director Approval
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_quotationreservation"));
@@ -44,6 +45,7 @@ namespace Action_QuotationReservation_ConvertToOE
                 MapPaymentSchemeDetail(target, refOE);
                 MapPromotion(target, refOE);
                 MapDiscountTransaction(target, refOE);
+                MapPayment(target, refOE);
                 UpdateReservation(target);
                 UpdateUnit(refProduct);
 
@@ -83,10 +85,17 @@ namespace Action_QuotationReservation_ConvertToOE
             newOE["bsd_packagesellingamount"] = GetValidFieldValue(enReservation, "bsd_packagesellingamount");
             newOE["bsd_totalamountlessfreight"] = GetValidFieldValue(enReservation, "bsd_totalamountlessfreight");
             newOE["bsd_totaltax"] = GetValidFieldValue(enReservation, "bsd_vat");
-            newOE["bsd_totalamount"] = GetValidFieldValue(enReservation, "bsd_totalamount");
+            newOE["bsd_freightamount"] = GetValidFieldValue(enReservation, "bsd_maintenancefees");
 
             newOE["bsd_discountcheck"] = GetValidFieldValue(enReservation, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enReservation, "bsd_discountdraw");
+
+            decimal bsd_totalamountpaid = enReservation.Contains("bsd_totalamountpaid") ? ((Money)enReservation["bsd_totalamountpaid"]).Value : 0;
+            decimal bsd_totalamount = enReservation.Contains("bsd_totalamount") ? ((Money)enReservation["bsd_totalamount"]).Value : 0;
+            newOE["bsd_totalamount"] = new Money(bsd_totalamount);
+            newOE["bsd_totalamountpaid"] = new Money(bsd_totalamountpaid);
+
+            newOE["bsd_totalpercent"] = bsd_totalamountpaid > 0 ? (bsd_totalamountpaid / bsd_totalamount * 100) : 0;
 
             newOE.Id = Guid.NewGuid();
             service.Create(newOE);
@@ -230,6 +239,30 @@ namespace Action_QuotationReservation_ConvertToOE
                 foreach (var item in rs.Entities)
                 {
                     CreateNewFromItem(item, "bsd_quote", refOE);
+                }
+            }
+        }
+
+        private void MapPayment(EntityReference target, EntityReference refOE)
+        {
+            traceService.Trace("MapPayment");
+
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_payment"">
+                <filter>
+                  <condition attribute=""bsd_quotationreservation"" operator=""eq"" value=""{target.Id}"" />
+                  <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                </filter>
+                <order attribute=""createdon"" />
+              </entity>
+            </fetch>";
+            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
+            {
+                foreach (var item in rs.Entities)
+                {
+                    CreateNewFromItem(item, "bsd_quotationreservation", refOE);
                 }
             }
         }

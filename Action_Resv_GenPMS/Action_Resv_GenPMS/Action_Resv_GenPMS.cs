@@ -62,8 +62,10 @@ namespace Action_Resv_GenPMS
 
                 Entity enPS = service.Retrieve(refPS.LogicalName, refPS.Id, new ColumnSet(new string[] { "bsd_interestratemaster", "bsd_name" }));
                 Entity interate = service.Retrieve(((EntityReference)enPS["bsd_interestratemaster"]).LogicalName, ((EntityReference)enPS["bsd_interestratemaster"]).Id,
-                        new ColumnSet(new string[] { "bsd_gracedays" }));
+                        new ColumnSet(new string[] { "bsd_gracedays", "bsd_depositinterest", "bsd_basecontractinterest" }));
                 int graceday = interate.Contains("bsd_gracedays") ? (int)interate["bsd_gracedays"] : 0;
+                decimal depositInterest = interate.Contains("bsd_depositinterest") ? (decimal)interate["bsd_depositinterest"] : 0;
+                decimal baseContractInterest = interate.Contains("bsd_basecontractinterest") ? (decimal)interate["bsd_basecontractinterest"] : 0;
                 //decimal interestPercent = interate.Contains("bsd_basecontractinterest") ? (decimal)interate["bsd_basecontractinterest"] : 0;
 
                 //if (bsd_typeunit == 100000000)//thấp tầng
@@ -91,7 +93,7 @@ namespace Action_Resv_GenPMS
                 //}
 
                 //GenPaymentScheme(ref enQuote, enPS, 100000003, phiBaoTriPaid, ref listCreateIns, graceday, interestPercent);//cao tầng
-                GenPaymentScheme(ref enQuote, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday);//cao tầng
+                GenPaymentScheme(ref enQuote, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday, depositInterest, baseContractInterest);//cao tầng
 
 
                 if (listCreateIns.Count > 0)
@@ -145,7 +147,7 @@ namespace Action_Resv_GenPMS
             }
         }
         //private void GenPaymentScheme(ref Entity enQuote, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday, decimal interestPercent)
-        private void GenPaymentScheme(ref Entity enQuote, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday)
+        private void GenPaymentScheme(ref Entity enQuote, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday, decimal depositInterest, decimal baseContractInterest)
         {
             traceS.Trace("vào GenPaymentScheme");
             decimal sumper = 0;
@@ -185,6 +187,7 @@ namespace Action_Resv_GenPMS
             bool f_es = false;
             bool f_ESmaintenancefees = false;
             bool f_ESmanagementfee = false;
+            bool isSPA = false;
             int i_dueCalMethod = -1;
             traceS.Trace("4.4");
             bool gotEstimateDate = false;
@@ -231,10 +234,10 @@ namespace Action_Resv_GenPMS
                     //    f_ESmaintenancefees, f_ESmanagementfee, bsd_managementfee, bsd_freightamount, type, ref sumper,
                     //    ref sumamount, amountBeforeDiscount, isLastIns, phiBaoTriPaid, graceday, interestPercent, amountVATBeforeDiscount, amountVATAfterDiscount, ref sumVAT, typeGen,
                     //    ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster);
-                    CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enQuote, amountCalcIns,
-                        f_ESmaintenancefees, f_ESmanagementfee, bsd_managementfee, bsd_freightamount, type, ref sumper,
-                        ref sumamount, isLastIns, phiBaoTriPaid, graceday, typeGen,
-                        ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster, wordTemplateList);
+                    CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enQuote, amountCalcIns, f_ESmaintenancefees, f_ESmanagementfee,
+                        bsd_managementfee, bsd_freightamount, type, ref sumper, ref sumamount, isLastIns, phiBaoTriPaid, graceday, typeGen,
+                        ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster, wordTemplateList,
+                        ref isSPA, depositInterest, baseContractInterest);
                 }
                 else if (i_dueCalMethod == 100000000 || i_dueCalMethod == 100000002) // fixx
                 {
@@ -247,7 +250,7 @@ namespace Action_Resv_GenPMS
                     CreatePaymentPhase_fixDate(ref orderNumber, bsd_managementfee, bsd_freightamount, listInsMaster.Entities[i], enQuote,
                         amountCalcIns, f_lastinstallment, f_es, f_ESmaintenancefees, f_ESmanagementfee, type, ref sumper, ref sumamount,
                         isLastIns, phiBaoTriPaid, graceday, typeGen, ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns,
-                        i_dueCalMethod, d_estimate, wordTemplateList);
+                        i_dueCalMethod, d_estimate, wordTemplateList, ref isSPA, depositInterest, baseContractInterest);
                 }
             }
             traceS.Trace("xong GenPaymentScheme");
@@ -266,11 +269,10 @@ namespace Action_Resv_GenPMS
         //    ref decimal sumper, ref decimal sumamount, decimal amountBeforeDiscount, bool isLastIns, decimal phiBaoTriPaid, int graceday,
         //    decimal interestPercent, decimal amountVATBeforeDiscount, decimal amountVATAfterDiscount, ref decimal sumVAT, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull,
         //    ref int indexInsValueNull, ref decimal valuePer, ref List<Entity> listCreateIns, EntityCollection listInsMaster)
-        private void CreatePaymentPhase(Entity enPS, ref int orderNumber, Entity en, Entity enQuote, decimal amountCalcIns,
-        bool f_ESmaintenancefees, bool f_ESmanagementfee, decimal bsd_managementfee, decimal bsd_maintenancefees, int typePrice,
-        ref decimal sumper, ref decimal sumamount, bool isLastIns, decimal phiBaoTriPaid, int graceday,
-        int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull,
-        ref int indexInsValueNull, ref decimal valuePer, ref List<Entity> listCreateIns, EntityCollection listInsMaster, EntityCollection wordTemplateList)
+        private void CreatePaymentPhase(Entity enPS, ref int orderNumber, Entity en, Entity enQuote, decimal amountCalcIns, bool f_ESmaintenancefees,
+        bool f_ESmanagementfee, decimal bsd_managementfee, decimal bsd_maintenancefees, int typePrice, ref decimal sumper, ref decimal sumamount, bool isLastIns,
+        decimal phiBaoTriPaid, int graceday, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull, ref int indexInsValueNull, ref decimal valuePer,
+        ref List<Entity> listCreateIns, EntityCollection listInsMaster, EntityCollection wordTemplateList, ref bool isSPA, decimal depositInterest, decimal baseContractInterest)
         {
             traceS.Trace("vào CreatePaymentPhase");
             orderNumber++;
@@ -321,11 +323,19 @@ namespace Action_Resv_GenPMS
             tmp["bsd_calculationmethodmaster"] = en.Contains("bsd_calculationmethod") ? en["bsd_calculationmethod"] : null;
             tmp["bsd_amount"] = en.Contains("bsd_amount") ? en["bsd_amount"] : null;
 
-            tmp["bsd_signcontractinstallment"] = en.Contains("bsd_signcontractinstallment") ? en["bsd_signcontractinstallment"] : false;
+            bool signContractInstallment = en.Contains("bsd_signcontractinstallment") ? (bool)en["bsd_signcontractinstallment"] : false;
+            tmp["bsd_signcontractinstallment"] = signContractInstallment;
             tmp["bsd_pinkbookhandover"] = en.Contains("bsd_pinkbookhandover") ? en["bsd_pinkbookhandover"] : false;
             tmp["bsd_lastinstallment"] = en.Contains("bsd_lastinstallment") ? en["bsd_lastinstallment"] : false;
             tmp["bsd_official"] = en.Contains("bsd_official") ? en["bsd_official"] : false;
             tmp["bsd_gopdot"] = en.Contains("bsd_gopdot") ? en["bsd_gopdot"] : false;
+
+            if (!isSPA && signContractInstallment)
+                isSPA = true;
+            if (isSPA)  //SPA
+                tmp["bsd_interestpercent"] = baseContractInterest;
+            else  //EDA
+                tmp["bsd_interestpercent"] = depositInterest;
 
             tmp["bsd_duedate"] = calculateDuedate(enQuote, en, listCreateIns, listInsMaster, orderNumber == 1);
 
@@ -420,7 +430,8 @@ namespace Action_Resv_GenPMS
         private void CreatePaymentPhase_fixDate(ref int orderNumber, decimal bsd_managementfee, decimal bsd_maintenancefees, Entity en, Entity enQuote,
         decimal amountCalcIns, bool f_last, bool f_es, bool f_ESmaintenancefees, bool f_ESmanagementfee, int typePrice, ref decimal sumper,
         ref decimal sumamount, bool isLastIns, decimal phiBaoTriPaid, int graceday, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull,
-        ref int indexInsValueNull, ref decimal valuePer, ref List<Entity> listCreateIns, int i_dueCalMethod, DateTime? d_estimate, EntityCollection wordTemplateList)
+        ref int indexInsValueNull, ref decimal valuePer, ref List<Entity> listCreateIns, int i_dueCalMethod, DateTime? d_estimate, EntityCollection wordTemplateList,
+        ref bool isSPA, decimal depositInterest, decimal baseContractInterest)
         {
             traceS.Trace("vào CreatePaymentPhase_fixDate");
             Entity tmp = new Entity("bsd_paymentschemedetail");
@@ -460,11 +471,19 @@ namespace Action_Resv_GenPMS
             tmp["bsd_taxlandvalue"] = new Money(0);
             tmp["bsd_tmpamount"] = new Money(0);
 
-            tmp["bsd_signcontractinstallment"] = en.Contains("bsd_signcontractinstallment") ? en["bsd_signcontractinstallment"] : false;
+            bool signContractInstallment = en.Contains("bsd_signcontractinstallment") ? (bool)en["bsd_signcontractinstallment"] : false;
+            tmp["bsd_signcontractinstallment"] = signContractInstallment;
             tmp["bsd_pinkbookhandover"] = en.Contains("bsd_pinkbookhandover") ? en["bsd_pinkbookhandover"] : false;
             tmp["bsd_lastinstallment"] = en.Contains("bsd_lastinstallment") ? en["bsd_lastinstallment"] : false;
             tmp["bsd_official"] = en.Contains("bsd_official") ? en["bsd_official"] : false;
             tmp["bsd_gopdot"] = en.Contains("bsd_gopdot") ? en["bsd_gopdot"] : false;
+
+            if (!isSPA && signContractInstallment)
+                isSPA = true;
+            if (isSPA)  //SPA
+                tmp["bsd_interestpercent"] = baseContractInterest;
+            else  //EDA
+                tmp["bsd_interestpercent"] = depositInterest;
 
             decimal tmpamount = 0;
             CalcAmount(ref tmpamount, ref tmp, en, typeGen, isLastIns, amountCalcIns,
