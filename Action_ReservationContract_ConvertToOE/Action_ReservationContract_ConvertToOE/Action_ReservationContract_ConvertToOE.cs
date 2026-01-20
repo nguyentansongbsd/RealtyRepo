@@ -68,6 +68,7 @@ namespace Action_ReservationContract_ConvertToOE
 
             Entity newOE = new Entity("bsd_salesorder");
             newOE["bsd_name"] = refProduct.Name;
+            newOE["bsd_date"] = DateTime.UtcNow;
             newOE["bsd_project"] = GetValidFieldValue(enRC, "bsd_projectid");
             newOE["bsd_phaseslaunch"] = GetValidFieldValue(enRC, "bsd_phaseslaunchid");
             newOE["bsd_pricelevel"] = GetValidFieldValue(enRC, "bsd_pricelevel");
@@ -159,6 +160,7 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
+                    item["bsd_converted"] = true;
                     CreateNewFromItem(item, refOE);
                 }
             }

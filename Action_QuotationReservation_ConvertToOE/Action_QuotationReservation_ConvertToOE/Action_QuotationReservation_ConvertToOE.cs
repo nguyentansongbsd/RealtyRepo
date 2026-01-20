@@ -63,6 +63,7 @@ namespace Action_QuotationReservation_ConvertToOE
 
             Entity newOE = new Entity("bsd_salesorder");
             newOE["bsd_name"] = refProduct.Name;
+            newOE["bsd_date"] = DateTime.UtcNow;
             newOE["bsd_project"] = GetValidFieldValue(enReservation, "bsd_projectid");
             newOE["bsd_phaseslaunch"] = GetValidFieldValue(enReservation, "bsd_phaseslaunchid");
             newOE["bsd_pricelevel"] = GetValidFieldValue(enReservation, "bsd_pricelevel");
@@ -151,6 +152,7 @@ namespace Action_QuotationReservation_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
+                    item["bsd_converted"] = true;
                     CreateNewFromItem(item, "bsd_reservation", refOE);
                 }
             }
