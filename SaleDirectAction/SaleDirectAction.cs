@@ -404,57 +404,132 @@ namespace SaleDirectAction
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
                     }
-                    var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                    <fetch distinct=""true"">
-                      <entity name=""bsd_productpricelevel"">
-                        <attribute name=""bsd_price"" alias=""prilist_price"" />
-                        <filter>
-                          <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
-                        </filter>
-                        <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
-                          <attribute name=""bsd_name"" alias=""price_name"" />
-                          <attribute name=""bsd_pricelevelid"" alias=""price_id"" />
-                          <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
-                            <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
-                              <filter>
-                                <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
-                                <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
-                              </filter>
-                            </link-entity>
-                          </link-entity>
-                        </link-entity>
-                      </entity>
-                    </fetch>";
-                    EntityCollection rs_price = service.RetrieveMultiple(new FetchExpression(fetchXml_pricelist));
-                    if (rs_price.Entities.Count == 1)
+                    //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                    //<fetch distinct=""true"">
+                    //  <entity name=""bsd_productpricelevel"">
+                    //    <attribute name=""bsd_price"" alias=""prilist_price"" />
+                    //    <filter>
+                    //      <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
+                    //    </filter>
+                    //    <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
+                    //      <attribute name=""bsd_name"" alias=""price_name"" />
+                    //      <attribute name=""bsd_pricelevelid"" alias=""price_id"" />
+                    //      <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
+                    //        <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
+                    //          <filter>
+                    //            <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
+                    //            <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
+                    //          </filter>
+                    //        </link-entity>
+                    //      </link-entity>
+                    //    </link-entity>
+                    //  </entity>
+                    //</fetch>";
+                    //EntityCollection rs_price = service.RetrieveMultiple(new FetchExpression(fetchXml_pricelist));
+                    //if (rs_price.Entities.Count == 1)
+                    //{
+                    //    tracingService.Trace("vào if price_" + rs_price.Entities.Count);
+
+                    //    var aliased_price = (AliasedValue)rs_price.Entities[0]["price_id"];
+                    //    Guid price_id = (Guid)aliased_price.Value;
+                    //    entity2["bsd_pricelevel"] = new EntityReference("bsd_pricelevel", price_id);
+                    //    if (rs_price.Entities[0].Contains("prilist_price"))
+                    //    {
+                    //        tracingService.Trace("Có prilist_price");
+                    //        var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
+                    //        Money moneyValue = (Money)aliased_money.Value;
+
+                    //        entity2["bsd_detailamount"] = moneyValue;
+                    //        if (enUnit.Contains("bsd_taxcode"))
+                    //        {
+                    //            tracingService.Trace("Có bsd_taxcode");
+                    //            Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
+                    //            decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
+                    //            decimal taxRate = taxCodeValue / 100.0m;
+                    //            decimal detailAmount = moneyValue.Value;
+                    //            decimal vatAmount = detailAmount * taxRate;
+                    //            entity2["bsd_vat"] = new Money(vatAmount);
+                    //        }
+                    //    }
+                    //}
+                    
+                    entity2["bsd_pricelevel"] = enUnit.Contains("bsd_pricelevel") ? (EntityReference)enUnit["bsd_pricelevel"] : null;
+                    if (enUnit.Contains("bsd_pricelevel") && enUnit["bsd_pricelevel"] != null)
                     {
-                        tracingService.Trace("vào if price_" + rs_price.Entities.Count);
-
-                        var aliased_price = (AliasedValue)rs_price.Entities[0]["price_id"];
-                        Guid price_id = (Guid)aliased_price.Value;
-                        entity2["bsd_pricelevel"] = new EntityReference("bsd_pricelevel", price_id);
-                        if (rs_price.Entities[0].Contains("prilist_price"))
+                        EntityReference priceLevelRef = (EntityReference)enUnit["bsd_pricelevel"];
+                       
+                        var fetchXml123 = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                            <fetch version=""1.0"" output-format=""xml-platform"" mapping=""logical"" distinct=""true"">
+                              <entity name=""bsd_productpricelevel"">
+                                <attribute name=""bsd_price"" alias=""p_price"" />
+                                <filter type=""and"">
+                                  <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
+                                  <condition attribute=""statuscode"" operator=""ne"" value=""{2}"" />
+                                </filter>
+                                <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
+                                  <filter type=""and"">
+                                    <condition attribute=""bsd_pricelevelid"" operator=""eq"" value=""{priceLevelRef.Id}"" />
+                                  </filter>
+                                </link-entity>
+                              </entity>
+                            </fetch>";
+                        EntityCollection rs_price123 = service.RetrieveMultiple(new FetchExpression(fetchXml123));
+                        if (rs_price123.Entities.Count > 0)
                         {
-                            tracingService.Trace("Có prilist_price");
-                            var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
-                            Money moneyValue = (Money)aliased_money.Value;
-
-                            entity2["bsd_detailamount"] = moneyValue;
-                            if (enUnit.Contains("bsd_taxcode"))
+                           tracingService.Trace("vào if price_" + rs_price123.Entities.Count);
+                            if (rs_price123.Entities[0].Contains("p_price"))
                             {
-                                tracingService.Trace("Có bsd_taxcode");
-                                Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
-                                decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
-                                decimal taxRate = taxCodeValue / 100.0m;
-                                decimal detailAmount = moneyValue.Value;
-                                decimal vatAmount = detailAmount * taxRate;
-                                entity2["bsd_vat"] = new Money(vatAmount);
+                                Entity result = rs_price123.Entities[0];
+                                tracingService.Trace("Có p_price");
+                                AliasedValue aliasedPrice = (AliasedValue)result["p_price"];
+                                
+                                
+                                Money moneyValue = (Money)aliasedPrice.Value;
+                                entity2["bsd_detailamount"] = moneyValue;
+                                if (enUnit.Contains("bsd_taxcode"))
+                                {
+                                    tracingService.Trace("Có bsd_taxcode");
+                                    Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
+                                    decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
+                                    decimal taxRate = taxCodeValue / 100.0m;
+                                    decimal detailAmount = moneyValue.Value;
+                                    decimal vatAmount = detailAmount * taxRate;
+                                    entity2["bsd_vat"] = new Money(vatAmount);
+                                }
                             }
                         }
                     }
 
                     tracingService.Trace("12");
                     strbuil.AppendLine("aaaaa");
+
+                    int nextNumber = 1;
+                    string fetchMaxCode = $@"
+                    <fetch top='1'>
+                      <entity name='bsd_quote'>
+                        <attribute name='bsd_reservationno' />
+                        <order attribute='bsd_reservationno' descending='true' />
+                      </entity>
+                    </fetch>";
+                    EntityCollection lastRecords = service.RetrieveMultiple(new FetchExpression(fetchMaxCode));
+
+                    if (lastRecords.Entities.Count > 0)
+                    {
+                        // Lấy chuỗi RSC-00000001
+                        string lastCode = lastRecords.Entities[0].GetAttributeValue<string>("bsd_reservationno");
+
+                        if (!string.IsNullOrEmpty(lastCode))
+                        {
+                            // Cắt bỏ phần chữ "RSC-", chỉ lấy phần số "00000001"
+                            string numericPart = lastCode.Replace("RSV-", "");
+                            if (int.TryParse(numericPart, out int lastNumber))
+                            {
+                                nextNumber = lastNumber + 1;
+                            }
+                        }
+                    }
+                    // Gán mã mới vào entity: Ví dụ RSC-00000002
+                    entity2["bsd_reservationno"] = "RSV-" + nextNumber.ToString("D7");
                     Guid guid = service.Create(entity2);
                     tracingService.Trace("16");
                     strbuil.AppendLine("bbbbbbbbbbbb");
@@ -464,10 +539,11 @@ namespace SaleDirectAction
                 }
                 else if(str1 == "Reservation")
                 {
+
                     Entity enUnit = RetrieveValidUnit(entityReference1.Id);
                     Entity updateUnit = new Entity("bsd_product", entityReference1.Id);
                     Entity entity2 = new Entity("bsd_quote");
-                    var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                    var fetchXml1 = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">
                       <entity name=""bsd_productpricelevel"">
                         <attribute name=""bsd_price"" alias=""prilist_price"" />
@@ -489,7 +565,7 @@ namespace SaleDirectAction
                         </link-entity>
                       </entity>
                     </fetch>";
-                    EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+                    EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml1));
                     if (rs.Entities.Count == 1)
                     {
                         tracingService.Trace("vào if phase_" + rs.Entities.Count);
@@ -502,52 +578,100 @@ namespace SaleDirectAction
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
                     }
-                    var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                    <fetch distinct=""true"">
-                      <entity name=""bsd_productpricelevel"">
-                        <attribute name=""bsd_price"" alias=""prilist_price"" />
-                        <filter>
-                          <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
-                        </filter>
-                        <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
-                          <attribute name=""bsd_name"" alias=""price_name"" />
-                          <attribute name=""bsd_pricelevelid"" alias=""price_id"" />
-                          <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
-                            <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
-                              <filter>
-                                <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
-                                <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
-                              </filter>
-                            </link-entity>
-                          </link-entity>
-                        </link-entity>
-                      </entity>
-                    </fetch>";
-                    EntityCollection rs_price = service.RetrieveMultiple(new FetchExpression(fetchXml_pricelist));
-                    if (rs_price.Entities.Count == 1)
+                    //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                    //<fetch distinct=""true"">
+                    //  <entity name=""bsd_productpricelevel"">
+                    //    <attribute name=""bsd_price"" alias=""prilist_price"" />
+                    //    <filter>
+                    //      <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
+                    //    </filter>
+                    //    <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
+                    //      <attribute name=""bsd_name"" alias=""price_name"" />
+                    //      <attribute name=""bsd_pricelevelid"" alias=""price_id"" />
+                    //      <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
+                    //        <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
+                    //          <filter>
+                    //            <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
+                    //            <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
+                    //          </filter>
+                    //        </link-entity>
+                    //      </link-entity>
+                    //    </link-entity>
+                    //  </entity>
+                    //</fetch>";
+                    //EntityCollection rs_price = service.RetrieveMultiple(new FetchExpression(fetchXml_pricelist));
+                    //if (rs_price.Entities.Count == 1)
+                    //{
+                    //    tracingService.Trace("vào if price_" + rs_price.Entities.Count);
+
+                    //    var aliased_price = (AliasedValue)rs_price.Entities[0]["price_id"];
+                    //    Guid price_id = (Guid)aliased_price.Value;
+                    //    entity2["bsd_pricelevel"] = new EntityReference("bsd_pricelevel", price_id);
+                    //    if (rs_price.Entities[0].Contains("prilist_price"))
+                    //    {
+                    //        var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
+                    //        Money moneyValue = (Money)aliased_money.Value;
+
+                    //        entity2["bsd_detailamount"] = moneyValue;
+                    //        if (enUnit.Contains("bsd_taxcode"))
+                    //        {
+                    //            Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
+                    //            decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
+                    //            decimal taxRate = taxCodeValue / 100.0m;
+                    //            decimal detailAmount = moneyValue.Value;
+                    //            decimal vatAmount = detailAmount * taxRate;
+                    //            entity2["bsd_vat"] = new Money(vatAmount);
+                    //        }
+                    //    }
+                    //}
+                    entity2["bsd_pricelevel"] = enUnit.Contains("bsd_pricelevel") ? (EntityReference)enUnit["bsd_pricelevel"] : null;
+                    if (enUnit.Contains("bsd_pricelevel") && enUnit["bsd_pricelevel"] != null)
                     {
-                        tracingService.Trace("vào if price_" + rs_price.Entities.Count);
+                        EntityReference priceLevelRef = (EntityReference)enUnit["bsd_pricelevel"];
 
-                        var aliased_price = (AliasedValue)rs_price.Entities[0]["price_id"];
-                        Guid price_id = (Guid)aliased_price.Value;
-                        entity2["bsd_pricelevel"] = new EntityReference("bsd_pricelevel", price_id);
-                        if (rs_price.Entities[0].Contains("prilist_price"))
+                        var fetchXml123 = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                            <fetch version=""1.0"" output-format=""xml-platform"" mapping=""logical"" distinct=""true"">
+                              <entity name=""bsd_productpricelevel"">
+                                <attribute name=""bsd_price"" alias=""p_price"" />
+                                <filter type=""and"">
+                                  <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
+                                  <condition attribute=""statuscode"" operator=""ne"" value=""{2}"" />
+                                </filter>
+                                <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
+                                  <filter type=""and"">
+                                    <condition attribute=""bsd_pricelevelid"" operator=""eq"" value=""{priceLevelRef.Id}"" />
+                                  </filter>
+                                </link-entity>
+                              </entity>
+                            </fetch>";
+                        EntityCollection rs_price123 = service.RetrieveMultiple(new FetchExpression(fetchXml123));
+                        if (rs_price123.Entities.Count > 0)
                         {
-                            var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
-                            Money moneyValue = (Money)aliased_money.Value;
-
-                            entity2["bsd_detailamount"] = moneyValue;
-                            if (enUnit.Contains("bsd_taxcode"))
+                            tracingService.Trace("vào if price_" + rs_price123.Entities.Count);
+                            if (rs_price123.Entities[0].Contains("p_price"))
                             {
-                                Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
-                                decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
-                                decimal taxRate = taxCodeValue / 100.0m;
-                                decimal detailAmount = moneyValue.Value;
-                                decimal vatAmount = detailAmount * taxRate;
-                                entity2["bsd_vat"] = new Money(vatAmount);
+                                Entity result = rs_price123.Entities[0];
+                                tracingService.Trace("Có p_price");
+                                AliasedValue aliasedPrice = (AliasedValue)result["p_price"];
+
+
+                                Money moneyValue = (Money)aliasedPrice.Value;
+                                entity2["bsd_detailamount"] = moneyValue;
+                                if (enUnit.Contains("bsd_taxcode"))
+                                {
+                                    tracingService.Trace("Có bsd_taxcode");
+                                    Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
+                                    decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
+                                    decimal taxRate = taxCodeValue / 100.0m;
+                                    decimal detailAmount = moneyValue.Value;
+                                    decimal vatAmount = detailAmount * taxRate;
+                                    entity2["bsd_vat"] = new Money(vatAmount);
+                                }
                             }
                         }
                     }
+
+                    //
                     updateUnit["statuscode"] = new OptionSetValue(100000003);
                     service.Update(updateUnit);
                     entity2["bsd_name"] = enUnit["bsd_name"];
@@ -577,6 +701,33 @@ namespace SaleDirectAction
                     //DateTime utcNow = DateTime.UtcNow;
                     //DateTime localNow = RetrieveLocalTimeFromUTCTime(utcNow, service);
                     //entity2["bsd_quotationdate"] = localNow;
+                    int nextNumber = 1;
+                    string fetchMaxCode = $@"
+                    <fetch top='1'>
+                      <entity name='bsd_quote'>
+                        <attribute name='bsd_reservationno' />
+                        <order attribute='bsd_reservationno' descending='true' />
+                      </entity>
+                    </fetch>";
+                    EntityCollection lastRecords = service.RetrieveMultiple(new FetchExpression(fetchMaxCode));
+
+                    if (lastRecords.Entities.Count > 0)
+                    {
+                        // Lấy chuỗi RSC-00000001
+                        string lastCode = lastRecords.Entities[0].GetAttributeValue<string>("bsd_reservationno");
+
+                        if (!string.IsNullOrEmpty(lastCode))
+                        {
+                            // Cắt bỏ phần chữ "RSC-", chỉ lấy phần số "00000001"
+                            string numericPart = lastCode.Replace("RSV-", "");
+                            if (int.TryParse(numericPart, out int lastNumber))
+                            {
+                                nextNumber = lastNumber + 1;
+                            }
+                        }
+                    }
+                    // Gán mã mới vào entity: Ví dụ RSC-00000002
+                    entity2["bsd_reservationno"] = "RSV-" + nextNumber.ToString("D7");
                     Guid guid = service.Create(entity2);
                     context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
                 }
@@ -666,22 +817,27 @@ namespace SaleDirectAction
                             }
                         }
                     }
-                    updateUnit["statuscode"] = new OptionSetValue(100000006);//Reserve
+                    updateUnit["statuscode"] = new OptionSetValue(100000006);//Reserver
                     service.Update(updateUnit);
                     enReContract["bsd_name"] = enUnit["bsd_name"];
                     enReContract["bsd_projectid"] = enUnit["bsd_projectcode"];
                     //entity2["transactioncurrencyid"] = enUnit["transactioncurrencyid"];
                     enReContract["bsd_unitno"] = (object)entityReference1;
                     enReContract["statuscode"] = new OptionSetValue(1);
+                    enReContract["bsd_landvaluededuction"] = new Money(0);
                     if (enUnit.Contains("bsd_taxcode"))
                     {
                         enReContract["bsd_taxcode"] = enUnit["bsd_taxcode"];
                     }
-                    //if (enUnit.Contains("bsd_maintenancefeespercent"))
-                    //{
-                    //    entity2["bsd_maintenancefeespercent"] = enUnit["bsd_maintenancefeespercent"];
+                    if (enUnit.Contains("bsd_numberofmonthspaidmf"))
+                    {
+                        enReContract["bsd_numberofmonthspaidmf"] = enUnit["bsd_numberofmonthspaidmf"];
+                    }
+                    if (enUnit.Contains("bsd_managementfee"))
+                    {
+                        enReContract["bsd_managementfee"] = enUnit["bsd_maintenancefeespercent"];
 
-                    //}
+                    }
                     //if (enUnit.Contains("bsd_maintenancefees"))
                     //{
                     //    entity2["bsd_maintenancefees"] = enUnit["bsd_maintenancefees"];
@@ -691,6 +847,35 @@ namespace SaleDirectAction
                     enReContract["bsd_netusablearea"] = enUnit.Contains("bsd_netsaleablearea") ? enUnit["bsd_netsaleablearea"] : Decimal.Zero;
                     enReContract["bsd_constructionarea"] = enUnit.Contains("bsd_constructionarea") ? enUnit["bsd_constructionarea"] : Decimal.Zero;
                     //Entity entity3 = service.Retrieve(((EntityReference)enUnit["bsd_projectcode"]).LogicalName, ((EntityReference)enUnit["bsd_projectcode"]).Id, new ColumnSet(true));
+                    int nextNumber = 1;
+                    string fetchMaxCode = $@"
+                    <fetch top='1'>
+                      <entity name='bsd_reservationcontract'>
+                        <attribute name='bsd_reservationnumber' />
+                        <order attribute='bsd_reservationnumber' descending='true' />
+                      </entity>
+                    </fetch>";
+
+                    EntityCollection lastRecords = service.RetrieveMultiple(new FetchExpression(fetchMaxCode));
+
+                    if (lastRecords.Entities.Count > 0)
+                    {
+                        // Lấy chuỗi RSC-00000001
+                        string lastCode = lastRecords.Entities[0].GetAttributeValue<string>("bsd_reservationnumber");
+
+                        if (!string.IsNullOrEmpty(lastCode))
+                        {
+                            // Cắt bỏ phần chữ "RSC-", chỉ lấy phần số "00000001"
+                            string numericPart = lastCode.Replace("RSC-", "");
+                            if (int.TryParse(numericPart, out int lastNumber))
+                            {
+                                nextNumber = lastNumber + 1;
+                            }
+                        }
+                    }
+                    // Gán mã mới vào entity: Ví dụ RSC-00000002
+                    enReContract["bsd_racontractsigndate"] = DateTime.Today;
+                    enReContract["bsd_reservationnumber"] = "RSC-" + nextNumber.ToString("D8");
                     Guid guid = service.Create(enReContract);
                     context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
                 }

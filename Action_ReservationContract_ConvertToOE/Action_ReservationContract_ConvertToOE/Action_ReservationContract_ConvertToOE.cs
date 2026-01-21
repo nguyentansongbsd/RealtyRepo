@@ -28,7 +28,9 @@ namespace Action_ReservationContract_ConvertToOE
                 Entity enRC = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_unitno", "bsd_projectid",
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_queuingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_queue", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
-                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid"}));
+                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid", "bsd_discountcheck", "bsd_discountdraw",
+                "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
+                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
                 if (status != 100000002) //Director Approval
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_reservationcontract"));
@@ -42,8 +44,13 @@ namespace Action_ReservationContract_ConvertToOE
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_unit"));
 
                 Guid idOE = CreateOE(enRC, target, refProduct, enProduct);
-                MapCoowner(target, idOE);
-                MapPaymentSchemeDetail(target, idOE);
+                EntityReference refOE = new EntityReference("bsd_salesorder", idOE);
+
+                MapCoowner(target, refOE);
+                MapPaymentSchemeDetail(target, refOE);
+                MapPromotion(target, refOE);
+                MapDiscountTransaction(target, refOE);
+                MapPayment(target, refOE);
                 UpdateReservationContract(target);
                 UpdateUnit(refProduct);
 
@@ -61,6 +68,7 @@ namespace Action_ReservationContract_ConvertToOE
 
             Entity newOE = new Entity("bsd_salesorder");
             newOE["bsd_name"] = refProduct.Name;
+            newOE["bsd_date"] = DateTime.UtcNow;
             newOE["bsd_project"] = GetValidFieldValue(enRC, "bsd_projectid");
             newOE["bsd_phaseslaunch"] = GetValidFieldValue(enRC, "bsd_phaseslaunchid");
             newOE["bsd_pricelevel"] = GetValidFieldValue(enRC, "bsd_pricelevel");
@@ -85,6 +93,18 @@ namespace Action_ReservationContract_ConvertToOE
             newOE["bsd_totalamountlessfreight"] = GetValidFieldValue(enRC, "bsd_totalamountlessfreight");
             newOE["bsd_totaltax"] = GetValidFieldValue(enRC, "bsd_totaltax");
             newOE["bsd_totalamount"] = GetValidFieldValue(enRC, "bsd_totalamount");
+            newOE["bsd_freightamount"] = GetValidFieldValue(enRC, "bsd_freightamount");
+            newOE["bsd_numberofmonthspaidmf"] = GetValidFieldValue(enRC, "bsd_numberofmonthspaidmf");
+            newOE["bsd_managementfee"] = GetValidFieldValue(enRC, "bsd_managementfee");
+
+            newOE["bsd_discountcheck"] = GetValidFieldValue(enRC, "bsd_discountcheck");
+            newOE["bsd_discountdraw"] = GetValidFieldValue(enRC, "bsd_discountdraw");
+
+            newOE["bsd_totalamountpaid"] = GetValidFieldValue(enRC, "bsd_totalamountpaid");
+            newOE["bsd_totalpercent"] = GetValidFieldValue(enRC, "bsd_totalpercent");
+            newOE["bsd_totalinterest"] = GetValidFieldValue(enRC, "bsd_totalinterest");
+            newOE["bsd_totalinterestpaid"] = GetValidFieldValue(enRC, "bsd_totalinterestpaid");
+            newOE["bsd_totalinterestremaining"] = GetValidFieldValue(enRC, "bsd_totalinterestremaining");
 
             newOE.Id = Guid.NewGuid();
             service.Create(newOE);
@@ -97,7 +117,7 @@ namespace Action_ReservationContract_ConvertToOE
             return enRC.Contains(field) ? enRC[field] : null; ;
         }
 
-        private void MapCoowner(EntityReference target, Guid id)
+        private void MapCoowner(EntityReference target, EntityReference refOE)
         {
             traceService.Trace("MapCoowner");
 
@@ -116,12 +136,12 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, id);
+                    CreateNewFromItem(item, refOE);
                 }
             }
         }
 
-        private void MapPaymentSchemeDetail(EntityReference target, Guid id)
+        private void MapPaymentSchemeDetail(EntityReference target, EntityReference refOE)
         {
             traceService.Trace("MapPaymentSchemeDetail");
 
@@ -140,19 +160,20 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, id);
+                    item["bsd_converted"] = true;
+                    CreateNewFromItem(item, refOE);
                 }
             }
         }
 
-        private void CreateNewFromItem(Entity item, Guid id)
+        private void CreateNewFromItem(Entity item, EntityReference refOE)
         {
             Entity it = new Entity(item.LogicalName);
             it = item;
             it.Attributes.Remove(item.LogicalName + "id");
             it.Attributes.Remove("ownerid");
             it.Attributes.Remove("bsd_reservationcontract");
-            it["bsd_optionentry"] = new EntityReference("bsd_salesorder", id);
+            it["bsd_optionentry"] = refOE;
             it.Id = Guid.NewGuid();
             service.Create(it);
         }
@@ -173,6 +194,87 @@ namespace Action_ReservationContract_ConvertToOE
             Entity upUnit = new Entity(refProduct.LogicalName, refProduct.Id);
             upUnit["statuscode"] = new OptionSetValue(100000008);    //In Contract
             service.Update(upUnit);
+        }
+
+        private void MapPromotion(EntityReference target, EntityReference refOE)
+        {
+            traceService.Trace("MapPromotion");
+
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_promotion"">
+                <attribute name=""bsd_promotionid"" />
+                <attribute name=""bsd_name"" />
+                <order attribute=""createdon"" />
+                <filter>
+                  <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                </filter>
+                <link-entity name=""bsd_bsd_reservationcontract_bsd_promotion"" from=""bsd_promotionid"" to=""bsd_promotionid"" intersect=""true"">
+                  <filter>
+                    <condition attribute=""bsd_reservationcontractid"" operator=""eq"" value=""{target.Id}"" />
+                  </filter>
+                </link-entity>
+              </entity>
+            </fetch>";
+            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
+            {
+                EntityReferenceCollection relativeEntity = new EntityReferenceCollection();
+                foreach (var item in rs.Entities)
+                {
+                    relativeEntity.Add(new EntityReference(item.LogicalName, item.Id));
+                }
+                Relationship relationship = new Relationship("bsd_bsd_salesorder_bsd_promotion");
+                service.Associate(refOE.LogicalName, refOE.Id, relationship, relativeEntity);
+            }
+        }
+
+        private void MapDiscountTransaction(EntityReference target, EntityReference refOE)
+        {
+            traceService.Trace("MapDiscountTransaction");
+
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_discounttransaction"">
+                <filter>
+                  <condition attribute=""bsd_reservationcontract"" operator=""eq"" value=""{target.Id}"" />
+                  <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                </filter>
+                <order attribute=""createdon"" />
+              </entity>
+            </fetch>";
+            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
+            {
+                foreach (var item in rs.Entities)
+                {
+                    CreateNewFromItem(item, refOE);
+                }
+            }
+        }
+
+        private void MapPayment(EntityReference target, EntityReference refOE)
+        {
+            traceService.Trace("MapPayment");
+
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch>
+              <entity name=""bsd_payment"">
+                <filter>
+                  <condition attribute=""bsd_reservationcontract"" operator=""eq"" value=""{target.Id}"" />
+                  <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                </filter>
+                <order attribute=""createdon"" />
+              </entity>
+            </fetch>";
+            EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
+            {
+                foreach (var item in rs.Entities)
+                {
+                    CreateNewFromItem(item, refOE);
+                }
+            }
         }
     }
 }
