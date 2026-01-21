@@ -32,12 +32,12 @@ namespace Action_OptionEntry_Cancel
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitnumber"));
 
                 EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
-                if (enOE.Contains("bsd_reservationcontract"))
+                if (enOE.Contains("bsd_reservationcontract"))   //hđcs
                     UpStatus(enOE, refUnit, "bsd_reservationcontract", 100000002, 100000006);
-                else if (enOE.Contains("bsd_quoteid"))
+                else if (enOE.Contains("bsd_quoteid"))  //đặt cọc
                     UpStatus(enOE, refUnit, "bsd_quoteid", 667980002, 100000003);
-                else
-                    UpStatus(enOE, refUnit);
+                else  //sản phẩm
+                    UpStatus(enOE, refUnit, null, 0, 100000000);
 
                 traceService.Trace("done");
             }
@@ -47,7 +47,7 @@ namespace Action_OptionEntry_Cancel
             }
         }
 
-        private void UpStatus(Entity enOE, EntityReference refUnit, string fieldContract = null, int? statusContract = null, int? statusUnit = null)
+        private void UpStatus(Entity enOE, EntityReference refUnit, string fieldContract, int statusContract, int statusUnit)
         {
             traceService.Trace($"UpStatus {fieldContract}");
 
@@ -56,13 +56,8 @@ namespace Action_OptionEntry_Cancel
             {
                 EntityReference refContract = (EntityReference)enOE[fieldContract];
                 Entity upContract = new Entity(refContract.LogicalName, refContract.Id);
-                upContract["statuscode"] = new OptionSetValue((int)statusContract);  //Director Approval
+                upContract["statuscode"] = new OptionSetValue(statusContract);  //Director Approval
                 service.Update(upContract);
-
-                // up unit
-                Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
-                upUnit["statuscode"] = new OptionSetValue((int)statusUnit);
-                service.Update(upUnit);
             }
 
             string reason = (string)context.InputParameters["reason"];
@@ -74,6 +69,11 @@ namespace Action_OptionEntry_Cancel
             upOE["bsd_canceler"] = new EntityReference("systemuser", context.UserId);
             upOE["bsd_cancelreason"] = reason;
             service.Update(upOE);
+
+            // up unit
+            Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
+            upUnit["statuscode"] = new OptionSetValue(statusUnit);
+            service.Update(upUnit);
         }
     }
 }
