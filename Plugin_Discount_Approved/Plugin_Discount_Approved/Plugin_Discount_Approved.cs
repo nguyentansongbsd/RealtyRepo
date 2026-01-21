@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Plugin_Discount_Approved
 {
-    public class Plugin_Discount_Approved: IPlugin
+    public class Plugin_Discount_Approved : IPlugin
     {
         IOrganizationService service = null;
         ITracingService traceService = null;
@@ -25,15 +25,17 @@ namespace Plugin_Discount_Approved
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enDiscount = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_phaselaunch" }));
+                Entity enDiscount = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_phaselaunch", "bsd_priority" }));
                 int status = enDiscount.Contains("statuscode") ? ((OptionSetValue)enDiscount["statuscode"]).Value : -99;
                 if (status != 100000000 || !enDiscount.Contains("bsd_phaselaunch"))  //Approved
                     return;
 
-                EntityReference refPL = (EntityReference)enDiscount["bsd_phaselaunch"];
-                var relativeEntity = new EntityReferenceCollection { new EntityReference(refPL.LogicalName, refPL.Id) };
-                Relationship relationship = new Relationship("bsd_bsd_phaseslaunch_bsd_discount");
-                service.Associate(enDiscount.LogicalName, enDiscount.Id, relationship, relativeEntity);
+                Entity newDR = new Entity("bsd_discountrule");
+                newDR["bsd_discount"] = enDiscount.ToEntityReference();
+                newDR["bsd_priority"] = enDiscount.Contains("bsd_priority") ? enDiscount["bsd_priority"] : null;
+                newDR["bsd_phaseslaunch"] = enDiscount["bsd_phaselaunch"];
+                newDR.Id = Guid.NewGuid();
+                service.Create(newDR);
 
                 traceService.Trace("done");
             }
