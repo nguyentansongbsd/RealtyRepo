@@ -21,11 +21,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_OptionEntry_Cancel",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Units_CreateOE", "..\Action_Units_CreateOE\Action_Units_CreateOE\Action_Units_CreateOE.csproj", "{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_OptionEntry_PSGen", "..\Action_OptionEntry_PSGen\Action_OptionEntry_PSGen\Action_OptionEntry_PSGen.csproj", "{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
 		RealtyCommon\RealtyCommon.projitems*{370a37f7-4625-4a6f-b0b3-54836d90a7d3}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{50b386f7-9c2f-4637-89bf-9ecbfbab1d22}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{6c3e5fa7-83ac-48d3-8cb0-1c0a8a1c45af}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{708f3e3b-6d53-4465-89cb-6899512ea772}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{719de0da-96a5-4f3b-9bce-294450757c56}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{c2f51e9f-1396-4d73-9478-9c7e8d57f17c}*SharedItemsImports = 4
@@ -70,6 +73,10 @@ Global
 		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
