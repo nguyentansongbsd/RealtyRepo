@@ -91,6 +91,7 @@ namespace Plugin_Quote_CalculateMoney
             int no = 1;
             foreach (Guid guid in strArraySum)
             {
+                trace.Trace("vào for");
                 Entity pro = service.Retrieve("bsd_discount", guid, new ColumnSet(new string[5]
                     {
                         "bsd_name",
@@ -143,8 +144,11 @@ namespace Plugin_Quote_CalculateMoney
                     trace.Trace("sumAmountDiscount: " + sumAmountDiscount);
                     trace.Trace("netSellingPrice: " + netSellingPrice);
                 }
+                trace.Trace("vào dis");
                 rsv["bsd_discount"] = pro.ToEntityReference();
+                trace.Trace("map dis");
                 rsv["bsd_quote"] = enTarget.ToEntityReference();
+                trace.Trace("map quote");
                 service.Create(rsv);
                 no++;
             }
