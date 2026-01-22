@@ -152,7 +152,6 @@ namespace Action_QuotationReservation_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    item["bsd_converted"] = true;
                     CreateNewFromItem(item, "bsd_reservation", refOE);
                 }
             }

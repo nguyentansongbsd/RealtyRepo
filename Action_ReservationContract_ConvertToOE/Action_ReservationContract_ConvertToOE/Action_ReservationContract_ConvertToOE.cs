@@ -160,7 +160,6 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    item["bsd_converted"] = true;
                     CreateNewFromItem(item, refOE);
                 }
             }
