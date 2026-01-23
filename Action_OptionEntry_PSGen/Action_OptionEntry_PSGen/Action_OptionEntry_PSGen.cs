@@ -536,7 +536,7 @@ namespace Action_OptionEntry_PSGen
             {
                 if (!enHD.Contains("bsd_date"))
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_gendate"));
-                date = CalcDate(enIns, (DateTime)enHD["no_gendate"], ref flag);
+                date = CalcDate(enIns, (DateTime)enHD["bsd_date"], ref flag);
             }
             else
             {
