@@ -31,6 +31,25 @@ namespace Action_OptionEntry_Cancel
                 if (!enOE.Contains("bsd_unitnumber"))
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitnumber"));
 
+                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                <fetch>
+                  <entity name=""bsd_payment"">
+                    <attribute name=""bsd_paymentid"" />
+                    <attribute name=""bsd_name"" />
+                    <filter>
+                      <condition attribute=""bsd_optionentry"" operator=""eq"" value=""{target.Id}"" />
+                      <condition attribute=""statuscode"" operator=""not-in"">
+                        <value>100000000</value>
+                      </condition>
+                    </filter>
+                  </entity>
+                </fetch>";
+                EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+                if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
+                {
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "spa_existing_receipts"));
+                }
+
                 EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
                 if (enOE.Contains("bsd_reservationcontract"))   //hđcs
                     UpStatus(enOE, refUnit, "bsd_reservationcontract", 100000002, 100000006);
