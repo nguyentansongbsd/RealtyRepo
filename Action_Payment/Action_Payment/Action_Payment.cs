@@ -136,7 +136,7 @@ namespace Action_Payment
             Entity upHD = new Entity(enrHD.LogicalName, enrHD.Id);
             upHD["bsd_totalinterest"] = new Money(totalinterest);
             upHD["totalinterestpaid"] = new Money(totalinterestpaid + amountPay);
-            upHD["bsd_totalinterestremaining"] = new Money(totalinterest - totalinterestpaid);
+            upHD["bsd_totalinterestremaining"] = new Money(totalinterest - totalinterestpaid - amountPay);
             _service.Update(upHD);
             string nameField = enrHD.LogicalName == "bsd_reservationcontract" ? "bsd_reservationcontract" : "bsd_optionentry";
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
