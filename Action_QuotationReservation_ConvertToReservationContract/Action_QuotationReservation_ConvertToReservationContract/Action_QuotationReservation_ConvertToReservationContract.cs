@@ -186,7 +186,8 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             traceService.Trace("UpdateReservation");
 
             Entity upReservation = new Entity(target.LogicalName, target.Id);
-            upReservation["statuscode"] = new OptionSetValue(667980003);    //Convert to RA Contract
+            upReservation["statuscode"] = new OptionSetValue(667980006);//Convert to RA Contract
+            upReservation["statecode"] = new OptionSetValue(1);//inactive
             service.Update(upReservation);
         }
 
