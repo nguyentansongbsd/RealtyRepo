@@ -111,7 +111,7 @@ namespace Action_ReservationContract_Update
                         {
                             foreach (var entity in rs.Entities)
                             {
-                                // Xóa trực tiếp bằng ID của từng bản ghi con
+                                // Xóa trực tiếp bằng ID của từng bản ghi con/
                                 service.Delete("bsd_paymentschemedetail", entity.Id);
                             }
                         }
