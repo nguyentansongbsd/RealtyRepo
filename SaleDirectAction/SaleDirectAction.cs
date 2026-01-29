@@ -381,6 +381,7 @@ namespace SaleDirectAction
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
                               <attribute name=""bsd_depositamount"" alias=""depositamount"" />
+                              <attribute name=""bsd_minimumdeposit"" alias=""minimumdeposit"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
@@ -403,6 +404,10 @@ namespace SaleDirectAction
                         var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
+                        entity2["bsd_depositfee"] = moneyValue;
+                        var minimum = (AliasedValue)rs.Entities[0]["minimumdeposit"];
+                        Money moneyminimum = (Money)aliased_money.Value;
+                        entity2["bsd_minimumdeposit"] = moneyminimum;
                     }
                     //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     //<fetch distinct=""true"">
@@ -555,6 +560,7 @@ namespace SaleDirectAction
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
                               <attribute name=""bsd_depositamount"" alias=""depositamount"" />
+                              <attribute name=""bsd_minimumdeposit"" alias=""minimumdeposit"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
@@ -566,6 +572,7 @@ namespace SaleDirectAction
                       </entity>
                     </fetch>";
                     EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml1));
+                    tracingService.Trace("phase_" + rs.Entities.Count);
                     if (rs.Entities.Count == 1)
                     {
                         tracingService.Trace("vào if phase_" + rs.Entities.Count);
@@ -577,6 +584,9 @@ namespace SaleDirectAction
                         var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
+                        var minimum = (AliasedValue)rs.Entities[0]["minimumdeposit"];
+                        Money moneyminimum = (Money)aliased_money.Value;
+                        entity2["bsd_minimumdeposit"] = moneyminimum;
                     }
                     //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     //<fetch distinct=""true"">
