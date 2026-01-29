@@ -59,31 +59,79 @@ namespace Action_ReservationContract_Update
                     if (!RA_Contract.Contains("bsd_quoteid"))
                     {
                         tracingService.Trace("vào if cancel_RAContract");
-                        up_RA_Contract["statuscode"] = new OptionSetValue(100000003);//Canceled
+                        up_RA_Contract["statecode"] = new OptionSetValue(1);
+                        up_RA_Contract["statuscode"] = new OptionSetValue(100000005);
                         //up_RA_Contract["bsd_canceldate"] = DateTime.Today;
                         //up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_RA_Contract);
 
-
                         up_unit["statuscode"] = new OptionSetValue(100000000);
                         service.Update(up_unit);
+                        var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                        <fetch>
+                          <entity name=""bsd_paymentschemedetail"">
+                            <filter>
+                              <condition attribute=""bsd_reservationcontract"" operator=""eq"" value=""{RA_Contract.Id}"" />
+                            </filter>
+                          </entity>
+                        </fetch>";
+                        EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+                        if (rs.Entities.Count > 0)
+                        {
+                            foreach (var entity in rs.Entities)
+                            {
+                                // Xóa trực tiếp bằng ID của từng bản ghi con
+                                service.Delete("bsd_paymentschemedetail", entity.Id);
+                            }
+                        }
                     }
                     else
                     {
                         tracingService.Trace("vào else cancel case update khi lên từ cọc");
                         up_unit["statuscode"] = new OptionSetValue(100000003);//Deposited
                         service.Update(up_unit);
-                        up_quote["statuscode"] = new OptionSetValue(667980002);//Director Approval
+                        up_quote["statecode"] = new OptionSetValue(0);
+                        up_quote["statuscode"] = new OptionSetValue(667980008); //Deposited
                         //up_RA_Contract["bsd_canceldate"] = DateTime.Today;
                         //up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_quote);
-                        up_RA_Contract["statuscode"] = new OptionSetValue(100000003);//Canceled
+                        up_RA_Contract["statecode"] = new OptionSetValue(1);
+                        up_RA_Contract["statuscode"] = new OptionSetValue(100000005);//Canceled
                         service.Update(up_RA_Contract);
+                        var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                        <fetch>
+                          <entity name=""bsd_paymentschemedetail"">
+                            <filter>
+                              <condition attribute=""bsd_reservationcontract"" operator=""eq"" value=""{RA_Contract.Id}"" />
+                            </filter>
+                          </entity>
+                        </fetch>";
+                        EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+                        if (rs.Entities.Count > 0)
+                        {
+                            foreach (var entity in rs.Entities)
+                            {
+                                // Xóa trực tiếp bằng ID của từng bản ghi con
+                                service.Delete("bsd_paymentschemedetail", entity.Id);
+                            }
+                        }
                     }
 
                 }
+                else if (str1 == "Sign_Ra")
+                {
+                    up_RA_Contract["bsd_signedcontractdate"] = DateTime.Today;
+                    //up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
+                    service.Update(up_RA_Contract);
+                    
+                }
+                else if (str1 == "Terminedted_Ra")
+                {
+                    up_RA_Contract["statecode"] = new OptionSetValue(1);//inactive
+                    up_RA_Contract["statuscode"] = new OptionSetValue(100000004);//Terminedted
+                    service.Update(up_RA_Contract);
 
-
+                }
 
             }
             catch (Exception ex)
