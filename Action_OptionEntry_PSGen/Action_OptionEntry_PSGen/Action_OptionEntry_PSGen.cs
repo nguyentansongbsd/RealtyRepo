@@ -341,25 +341,16 @@ namespace Action_OptionEntry_PSGen
             tmp["bsd_duedate"] = calculateDuedate(enHD, en, listCreateIns, listInsMaster, orderNumber == 1);
 
             tmp["bsd_calendartype"] = en.Contains("bsd_calendartype") ? en["bsd_calendartype"] : null;
-            tmp["bsd_waiveramount"] = new Money(0);
             tmp["bsd_waiverinterest"] = new Money(0);
-            tmp["bsd_waiverinstallment"] = new Money(0);
 
             tmp["bsd_actualgracedays"] = 0;
 
             tmp["bsd_interestwaspaid"] = new Money(0);
             tmp["bsd_interestchargeamount"] = new Money(0);
 
-            tmp["bsd_managementfeepaid"] = new Money(0);
             tmp["bsd_maintenancefeepaid"] = new Money(0);
             tmp["bsd_maintenanceamount"] = new Money(0);
-            tmp["bsd_managementamount"] = new Money(0);
             tmp["bsd_maintenancefeewaiver"] = new Money(0);
-            tmp["bsd_managementfeewaiver"] = new Money(0);
-
-            tmp["bsd_estimateamount"] = new Money(0);
-            tmp["bsd_taxlandvalue"] = new Money(0);
-            tmp["bsd_tmpamount"] = new Money(0);
 
             tmp["bsd_depositamount"] = new Money(0);
 
@@ -449,9 +440,7 @@ namespace Action_OptionEntry_PSGen
             tmp["bsd_amountwaspaid"] = new Money(0);
             tmp["bsd_depositamount"] = new Money(0);
             tmp["bsd_pricetype"] = new OptionSetValue(typePrice);
-            tmp["bsd_waiveramount"] = new Money(0);
             tmp["bsd_waiverinterest"] = new Money(0);
-            tmp["bsd_waiverinstallment"] = new Money(0);
             tmp["bsd_gracedays"] = graceday;
             //tmp["bsd_interestpercent"] = interestPercent;
             tmp["bsd_calculationmethodmaster"] = en.Contains("bsd_calculationmethod") ? en["bsd_calculationmethod"] : null;
@@ -462,15 +451,9 @@ namespace Action_OptionEntry_PSGen
             tmp["bsd_interestwaspaid"] = new Money(0);
             tmp["bsd_interestchargeamount"] = new Money(0);
 
-            tmp["bsd_managementfeepaid"] = new Money(0);
             tmp["bsd_maintenancefeepaid"] = new Money(0);
             tmp["bsd_maintenanceamount"] = new Money(0);
-            tmp["bsd_managementamount"] = new Money(0);
             tmp["bsd_maintenancefeewaiver"] = new Money(0);
-            tmp["bsd_managementfeewaiver"] = new Money(0);
-            tmp["bsd_estimateamount"] = new Money(0);
-            tmp["bsd_taxlandvalue"] = new Money(0);
-            tmp["bsd_tmpamount"] = new Money(0);
 
             bool signContractInstallment = en.Contains("bsd_signcontractinstallment") ? (bool)en["bsd_signcontractinstallment"] : false;
             tmp["bsd_signcontractinstallment"] = signContractInstallment;

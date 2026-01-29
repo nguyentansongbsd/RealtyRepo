@@ -26,8 +26,7 @@ namespace Action_Units_CreateOE
 
                 EntityReference target = (EntityReference)context.InputParameters["Target"];
                 Entity enUnit = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_name", "bsd_projectcode",
-                "bsd_pricelevel", "bsd_taxcode", "bsd_unittype", "bsd_netsaleablearea", "bsd_numberofmonthspaidmf", "bsd_managementamountmonth", "bsd_price",
-                "bsd_maintenancefeespercent"}));
+                "bsd_pricelevel", "bsd_taxcode", "bsd_unittype", "bsd_netsaleablearea", "bsd_numberofmonthspaidmf", "bsd_managementamountmonth", "bsd_price"}));
                 int status = enUnit.Contains("statuscode") ? ((OptionSetValue)enUnit["statuscode"]).Value : -99;
                 if (status != 100000000) //Available
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_unit"));
@@ -82,29 +81,7 @@ namespace Action_Units_CreateOE
             #endregion
 
             //Price
-            #region Price
-            decimal bsd_totalamountlessfreight = 0;
-            if (enUnit.Contains("bsd_price"))
-            {
-                bsd_totalamountlessfreight = ((Money)enUnit["bsd_price"]).Value;
-                newOE["bsd_detailamount"] = new Money(bsd_totalamountlessfreight);
-                newOE["bsd_totalamountlessfreight"] = new Money(bsd_totalamountlessfreight);
-            }
-            decimal bsd_landvaluededuction = 0;
-            decimal percentTax = 0;
-            if (enUnit.Contains("bsd_taxcode"))
-            {
-                EntityReference refTax = (EntityReference)enUnit["bsd_taxcode"];
-                Entity enTax = service.Retrieve(refTax.LogicalName, refTax.Id, new ColumnSet(new string[] { "bsd_value" }));
-                percentTax = enTax.Contains("bsd_value") ? (decimal)enTax["bsd_value"] / 100 : 0;
-            }
-            decimal bsd_totaltax = (bsd_totalamountlessfreight - bsd_landvaluededuction) * percentTax;
-            newOE["bsd_totaltax"] = new Money(bsd_totaltax);
-            decimal bsd_maintenancefeespercent = enUnit.Contains("bsd_maintenancefeespercent") ? (decimal)enUnit["bsd_maintenancefeespercent"] : 0;
-            decimal bsd_freightamount = bsd_maintenancefeespercent * bsd_totalamountlessfreight;
-            newOE["bsd_freightamount"] = new Money(bsd_freightamount);
-            newOE["bsd_totalamount"] = new Money(bsd_totalamountlessfreight + bsd_totaltax + bsd_freightamount);
-            #endregion
+            newOE["bsd_detailamount"] = enUnit.Contains("bsd_price") ? enUnit["bsd_price"] : new Money(0);
 
             newOE.Id = Guid.NewGuid();
             service.Create(newOE);
