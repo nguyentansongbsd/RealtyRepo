@@ -22,7 +22,7 @@ namespace Plugin_OptionEntry_ChangeHandoverCondition
                 service = factory.CreateOrganizationService(context.UserId);
                 traceService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
                 traceService.Trace("start");
-                if (context.Depth > 2) return;
+                if (context.Depth > 1) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
                 Entity enOE = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_quoteid", "bsd_reservationcontract", "bsd_handovercondition",
