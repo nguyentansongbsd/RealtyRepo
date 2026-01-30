@@ -82,6 +82,8 @@ namespace Action_Units_CreateOE
 
             //Price
             newOE["bsd_detailamount"] = enUnit.Contains("bsd_price") ? enUnit["bsd_price"] : new Money(0);
+            newOE["bsd_totalamountlessfreight"] = enUnit.Contains("bsd_price") ? enUnit["bsd_price"] : new Money(0);
+            newOE["bsd_discount"] = new Money(0);
 
             newOE.Id = Guid.NewGuid();
             service.Create(newOE);

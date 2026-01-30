@@ -14,60 +14,54 @@ namespace Plugin_OptionEntry_CalculateMoney
 
         void IPlugin.Execute(IServiceProvider serviceProvider)
         {
-            IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+            context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
             factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             service = factory.CreateOrganizationService(context.UserId);
             trace = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
             trace.Trace($"{context.Depth}");
-            if (context.MessageName == "Create")
-            {
-                if (context.Depth > 2) return;
-            }
-            else
-            {
-                if (context.Depth > 1) return;
-            }
+            if (context.Depth > (context.MessageName == "Create" ? 2 : 1))
+                return;
 
             if (context.MessageName == "Create" || context.MessageName == "Update")
             {
                 Entity target = (Entity)context.InputParameters["Target"];
                 Entity enTarget = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[]
                 {
-                    "bsd_detailamount",
-                    "bsd_discountcheck",
-                    "bsd_quoteid", "bsd_reservationcontract", "bsd_unitnumber", "bsd_taxcode", "bsd_handovercondition",
-                    "bsd_pricelevel", "bsd_packagesellingamount", "bsd_freightamount"
+                    "bsd_detailamount", "bsd_discountcheck", "bsd_quoteid", "bsd_reservationcontract", "bsd_unitnumber", "bsd_taxcode", "bsd_handovercondition",
+                    "bsd_pricelevel", "bsd_packagesellingamount", "bsd_freightamount", "bsd_totalamountlessfreight"
                 }));
 
-                decimal unitprice = 0;
                 Entity enUp = new Entity(target.LogicalName, target.Id);
-                if (context.MessageName == "Update" && target.Contains("bsd_pricelevel") && !enTarget.Contains("bsd_quoteid") && !enTarget.Contains("bsd_reservationcontract"))
-                {
-                    unitprice = GetNewListedPrice(enTarget);
-                    enUp["bsd_detailamount"] = new Money(unitprice);
-                }
-                else
-                    unitprice = enTarget.Contains("bsd_detailamount") ? ((Money)enTarget["bsd_detailamount"]).Value : 0;
+                decimal unitPrice = GetUnitPrice(enTarget, target, ref enUp);
 
-                delete_DiscountTransaction(target.Id);
-                if (!enTarget.Contains("bsd_discountcheck"))
-                {
-                    enUp["bsd_discount"] = new Money(0);
-                    enUp["bsd_totalamountlessfreight"] = new Money(unitprice);
-                }
-                else
-                {
-                    string[] strArray = enTarget["bsd_discountcheck"].ToString().Split(';');
-                    calculate_Discount_createDiscountTransaction(strArray, unitprice, enTarget, out decimal sumAmountDiscount, out decimal netSellingPrice);
-                    enUp["bsd_discount"] = new Money(sumAmountDiscount);
-                    enUp["bsd_totalamountlessfreight"] = new Money(netSellingPrice);
-                }
+                if (context.MessageName == "Update")
+                    CalcDiscount(enTarget, ref enUp, unitPrice);
 
-                SetPrice(enTarget, ref enUp, unitprice);
+                SetPrice(enTarget, ref enUp, unitPrice);
 
                 service.Update(enUp);
             }
         }
+
+        private void CalcDiscount(Entity enTarget, ref Entity enUp, decimal unitprice)
+        {
+            trace.Trace("CalcDiscount");
+
+            delete_DiscountTransaction(enTarget.Id);
+            if (!enTarget.Contains("bsd_discountcheck"))
+            {
+                enUp["bsd_discount"] = new Money(0);
+                enUp["bsd_totalamountlessfreight"] = new Money(unitprice);
+            }
+            else
+            {
+                string[] strArray = enTarget["bsd_discountcheck"].ToString().Split(';');
+                calculate_Discount_createDiscountTransaction(strArray, unitprice, enTarget, out decimal sumAmountDiscount, out decimal netSellingPrice);
+                enUp["bsd_discount"] = new Money(sumAmountDiscount);
+                enUp["bsd_totalamountlessfreight"] = new Money(netSellingPrice);
+            }
+        }
+
         private void delete_DiscountTransaction(Guid idQuote)
         {
             QueryExpression queryExpression = new QueryExpression("bsd_discounttransaction");
@@ -171,7 +165,11 @@ namespace Plugin_OptionEntry_CalculateMoney
 
         private void SetPrice(Entity enOE, ref Entity enUp, decimal bsd_detailamount)
         {
-            decimal bsd_totalamountlessfreight = enUp.Contains("bsd_totalamountlessfreight") ? ((Money)enUp["bsd_totalamountlessfreight"]).Value : 0;
+            decimal bsd_totalamountlessfreight = 0;
+            if (context.MessageName == "Create")
+                bsd_totalamountlessfreight = GetMoney(enOE, "bsd_totalamountlessfreight");
+            else
+                bsd_totalamountlessfreight = GetMoney(enUp, "bsd_totalamountlessfreight");
             decimal bsd_packagesellingamount = 0;
             decimal bsd_freightamount = 0;
 
@@ -179,36 +177,65 @@ namespace Plugin_OptionEntry_CalculateMoney
             {
                 trace.Trace("từ sp");
 
-                if (enOE.Contains("bsd_handovercondition"))
-                {
-                    EntityReference refHandover = (EntityReference)enOE["bsd_handovercondition"];
-                    Entity enHandover = service.Retrieve(refHandover.LogicalName, refHandover.Id, new ColumnSet(new string[] { "bsd_method", "bsd_amount", "bsd_percent" }));
-                    int bsd_method = enHandover.Contains("bsd_method") ? ((OptionSetValue)enHandover["bsd_method"]).Value : -99;
-
-                    if (bsd_method == 100000001)    //Amount
-                    {
-                        bsd_packagesellingamount = enHandover.Contains("bsd_amount") ? ((Money)enHandover["bsd_amount"]).Value : 0;
-                    }
-                    else if (bsd_method == 100000002)   //Percent (%)
-                    {
-                        decimal bsd_percent = enHandover.Contains("bsd_percent") ? (decimal)enHandover["bsd_percent"] / 100 : 0;
-                        bsd_packagesellingamount = bsd_detailamount * bsd_percent;
-                    }
-                }
+                bsd_packagesellingamount = GetPackageSellingAmount(enOE, bsd_detailamount);
                 enUp["bsd_packagesellingamount"] = new Money(bsd_packagesellingamount);
 
-                EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
-                Entity enUnit = service.Retrieve(refUnit.LogicalName, refUnit.Id, new ColumnSet(new string[] { "bsd_maintenancefeespercent" }));
-                decimal bsd_maintenancefeespercent = enUnit.Contains("bsd_maintenancefeespercent") ? (decimal)enUnit["bsd_maintenancefeespercent"] / 100 : 0;
-                bsd_freightamount = bsd_maintenancefeespercent * bsd_detailamount;
+                bsd_freightamount = GetFreightAmount(enOE, bsd_detailamount);
                 enUp["bsd_freightamount"] = new Money(bsd_freightamount);
+
+                SetTotalTaxAndTotalAmount(enOE, bsd_totalamountlessfreight, bsd_freightamount, bsd_packagesellingamount, ref enUp);
             }
             else  // từ convert
             {
-                trace.Trace("từ convert");
-                bsd_packagesellingamount = enOE.Contains("bsd_packagesellingamount") ? ((Money)enOE["bsd_packagesellingamount"]).Value : 0;
-                bsd_freightamount = enOE.Contains("bsd_freightamount") ? ((Money)enOE["bsd_freightamount"]).Value : 0;
+                if (context.MessageName == "Update")
+                {
+                    trace.Trace("từ convert");
+                    bsd_packagesellingamount = GetMoney(enOE, "bsd_packagesellingamount");
+                    bsd_freightamount = GetMoney(enOE, "bsd_freightamount");
+
+                    SetTotalTaxAndTotalAmount(enOE, bsd_totalamountlessfreight, bsd_freightamount, bsd_packagesellingamount, ref enUp);
+                }
             }
+        }
+
+        private decimal GetPackageSellingAmount(Entity enOE, decimal bsd_detailamount)
+        {
+            trace.Trace("GetPackageSellingAmount");
+
+            decimal bsd_packagesellingamount = 0;
+            if (!enOE.Contains("bsd_handovercondition"))
+                return bsd_packagesellingamount;
+
+            EntityReference refHandover = (EntityReference)enOE["bsd_handovercondition"];
+            Entity enHandover = service.Retrieve(refHandover.LogicalName, refHandover.Id, new ColumnSet(new string[] { "bsd_method", "bsd_amount", "bsd_percent" }));
+            int bsd_method = enHandover.Contains("bsd_method") ? ((OptionSetValue)enHandover["bsd_method"]).Value : -99;
+
+            if (bsd_method == 100000001)    //Amount
+            {
+                bsd_packagesellingamount = GetMoney(enHandover, "bsd_amount");
+            }
+            else if (bsd_method == 100000002)   //Percent (%)
+            {
+                decimal bsd_percent = enHandover.Contains("bsd_percent") ? (decimal)enHandover["bsd_percent"] / 100 : 0;
+                bsd_packagesellingamount = bsd_detailamount * bsd_percent;
+            }
+
+            return bsd_packagesellingamount;
+        }
+
+        private decimal GetFreightAmount(Entity enOE, decimal bsd_detailamount)
+        {
+            trace.Trace("GetFreightAmount");
+
+            EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
+            Entity enUnit = service.Retrieve(refUnit.LogicalName, refUnit.Id, new ColumnSet(new string[] { "bsd_maintenancefeespercent" }));
+            decimal bsd_maintenancefeespercent = enUnit.Contains("bsd_maintenancefeespercent") ? (decimal)enUnit["bsd_maintenancefeespercent"] / 100 : 0;
+            return bsd_maintenancefeespercent * bsd_detailamount;
+        }
+
+        private void SetTotalTaxAndTotalAmount(Entity enOE, decimal bsd_totalamountlessfreight, decimal bsd_freightamount, decimal bsd_packagesellingamount, ref Entity enUp)
+        {
+            trace.Trace("SetTotalTaxAndTotalAmount");
 
             decimal percentTax = 0;
             if (enOE.Contains("bsd_taxcode"))
@@ -220,6 +247,22 @@ namespace Plugin_OptionEntry_CalculateMoney
             decimal bsd_totaltax = bsd_totalamountlessfreight * percentTax;
             enUp["bsd_totaltax"] = new Money(bsd_totaltax);
             enUp["bsd_totalamount"] = new Money(bsd_totalamountlessfreight + bsd_totaltax + bsd_freightamount + bsd_packagesellingamount);
+        }
+
+        private decimal GetUnitPrice(Entity enTarget, Entity target, ref Entity enUp)
+        {
+            trace.Trace("GetUnitPrice");
+            decimal unitPrice = 0;
+
+            if (context.MessageName == "Update" && target.Contains("bsd_pricelevel") && !enTarget.Contains("bsd_quoteid") && !enTarget.Contains("bsd_reservationcontract"))
+            {
+                unitPrice = GetNewListedPrice(enTarget);
+                enUp["bsd_detailamount"] = new Money(unitPrice);
+            }
+            else
+                unitPrice = GetMoney(enTarget, "bsd_detailamount");
+
+            return unitPrice;
         }
 
         private decimal GetNewListedPrice(Entity enOE)
@@ -242,10 +285,15 @@ namespace Plugin_OptionEntry_CalculateMoney
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count == 1)
             {
-                return rs.Entities[0].Contains("bsd_price") ? ((Money)rs.Entities[0]["bsd_price"]).Value : 0;
+                return GetMoney(rs.Entities[0], "bsd_price");
             }
 
             return 0;
+        }
+
+        private decimal GetMoney(Entity e, string field)
+        {
+            return e.Contains(field) ? ((Money)e[field]).Value : 0;
         }
     }
 }
