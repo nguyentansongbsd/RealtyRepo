@@ -27,7 +27,7 @@ namespace Plugin_OptionEntry_Approved
                 Entity target = (Entity)context.InputParameters["Target"];
                 Entity enOE = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_unitnumber" }));
                 int status = enOE.Contains("statuscode") ? ((OptionSetValue)enOE["statuscode"]).Value : -99;
-                if (status != 100000010)  //Director Approval
+                if (status != 100000008)  //Active
                     return;
 
                 EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
