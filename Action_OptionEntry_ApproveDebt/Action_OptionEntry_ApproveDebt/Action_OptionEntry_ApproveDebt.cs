@@ -22,7 +22,7 @@ namespace Action_OptionEntry_ApproveDebt
                 traceService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
                 traceService.Trace("start");
                 if (context.Depth > 1) return;
-                throw new InvalidPluginExecutionException("test");
+
                 EntityReference target = (EntityReference)context.InputParameters["Target"];
 
                 Entity upOE = new Entity(target.LogicalName, target.Id);
