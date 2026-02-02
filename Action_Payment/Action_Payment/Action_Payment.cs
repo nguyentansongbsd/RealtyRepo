@@ -282,7 +282,7 @@ namespace Action_Payment
                 }
                 if (interest.isLai)
                 {
-                    if (!entity.Contains("bsd_intereststartdate")) upIntallment["bsd_intereststartdate"] = enPayment["bsd_paymentactualtime"];
+                    upIntallment["bsd_intereststartdate"] = interest.dueDate;
                     upIntallment["bsd_interestchargeamount"] = new Money(bsd_interestchargeamount + interest.InterestChargeAmount);
                     upIntallment["bsd_interestchargeremaining"] = new Money(bsd_interestchargeamount + interest.InterestChargeAmount - bsd_interestwaspaid);
                     bsd_totalinterest += interest.InterestChargeAmount;
@@ -322,6 +322,7 @@ namespace Action_Payment
                     decimal bsd_interestpercent = enInstallment.Contains("bsd_interestpercent") ? (decimal)enInstallment["bsd_interestpercent"] : 0;
                     interest.InterestChargeAmount = Math.Round(bsd_balance * gracedays * bsd_interestpercent / 100, MidpointRounding.AwayFromZero);
                     interest.isLai = true;
+                    interest.dueDate = dueDate;
                 }
             }
             else interest.isLai = false;
@@ -331,6 +332,7 @@ namespace Action_Payment
             public bool isLai { get; set; }
             public int Gracedays { get; set; }
             public decimal InterestChargeAmount { get; set; }
+            public DateTime dueDate { get; set; }
         }
         // case thanh toán tiền cọc
         private void deposit(Entity enPayment, EntityReference enrDeposit, decimal amountPay)
