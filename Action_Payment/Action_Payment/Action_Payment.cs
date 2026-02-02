@@ -257,6 +257,10 @@ namespace Action_Payment
                 decimal bsd_depositamount = entity.Contains("bsd_depositamount") ? ((Money)entity["bsd_depositamount"]).Value : 0;
                 decimal bsd_amountwaspaid = entity.Contains("bsd_amountwaspaid") ? ((Money)entity["bsd_amountwaspaid"]).Value : 0;
                 decimal bsd_balance = bsd_amountofthisphase - bsd_depositamount - bsd_amountwaspaid;
+                _tracingService.Trace("bsd_amountofthisphase " + bsd_amountofthisphase);
+                _tracingService.Trace("bsd_depositamount " + bsd_depositamount);
+                _tracingService.Trace("bsd_amountwaspaid " + bsd_amountwaspaid);
+                _tracingService.Trace("bsd_balance " + bsd_balance);
                 InterestCharge interest = new InterestCharge();
                 caculateLai(entity, enPayment, bsd_balance, interest);
                 Entity upIntallment = new Entity(entity.LogicalName, entity.Id);
@@ -307,6 +311,7 @@ namespace Action_Payment
         // tính phát sinh lãi
         private void caculateLai(Entity enInstallment, Entity enPayment, decimal bsd_balance, InterestCharge interest)
         {
+            _tracingService.Trace("vào caculateLai");
             bool bsd_official = enInstallment.Contains("bsd_official") ? (bool)enInstallment["bsd_official"] : false;
             if (bsd_official && enInstallment.Contains("bsd_duedate") && enPayment.Contains("bsd_paymentactualtime"))
             {
@@ -316,11 +321,15 @@ namespace Action_Payment
                 DateTime receiptDate = RetrieveLocalTimeFromUTCTime((DateTime)enPayment["bsd_paymentactualtime"], _service);
                 receiptDate = new DateTime(receiptDate.Year, receiptDate.Month, receiptDate.Day);
                 int gracedays = (int)receiptDate.Date.Subtract(dueDate.Date).TotalDays;
+                _tracingService.Trace("bsd_balance " + bsd_balance);
                 if (gracedays > 0)
                 {
+                    _tracingService.Trace("gracedays " + gracedays);
                     interest.Gracedays = gracedays < 0 ? 0 : gracedays;
                     decimal bsd_interestpercent = enInstallment.Contains("bsd_interestpercent") ? (decimal)enInstallment["bsd_interestpercent"] : 0;
+                    _tracingService.Trace("bsd_interestpercent " + bsd_interestpercent);
                     interest.InterestChargeAmount = Math.Round(bsd_balance * gracedays * bsd_interestpercent / 100, MidpointRounding.AwayFromZero);
+                    _tracingService.Trace("InterestChargeAmount " + interest.InterestChargeAmount);
                     interest.isLai = true;
                     interest.dueDate = dueDate;
                 }
