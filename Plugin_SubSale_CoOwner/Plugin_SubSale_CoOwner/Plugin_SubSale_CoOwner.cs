@@ -32,7 +32,7 @@ namespace Plugin_SubSale_CoOwner
                 int bsd_type = ((OptionSetValue)enSubSale["bsd_type"]).Value;
 
                 string logicalName = null;
-                if (bsd_type == 100000000 && enSubSale.Contains("bsd_quote"))   //Deposit
+                if (bsd_type == 100000000 && enSubSale.Contains("bsd_reservation"))   //Deposit
                 {
                     logicalName = "bsd_reservation";
                 }
