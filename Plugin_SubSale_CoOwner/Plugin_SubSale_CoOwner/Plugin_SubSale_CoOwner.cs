@@ -25,18 +25,22 @@ namespace Plugin_SubSale_CoOwner
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation", "bsd_optionentry" }));
+                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_quote", "bsd_reservationcontract", "bsd_optionentry" }));
 
                 if (!enSubSale.Contains("bsd_type"))
                     return;
                 int bsd_type = ((OptionSetValue)enSubSale["bsd_type"]).Value;
 
                 string logicalName = null;
-                if (bsd_type == 100000000 && enSubSale.Contains("bsd_reservation"))   //Reservation
+                if (bsd_type == 100000000 && enSubSale.Contains("bsd_quote"))   //Deposit
                 {
                     logicalName = "bsd_reservation";
                 }
-                else if (bsd_type == 100000001 && enSubSale.Contains("bsd_optionentry"))   //Option Entry
+                else if (bsd_type == 100000001 && enSubSale.Contains("bsd_reservationcontract"))   //Reservation Contract
+                {
+                    logicalName = "bsd_reservationcontract";
+                }
+                else if (bsd_type == 100000002 && enSubSale.Contains("bsd_optionentry"))   //Option Entry
                 {
                     logicalName = "bsd_optionentry";
                 }
