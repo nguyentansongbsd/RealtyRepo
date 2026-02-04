@@ -27,7 +27,7 @@ namespace Action_QuotationReservation_ConvertToOE
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount", "bsd_discountcheck", "bsd_discountdraw", "bsd_maintenancefees",
                 "bsd_totalamountpaid"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
-                if (status != 667980002) //Director Approval
+                if (status != 667980008) //Deposited
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_quotationreservation"));
 
                 if (!enReservation.Contains("bsd_unitno"))
@@ -174,7 +174,8 @@ namespace Action_QuotationReservation_ConvertToOE
             traceService.Trace("UpdateReservation");
 
             Entity upReservation = new Entity(target.LogicalName, target.Id);
-            upReservation["statuscode"] = new OptionSetValue(100000012);    //Convert to Option Entry
+            upReservation["statecode"] = new OptionSetValue(1);    //inactive
+            upReservation["statuscode"] = new OptionSetValue(667980007);    //Convert to Option Entry
             service.Update(upReservation);
         }
 

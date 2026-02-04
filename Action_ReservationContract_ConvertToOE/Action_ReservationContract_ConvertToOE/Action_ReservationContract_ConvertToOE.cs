@@ -32,7 +32,7 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
                 "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
-                if (status != 100000002) //Director Approval
+                if (status != 100000000) //Active
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_reservationcontract"));
 
                 if (!enRC.Contains("bsd_unitno"))
@@ -182,7 +182,8 @@ namespace Action_ReservationContract_ConvertToOE
             traceService.Trace("UpdateReservationContract");
 
             Entity upReservationContract = new Entity(target.LogicalName, target.Id);
-            upReservationContract["statuscode"] = new OptionSetValue(100000005);    //Convert to SPA
+            upReservationContract["statecode"] = new OptionSetValue(1);    //inactive
+            upReservationContract["statuscode"] = new OptionSetValue(100000008);    //Convert to Option Entry
             service.Update(upReservationContract);
         }
 
