@@ -1,5 +1,6 @@
 ﻿using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Query;
 using System;
 using System.Text;
@@ -35,9 +36,10 @@ namespace Action_UpdateQuote
                 Entity quote = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(true));
                 tracingService.Trace("Quote retrieved successfully.");
 
-                Entity up_quote = new Entity(quote.LogicalName, quote.Id);
+                    Entity up_quote = new Entity(quote.LogicalName, quote.Id);
                     Entity entity_unit = service.Retrieve(((EntityReference)quote["bsd_unitno"]).LogicalName, ((EntityReference)quote["bsd_unitno"]).Id, new ColumnSet(true));
                     Entity up_unit = new Entity(entity_unit.LogicalName, entity_unit.Id);
+
                 if (str1 == "confirm")
                 {
                     // Fetch Tiến độ thanh toán
@@ -68,6 +70,37 @@ namespace Action_UpdateQuote
                     up_quote["bsd_confirmer"] = new EntityReference("systemuser", context.UserId);
                     up_quote["statuscode"] = new OptionSetValue(100000000);
                     service.Update(up_quote);
+                    up_unit["statuscode"] = new OptionSetValue(100000003);
+                    service.Update(up_unit);
+                    if (quote.Contains("bsd_opportunityid"))
+                    {
+                        Entity entity_booking = service.Retrieve(((EntityReference)quote["bsd_opportunityid"]).LogicalName, ((EntityReference)quote["bsd_opportunityid"]).Id, new ColumnSet(true));
+                        Entity up_booking = new Entity(entity_booking.LogicalName, entity_booking.Id);
+                    
+                        var fetchXml_updatebooking = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                        <fetch>
+                          <entity name=""bsd_opportunity"">
+                            <filter>
+                              <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{entity_booking.Id}"" />
+                              <condition attribute=""bsd_unit"" operator=""eq"" value=""{entity_unit.Id}"" />
+                            </filter>
+                          </entity>
+                        </fetch>";
+                        EntityCollection rs_booking = service.RetrieveMultiple(new FetchExpression(fetchXml_updatebooking));
+
+
+                        if (rs_booking.Entities.Count > 0)
+                        {
+                            foreach (var entity in rs_booking.Entities)
+                            {
+                                Entity updateTarget = new Entity("bsd_opportunity", entity.Id);
+                                updateTarget["statecode"] = new OptionSetValue(1);
+                                updateTarget["statuscode"] = new OptionSetValue(100000005);
+                                service.Update(updateTarget);
+                            }
+                        }
+                    }
+                    
                     tracingService.Trace("Quote updated successfully");
                 }
                 if (str1 == "cancel")
@@ -78,7 +111,8 @@ namespace Action_UpdateQuote
                         Entity up_queue = new Entity(queue.LogicalName, queue.Id);
                         
                         tracingService.Trace("vào if cancel");
-                        up_quote["statuscode"] = new OptionSetValue(100000002);
+                        up_quote["statecode"] = new OptionSetValue(1);
+                        up_quote["statuscode"] = new OptionSetValue(667980005);
                         up_quote["bsd_canceldate"] = DateTime.Today;
                         up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_quote);

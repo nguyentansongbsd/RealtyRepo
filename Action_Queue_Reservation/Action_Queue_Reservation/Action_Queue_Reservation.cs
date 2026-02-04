@@ -18,6 +18,7 @@ namespace Action_Queue_Reservation
         private StringBuilder strbuil = new StringBuilder();
         ITracingService tracingService = null;
         string unitName = "";
+        Entity unitInfo = null;
         public void Execute(IServiceProvider serviceProvider)
         {
             IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
@@ -34,36 +35,39 @@ namespace Action_Queue_Reservation
             service.Update(updateCurrentQueue);
 
             EntityReference unitRef = queue.GetAttributeValue<EntityReference>("bsd_unit");
-            Entity unitInfo = service.Retrieve(unitRef.LogicalName, unitRef.Id, new ColumnSet("bsd_name", "bsd_netsaleablearea", "bsd_taxcode", "bsd_maintenancefeespercent", "bsd_maintenancefees"));
-            unitName = unitInfo.GetAttributeValue<string>("bsd_name");
             if (unitRef != null)
             {
-                
-                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                <fetch>
-                  <entity name=""bsd_opportunity"">
-                    <attribute name=""statuscode"" />
-                    <filter>
-                      <condition attribute=""bsd_unit"" operator=""eq"" value=""{unitRef.Id}"" />
-                      <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{target.Id}"" />
-                      <condition attribute=""statuscode"" operator=""ne"" value=""{100000005}"" />
-                      <condition attribute=""statuscode"" operator=""ne"" value=""{100000001}"" />
-                    </filter>
-                  </entity>
-                </fetch>";
-                EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
-                foreach (var q in rs.Entities)
-                {
-                    Entity updateOther = new Entity(target.LogicalName, q.Id);
-                    updateOther["statuscode"] = new OptionSetValue(100000002);
-                    service.Update(updateOther);
-                }
-
-                Entity updateUnit = new Entity(unitRef.LogicalName, unitRef.Id);
-                updateUnit["statuscode"] = new OptionSetValue(100000003);
-                service.Update(updateUnit);
-                tracingService.Trace("1");
+                unitInfo = service.Retrieve(unitRef.LogicalName, unitRef.Id, new ColumnSet("bsd_name", "bsd_netsaleablearea", "bsd_taxcode", "bsd_maintenancefeespercent", "bsd_maintenancefees"));
+                unitName = unitInfo.GetAttributeValue<string>("bsd_name");
             }
+            
+            //if (unitRef != null)
+            //{
+                
+            //    var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            //    <fetch>
+            //      <entity name=""bsd_opportunity"">
+            //        <attribute name=""statuscode"" />
+            //        <filter>
+            //          <condition attribute=""bsd_unit"" operator=""eq"" value=""{unitRef.Id}"" />
+            //          <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{target.Id}"" />
+            //          <condition attribute=""statuscode"" operator=""ne"" value=""{100000005}"" />
+            //          <condition attribute=""statuscode"" operator=""ne"" value=""{100000001}"" />
+            //        </filter>
+            //      </entity>
+            //    </fetch>";
+            //    EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            //    foreach (var q in rs.Entities)
+            //    {
+            //        Entity updateOther = new Entity(target.LogicalName, q.Id);
+            //        updateOther["statuscode"] = new OptionSetValue(100000002);
+            //        service.Update(updateOther);
+            //    }  
+            //}
+            Entity updateUnit = new Entity(unitRef.LogicalName, unitRef.Id);
+            updateUnit["statuscode"] = new OptionSetValue(100000003);
+            service.Update(updateUnit);
+            tracingService.Trace("1");
             Entity en_quote = new Entity("bsd_quote");
             en_quote["bsd_opportunityid"] = target; 
             en_quote["bsd_name"] = unitName;
