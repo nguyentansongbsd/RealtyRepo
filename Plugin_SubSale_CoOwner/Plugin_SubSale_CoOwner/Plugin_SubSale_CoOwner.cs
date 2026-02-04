@@ -25,7 +25,7 @@ namespace Plugin_SubSale_CoOwner
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_quote", "bsd_reservationcontract", "bsd_optionentry" }));
+                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation", "bsd_reservationcontract", "bsd_optionentry" }));
 
                 if (!enSubSale.Contains("bsd_type"))
                     return;
@@ -64,14 +64,14 @@ namespace Plugin_SubSale_CoOwner
                 {
                     foreach (var item in rs.Entities)
                     {
-                        Entity newSubSale = new Entity("bsd_assign");
-                        newSubSale = item;
-                        newSubSale.Attributes.Remove("bsd_coownerid");
-                        newSubSale.Attributes.Remove("ownerid");
-                        newSubSale.Attributes.Remove(logicalName);
-                        newSubSale["bsd_subsale"] = enSubSale.ToEntityReference();
-                        newSubSale.Id = Guid.NewGuid();
-                        service.Create(newSubSale);
+                        Entity newCoOwner = new Entity("bsd_coowner");
+                        newCoOwner = item;
+                        newCoOwner.Attributes.Remove("bsd_coownerid");
+                        newCoOwner.Attributes.Remove("ownerid");
+                        newCoOwner.Attributes.Remove(logicalName);
+                        newCoOwner["bsd_subsale"] = enSubSale.ToEntityReference();
+                        newCoOwner.Id = Guid.NewGuid();
+                        service.Create(newCoOwner);
                     }
                 }
 
