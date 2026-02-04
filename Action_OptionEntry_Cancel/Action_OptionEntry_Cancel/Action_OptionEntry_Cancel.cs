@@ -52,9 +52,9 @@ namespace Action_OptionEntry_Cancel
 
                 EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
                 if (enOE.Contains("bsd_reservationcontract"))   //hđcs
-                    UpStatus(enOE, refUnit, "bsd_reservationcontract", 100000002, 100000006);
+                    UpStatus(enOE, refUnit, "bsd_reservationcontract", 100000000, 100000006);
                 else if (enOE.Contains("bsd_quoteid"))  //đặt cọc
-                    UpStatus(enOE, refUnit, "bsd_quoteid", 667980002, 100000003);
+                    UpStatus(enOE, refUnit, "bsd_quoteid", 667980008, 100000003);
                 else  //sản phẩm
                     UpStatus(enOE, refUnit, null, 0, 100000000);
 
@@ -75,6 +75,7 @@ namespace Action_OptionEntry_Cancel
             {
                 EntityReference refContract = (EntityReference)enOE[fieldContract];
                 Entity upContract = new Entity(refContract.LogicalName, refContract.Id);
+                upContract["statecode"] = new OptionSetValue(0);    //active
                 upContract["statuscode"] = new OptionSetValue(statusContract);  //Director Approval
                 service.Update(upContract);
             }
@@ -83,7 +84,8 @@ namespace Action_OptionEntry_Cancel
 
             // up oe
             Entity upOE = new Entity(enOE.LogicalName, enOE.Id);
-            upOE["statuscode"] = new OptionSetValue(100000011);  //Cancel
+            upOE["statecode"] = new OptionSetValue(1);    //inactive
+            upOE["statuscode"] = new OptionSetValue(100000012);  //Cancel
             upOE["bsd_canceldate"] = DateTime.UtcNow;
             upOE["bsd_canceler"] = new EntityReference("systemuser", context.UserId);
             upOE["bsd_cancelreason"] = reason;
