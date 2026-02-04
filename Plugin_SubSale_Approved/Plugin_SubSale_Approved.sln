@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_SubSale_Approved", "Plugin_SubSale_Approved\Plugin_SubSale_Approved.csproj", "{74416D2B-EA8D-4626-AAB6-E6F34B65A51E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74416D2B-EA8D-4626-AAB6-E6F34B65A51E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74416D2B-EA8D-4626-AAB6-E6F34B65A51E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74416D2B-EA8D-4626-AAB6-E6F34B65A51E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74416D2B-EA8D-4626-AAB6-E6F34B65A51E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2E2E61A3-C01E-4F0C-BB0F-16D5C7975FB3}
+	EndGlobalSection
+EndGlobal
