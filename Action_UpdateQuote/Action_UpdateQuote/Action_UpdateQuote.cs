@@ -95,7 +95,7 @@ namespace Action_UpdateQuote
                             {
                                 Entity updateTarget = new Entity("bsd_opportunity", entity.Id);
                                 updateTarget["statecode"] = new OptionSetValue(1);
-                                updateTarget["statuscode"] = new OptionSetValue(100000005);
+                                updateTarget["statuscode"] = new OptionSetValue(100000005);//canceled
                                 service.Update(updateTarget);
                             }
                         }

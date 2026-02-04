@@ -33,7 +33,6 @@ namespace Action_Queue_Reservation
             Entity updateCurrentQueue = new Entity(target.LogicalName, target.Id);
             updateCurrentQueue["statuscode"] = new OptionSetValue(100000000);
             service.Update(updateCurrentQueue);
-
             EntityReference unitRef = queue.GetAttributeValue<EntityReference>("bsd_unit");
             if (unitRef != null)
             {
