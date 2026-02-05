@@ -779,7 +779,7 @@ namespace SaleDirectAction
                         enReContract["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
                         var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
                         Money moneyValue = (Money)aliased_money.Value;
-                        enReContract["bsd_depositfee"] = moneyValue;
+                        //enReContract["bsd_depositfee"] = moneyValue;
                     }
                     var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">
@@ -849,11 +849,11 @@ namespace SaleDirectAction
                         enReContract["bsd_managementfee"] = enUnit["bsd_maintenancefeespercent"];
 
                     }
-                    //if (enUnit.Contains("bsd_maintenancefees"))
-                    //{
-                    //    entity2["bsd_maintenancefees"] = enUnit["bsd_maintenancefees"];
+                    if (enUnit.Contains("bsd_unittype"))
+                    {
+                        enReContract["bsd_unittype"] = enUnit["bsd_unittype"];
 
-                    //}
+                    }
                     //entity2["bsd_reservationtime"] = DateTime.Today;
                     enReContract["bsd_netusablearea"] = enUnit.Contains("bsd_netsaleablearea") ? enUnit["bsd_netsaleablearea"] : Decimal.Zero;
                     enReContract["bsd_constructionarea"] = enUnit.Contains("bsd_constructionarea") ? enUnit["bsd_constructionarea"] : Decimal.Zero;

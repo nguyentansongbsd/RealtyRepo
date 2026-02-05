@@ -122,6 +122,7 @@ namespace Action_ReservationContract_Update
                 {
                     up_RA_Contract["bsd_signedcontractdate"] = DateTime.Today;
                     //up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
+                    up_RA_Contract["statuscode"] = new OptionSetValue(100000010);//Signed
                     service.Update(up_RA_Contract);
                     
                 }
@@ -132,7 +133,13 @@ namespace Action_ReservationContract_Update
                     service.Update(up_RA_Contract);
 
                 }
+                else if (str1 == "Debt_approve")
+                {
+                    up_RA_Contract["bsd_debtapprovaldate"] = DateTime.Today;
+                    up_RA_Contract["bsd_debtapprover"] = new EntityReference("systemuser", context.UserId);
+                    service.Update(up_RA_Contract);
 
+                }
             }
             catch (Exception ex)
             {

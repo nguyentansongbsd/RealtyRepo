@@ -35,7 +35,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
                 EntityReference refOE = new EntityReference("bsd_reservationcontract", idOE);
 
                 //MapCoowner(target, refOE);
-                //MapPaymentSchemeDetail(target, refOE);
+                MapPaymentSchemeDetail(target, refOE);
                 //MapPromotion(target, refOE);
                 //MapDiscountTransaction(target, refOE);
                 UpdateReservation(target);
@@ -176,7 +176,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             it.Attributes.Remove(item.LogicalName + "id");
             it.Attributes.Remove("ownerid");
             it.Attributes.Remove(logicalField);
-            it["bsd_optionentry"] = refOE;
+            it["bsd_reservationcontract"] = refOE;
             it.Id = Guid.NewGuid();
             service.Create(it);
         }
