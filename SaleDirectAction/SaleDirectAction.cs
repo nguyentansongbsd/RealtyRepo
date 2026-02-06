@@ -404,7 +404,6 @@ namespace SaleDirectAction
                         var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
-                        entity2["bsd_depositfee"] = moneyValue;
                         var minimum = (AliasedValue)rs.Entities[0]["minimumdeposit"];
                         Money moneyminimum = (Money)aliased_money.Value;
                         entity2["bsd_minimumdeposit"] = moneyminimum;
