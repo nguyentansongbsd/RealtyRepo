@@ -102,6 +102,36 @@ namespace Action_UpdateQuote
                     }
                     
                     tracingService.Trace("Quote updated successfully");
+                    tracingService.Trace("Updating BPF Stage using Late-bound...");
+                    tracingService.Trace("Updating BPF Stage via Process Instance...");
+
+                    // 1. Tìm bản ghi Instance của quy trình đang chạy trên Quote này
+                    // Tên thực thể BPF thường là tên Quy trình viết liền (ví dụ: bsd_bpf_deposit_process)
+                    QueryExpression bpfQuery = new QueryExpression("new_reservationprocess") // Thay bằng Schema Name của BPF
+                    {
+                        ColumnSet = new ColumnSet("businessprocessflowinstanceid"),
+                        Criteria = new FilterExpression()
+                    };
+                    bpfQuery.Criteria.AddCondition("bpf_bsd_quoteid", ConditionOperator.Equal, quote.Id);
+
+                    EntityCollection bpfInstances = service.RetrieveMultiple(bpfQuery);
+
+                    if (bpfInstances.Entities.Count > 0)
+                    {
+                        Entity bpfInstance = bpfInstances.Entities[0];
+
+                        // 2. Cập nhật Stage hiện tại cho Instance này
+                        bpfInstance["activestageid"] = new EntityReference("processstage", new Guid("8afac8a7-4a01-4e87-9d5a-700fc50b26f7"));
+
+                        service.Update(bpfInstance);
+                        tracingService.Trace("BPF Instance updated successfully.");
+                    }
+                    else
+                    {
+                        tracingService.Trace("No BPF Instance found for this Quote.");
+                        // Nếu không tìm thấy, có nghĩa là bản ghi này chưa bao giờ được gán quy trình này
+                    }
+                    tracingService.Trace("BPF Stage updated successfully.");
                 }
                 if (str1 == "cancel")
                 {
