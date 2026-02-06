@@ -87,6 +87,8 @@ namespace Action_Queue_Reservation
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
+                              <attribute name=""bsd_depositamount"" alias=""depositamount"" />
+                              <attribute name=""bsd_minimumdeposit"" alias=""minimumdeposit"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
                                 <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
@@ -105,6 +107,12 @@ namespace Action_Queue_Reservation
                 Guid phaseId = (Guid)aliased.Value;
 
                 en_quote["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
+                var aliased_money = (AliasedValue)rs1.Entities[0]["depositamount"];
+                Money moneyValue = (Money)aliased_money.Value;
+                en_quote["bsd_depositfee"] = moneyValue;
+                var minimum = (AliasedValue)rs1.Entities[0]["minimumdeposit"];
+                Money moneyminimum = (Money)minimum.Value;
+                en_quote["bsd_minimumdeposit"] = moneyminimum;
             }
             var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">

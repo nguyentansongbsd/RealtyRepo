@@ -17,6 +17,7 @@ using System.Runtime.ConstrainedExecution;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Web.UI.WebControls;
 
 namespace SaleDirectAction
 {
@@ -131,6 +132,44 @@ namespace SaleDirectAction
                     //    }
                     //    //  entity2["bsd_pricelistapply"] = pricelist_ref;
                     //}
+                    var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                    <fetch distinct=""true"">
+                      <entity name=""bsd_productpricelevel"">
+                        <filter>
+                          <condition attribute=""bsd_product"" operator=""eq"" value=""{entity1.Id}"" />
+                        </filter>
+                        <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"">
+                          <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
+                            <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
+                              <attribute name=""bsd_name"" alias=""name"" />
+                              <attribute name=""bsd_depositamount"" alias=""depositamount"" />
+                              <attribute name=""bsd_minimumdeposit"" alias=""minimumdeposit"" />
+                              <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
+                              <filter>
+                                <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
+                                <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
+                              </filter>
+                            </link-entity>
+                          </link-entity>
+                        </link-entity>
+                      </entity>
+                    </fetch>";
+                    EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+                    if (rs.Entities.Count == 1)
+                    {
+                        tracingService.Trace("vào if phase_" + rs.Entities.Count);
+
+                        var aliased = (AliasedValue)rs.Entities[0]["phaseid"];
+                        Guid phaseId = (Guid)aliased.Value;
+
+                        entity2["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
+                        var aliased_money = (AliasedValue)rs.Entities[0]["depositamount"];
+                        Money moneyValue = (Money)aliased_money.Value;
+                        entity2["bsd_depositfee"] = moneyValue;
+                        var minimum = (AliasedValue)rs.Entities[0]["minimumdeposit"];
+                        Money moneyminimum = (Money)minimum.Value;
+                        entity2["bsd_minimumdeposit"] = moneyminimum;
+                    }
                     Guid guid = service.Create(entity2);
                     if (((OptionSetValue)entity1["statuscode"]).Value == 100000000 && enfPhasesLaunch != null)
                         updateUnitStatus(entityReference1, 100000004);
@@ -405,7 +444,7 @@ namespace SaleDirectAction
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
                         var minimum = (AliasedValue)rs.Entities[0]["minimumdeposit"];
-                        Money moneyminimum = (Money)aliased_money.Value;
+                        Money moneyminimum = (Money)minimum.Value;
                         entity2["bsd_minimumdeposit"] = moneyminimum;
                     }
                     //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
@@ -584,7 +623,7 @@ namespace SaleDirectAction
                         Money moneyValue = (Money)aliased_money.Value;
                         entity2["bsd_depositfee"] = moneyValue;
                         var minimum = (AliasedValue)rs.Entities[0]["minimumdeposit"];
-                        Money moneyminimum = (Money)aliased_money.Value;
+                        Money moneyminimum = (Money)minimum.Value;
                         entity2["bsd_minimumdeposit"] = moneyminimum;
                     }
                     //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
