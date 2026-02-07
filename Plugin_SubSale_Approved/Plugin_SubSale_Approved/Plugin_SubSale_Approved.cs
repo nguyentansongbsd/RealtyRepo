@@ -28,7 +28,7 @@ namespace Plugin_SubSale_Approved
                 Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_type", "bsd_reservation",
                     "bsd_reservationcontract", "bsd_optionentry", "bsd_newcustomer" }));
                 int status = enSubSale.Contains("statuscode") ? ((OptionSetValue)enSubSale["statuscode"]).Value : -99;
-                if (status != 100000002 || !enSubSale.Contains("bsd_type"))  //Complete
+                if (status != 100000004 || !enSubSale.Contains("bsd_type"))  //Complete
                     return;
 
                 int bsd_type = ((OptionSetValue)enSubSale["bsd_type"]).Value;
