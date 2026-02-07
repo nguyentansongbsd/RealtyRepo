@@ -32,7 +32,7 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
                 "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
-                if (status != 100000000) //Active
+                if (status != 100000010) //Signed
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_reservationcontract"));
 
                 if (!enRC.Contains("bsd_unitno"))

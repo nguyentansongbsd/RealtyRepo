@@ -52,7 +52,7 @@ namespace Action_OptionEntry_Cancel
 
                 EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
                 if (enOE.Contains("bsd_reservationcontract"))   //hđcs
-                    UpStatus(enOE, refUnit, "bsd_reservationcontract", 100000000, 100000006);
+                    UpStatus(enOE, refUnit, "bsd_reservationcontract", 100000010, 100000006);
                 else if (enOE.Contains("bsd_quoteid"))  //đặt cọc
                     UpStatus(enOE, refUnit, "bsd_quoteid", 667980008, 100000003);
                 else  //sản phẩm
