@@ -100,7 +100,31 @@ namespace Action_UpdateQuote
                             }
                         }
                     }
-                    
+                    // 1. Định nghĩa FetchXML để tìm các Quote liên quan (trừ Quote hiện tại)
+                    var fetchXml_quote = $@"
+                        <fetch>
+                          <entity name=""bsd_quote"">
+                            <attribute name=""bsd_quoteid"" />
+                            <filter type=""and"">
+                              <condition attribute=""bsd_quoteid"" operator=""ne"" value=""{quote.Id}"" />
+                              <condition attribute=""bsd_unitno"" operator=""eq"" value=""{entity_unit.Id}"" />
+                              <condition attribute=""statuscode"" operator=""eq"" value=""{100000007}"" />
+                            </filter>
+                          </entity>
+                        </fetch>";
+
+                    // 2. Thực thi truy vấn
+                    EntityCollection otherQuotes = service.RetrieveMultiple(new FetchExpression(fetchXml_quote));
+
+                    // 3. Duyệt qua danh sách và cập nhật statuscode
+                    foreach (var quotests in otherQuotes.Entities)
+                    {
+                        Entity updateQuote = new Entity("bsd_quote");
+                        updateQuote.Id = quotests.Id;
+                        updateQuote["statecode"] = new OptionSetValue(1);//Canceled
+                        updateQuote["statuscode"] = new OptionSetValue(667980005);//Canceled
+                        service.Update(updateQuote);
+                    }
                     tracingService.Trace("Quote updated successfully");
                     tracingService.Trace("Updating BPF Stage using Late-bound...");
                     tracingService.Trace("Updating BPF Stage via Process Instance...");
