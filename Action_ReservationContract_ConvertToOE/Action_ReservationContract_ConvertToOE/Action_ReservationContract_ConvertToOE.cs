@@ -50,7 +50,7 @@ namespace Action_ReservationContract_ConvertToOE
                 MapPaymentSchemeDetail(target, refOE);
                 MapPromotion(target, refOE);
                 MapDiscountTransaction(target, refOE);
-                MapPayment(target, refOE);
+                //MapPayment(target, refOE);
                 UpdateReservationContract(target);
                 UpdateUnit(refProduct);
 

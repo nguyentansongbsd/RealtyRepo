@@ -45,7 +45,7 @@ namespace Action_QuotationReservation_ConvertToOE
                 MapPaymentSchemeDetail(target, refOE);
                 MapPromotion(target, refOE);
                 MapDiscountTransaction(target, refOE);
-                MapPayment(target, refOE);
+                //MapPayment(target, refOE);
                 UpdateReservation(target);
                 UpdateUnit(refProduct);
 
