@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AE02620E-81D5-4B48-A900-42368942AE8B}</ProjectGuid>
+    <ProjectGuid>{66E36355-11DC-4A4D-8E70-87E60A3658AB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Plugin_Termination_Approved</RootNamespace>
-    <AssemblyName>Plugin_Termination_Approved</AssemblyName>
+    <RootNamespace>Action_SubSale_Complete</RootNamespace>
+    <AssemblyName>Action_SubSale_Complete</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -61,7 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Plugin_Termination_Approved.cs" />
+    <Compile Include="Action_SubSale_Complete.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

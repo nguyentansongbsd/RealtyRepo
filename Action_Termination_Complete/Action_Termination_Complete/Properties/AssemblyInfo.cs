@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Plugin_Termination_Approved")]
+[assembly: AssemblyTitle("Action_Termination_Complete")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Plugin_Termination_Approved")]
+[assembly: AssemblyProduct("Action_Termination_Complete")]
 [assembly: AssemblyCopyright("Copyright ©  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("ae02620e-81d5-4b48-a900-42368942ae8b")]
+[assembly: Guid("5ae15d52-8bea-4dd6-9d82-14e75ed53804")]
 
 // Version information for an assembly consists of the following four values:
 //

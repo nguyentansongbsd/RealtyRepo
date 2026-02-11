@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Plugin_Termination_Approved
+namespace Action_Termination_Complete
 {
-    public class Plugin_Termination_Approved : IPlugin
+    public class Action_Termination_Complete : IPlugin
     {
         IOrganizationService service = null;
         ITracingService traceService = null;
@@ -24,25 +24,22 @@ namespace Plugin_Termination_Approved
                 traceService.Trace("start");
                 if (context.Depth > 2) return;
 
-                Entity target = (Entity)context.InputParameters["Target"];
-                Entity enTermination = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_source", "bsd_reservation",
+                EntityReference target = (EntityReference)context.InputParameters["Target"];
+                Entity enTermination = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_source", "bsd_reservation",
                     "bsd_reservationcontract", "bsd_optionentry", "bsd_units", "bsd_source", "bsd_resell", "bsd_customer", "bsd_project", "bsd_totalamountpaid", "bsd_forfeitureamount"}));
-                int status = enTermination.Contains("statuscode") ? ((OptionSetValue)enTermination["statuscode"]).Value : -99;
-                if (status != 100000004)  //Complete
-                    return;
 
                 int bsd_source = ((OptionSetValue)enTermination["bsd_source"]).Value;
                 if (bsd_source == 100000000 && enTermination.Contains("bsd_reservation"))   //Deposit
                 {
-                    UpdateStatus("bsd_reservation", enTermination, 667980004);
+                    RunUpdate("bsd_reservation", enTermination, 667980004);
                 }
                 else if (bsd_source == 100000001 && enTermination.Contains("bsd_reservationcontract"))   //Reservation Contract
                 {
-                    UpdateStatus("bsd_reservationcontract", enTermination, 100000004);
+                    RunUpdate("bsd_reservationcontract", enTermination, 100000004);
                 }
                 else if (bsd_source == 100000002 && enTermination.Contains("bsd_optionentry"))   //Option Entry
                 {
-                    UpdateStatus("bsd_optionentry", enTermination, 100000014);
+                    RunUpdate("bsd_optionentry", enTermination, 100000014);
                 }
 
                 traceService.Trace("done");
@@ -53,30 +50,51 @@ namespace Plugin_Termination_Approved
             }
         }
 
-        private void UpdateStatus(string logicalName, Entity enTermination, int statusContract)
+        private void RunUpdate(string logicalName, Entity enTermination, int statusContract)
         {
-            traceService.Trace("UpdateStatus");
+            traceService.Trace("RunUpdate");
 
-            #region up reservation, reservation contract, oe
             EntityReference refContract = (EntityReference)enTermination[logicalName];
-            Entity upContract = new Entity(refContract.LogicalName, refContract.Id);
-            upContract["statecode"] = new OptionSetValue(1);    //active
-            upContract["statuscode"] = new OptionSetValue(statusContract);  //Terminated
-            service.Update(upContract);
-            #endregion
+            UpdateTermination(enTermination);
+            UpdateContract(refContract, statusContract);
 
-            bool bsd_resell = enTermination.Contains("bsd_resell") ? (bool)enTermination["bsd_resell"] : false;
-
-            #region up unit
             EntityReference refUnit = (EntityReference)enTermination["bsd_units"];
-            Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
-            upUnit["statuscode"] = new OptionSetValue(bsd_resell ? 100000000 : 1);  //Available, Preparing
-            service.Update(upUnit);
-            #endregion
+            UpdateUnit(enTermination, refUnit);
 
             decimal bsd_forfeitureamount = enTermination.Contains("bsd_forfeitureamount") ? ((Money)enTermination["bsd_forfeitureamount"]).Value : 0;
             if (bsd_forfeitureamount > 0)
                 CreateRefund(enTermination, refUnit, refContract, logicalName);
+        }
+
+        private void UpdateTermination(Entity enTermination)
+        {
+            traceService.Trace("UpdateTermination");
+
+            Entity upTermination = new Entity(enTermination.LogicalName, enTermination.Id);
+            upTermination["statecode"] = new OptionSetValue(1);    //inactive
+            upTermination["statuscode"] = new OptionSetValue(100000005);    //Complete
+            service.Update(upTermination);
+        }
+
+        private void UpdateContract(EntityReference refContract, int statusContract)
+        {
+            traceService.Trace("UpdateContract");
+
+            Entity upContract = new Entity(refContract.LogicalName, refContract.Id);
+            upContract["statecode"] = new OptionSetValue(1);    //active
+            upContract["statuscode"] = new OptionSetValue(statusContract);  //Terminated
+            service.Update(upContract);
+        }
+
+        private void UpdateUnit(Entity enTermination, EntityReference refUnit)
+        {
+            traceService.Trace("UpdateUnit");
+
+            bool bsd_resell = enTermination.Contains("bsd_resell") ? (bool)enTermination["bsd_resell"] : false;
+
+            Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
+            upUnit["statuscode"] = new OptionSetValue(bsd_resell ? 100000000 : 1);  //Available, Preparing
+            service.Update(upUnit);
         }
 
         private void CreateRefund(Entity enTermination, EntityReference refUnit, EntityReference refContract, string logicalName)

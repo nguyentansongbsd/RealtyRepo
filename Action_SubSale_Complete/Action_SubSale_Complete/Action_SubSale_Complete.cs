@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Plugin_SubSale_Approved
+namespace Action_SubSale_Complete
 {
-    public class Plugin_SubSale_Approved : IPlugin
+    public class Action_SubSale_Complete : IPlugin
     {
         IOrganizationService service = null;
         ITracingService traceService = null;
@@ -24,12 +24,9 @@ namespace Plugin_SubSale_Approved
                 traceService.Trace("start");
                 if (context.Depth > 2) return;
 
-                Entity target = (Entity)context.InputParameters["Target"];
-                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_type", "bsd_reservation",
+                EntityReference target = (EntityReference)context.InputParameters["Target"];
+                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation",
                     "bsd_reservationcontract", "bsd_optionentry", "bsd_newcustomer" }));
-                int status = enSubSale.Contains("statuscode") ? ((OptionSetValue)enSubSale["statuscode"]).Value : -99;
-                if (status != 100000004)  //Complete
-                    return;
 
                 int bsd_type = ((OptionSetValue)enSubSale["bsd_type"]).Value;
                 string logicalName = null;
@@ -50,6 +47,7 @@ namespace Plugin_SubSale_Approved
                     return;
                 EntityReference refContract = (EntityReference)enSubSale[logicalName];
 
+                UpdateSubSale(enSubSale);
                 UpdateContract(refContract, logicalName, enSubSale);
 
                 traceService.Trace("done");
@@ -58,6 +56,16 @@ namespace Plugin_SubSale_Approved
             {
                 throw new InvalidPluginExecutionException(ex.Message);
             }
+        }
+
+        private void UpdateSubSale(Entity enSubSale)
+        {
+            traceService.Trace("UpdateSubSale");
+
+            Entity upSubSale = new Entity(enSubSale.LogicalName, enSubSale.Id);
+            upSubSale["statecode"] = new OptionSetValue(1);    //inactive
+            upSubSale["statuscode"] = new OptionSetValue(100000005);    //Complete
+            service.Update(upSubSale);
         }
 
         private void UpdateContract(EntityReference refContract, string logicalName, Entity enSubSale)
