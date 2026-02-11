@@ -58,6 +58,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             Entity newOE = new Entity("bsd_reservationcontract");
             newOE["bsd_name"] = refProduct.Name;
             newOE["statuscode"] = new OptionSetValue(1);
+            newOE["bsd_racontractsigndate"] = GetValidFieldValue(enReservation, "bsd_ngaydatcoc");
             newOE["bsd_projectid"] = GetValidFieldValue(enReservation, "bsd_projectid");
             newOE["bsd_totalamountpaid"] = GetValidFieldValue(enReservation, "bsd_totalamountpaid");
             newOE["bsd_phaseslaunchid"] = GetValidFieldValue(enReservation, "bsd_phaseslaunchid");
