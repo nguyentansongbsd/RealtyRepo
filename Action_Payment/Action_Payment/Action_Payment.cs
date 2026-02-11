@@ -360,7 +360,11 @@ namespace Action_Payment
             Entity upDeposit = new Entity(enrDeposit.LogicalName, enrDeposit.Id);
             totalamountpaid += amountPay;
             upDeposit["bsd_totalamountpaid"] = new Money(totalamountpaid);
-            if (totalamountpaid == depositfee) upDeposit["bsd_deposittime"] = enPayment["bsd_paymentactualtime"];
+            if (totalamountpaid == depositfee)
+            {
+                upDeposit["bsd_deposittime"] = enPayment["bsd_paymentactualtime"];
+                upDeposit["statuscode"] = new OptionSetValue(667980008);
+            }
             _service.Update(upDeposit);
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
