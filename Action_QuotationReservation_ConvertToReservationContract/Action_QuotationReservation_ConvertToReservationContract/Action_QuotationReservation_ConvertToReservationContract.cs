@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
+using System.IdentityModel.Metadata;
 using System.Security.Principal;
+using System.Web.UI.WebControls;
 
 namespace Action_QuotationReservation_ConvertToReservationContract
 {
@@ -26,7 +28,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_opportunityid", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount","bsd_totalamountpaid", "bsd_discountcheck", "bsd_discountdraw"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
-                
+
                 EntityReference refProduct = (EntityReference)enReservation["bsd_unitno"];
                 Entity enProduct = service.Retrieve(refProduct.LogicalName, refProduct.Id, new ColumnSet(new string[] { "statuscode", "bsd_unittype" }));
                 int statusProduct = enProduct.Contains("statuscode") ? ((OptionSetValue)enProduct["statuscode"]).Value : -99;
@@ -111,11 +113,49 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             newOE["bsd_racontractsigndate"] = DateTime.Today;
             newOE["bsd_reservationnumber"] = "RSC-" + nextNumber.ToString("D8");
             newOE.Id = Guid.NewGuid();
-            service.Create(newOE);
-
+            Guid id = service.Create(newOE);
+            create_update_DataProjection(((EntityReference)newOE["bsd_unitno"]).Id, newOE, id);
             return newOE.Id;
         }
-
+        private void create_update_DataProjection(Guid idUnit, Entity enEntity, Guid id)
+        {
+            // get DataProjection theo unit
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_dataprojection"">
+                <filter>
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{idUnit}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection en = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (en.Entities.Count > 0)
+            {
+                Entity enDataprojection = en.Entities[0];
+                Entity enUp = new Entity(enDataprojection.LogicalName, enDataprojection.Id);
+                enUp["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enUp["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enUp["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enUp["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enUp["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enUp["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_quoteid")) enUp["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Update(enUp);
+            }
+            else
+            {
+                Entity enCre = new Entity("bsd_dataprojection");
+                enCre["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enCre["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enCre["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enCre["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enCre["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enCre["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_unitno")) enCre["bsd_productid"] = enEntity["bsd_unitno"];
+                if (enEntity.Contains("bsd_quoteid")) enCre["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Create(enCre);
+            }
+        }
         private object GetValidFieldValue(Entity enReservation, string field)
         {
             return enReservation.Contains(field) ? enReservation[field] : null; ;

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 
 namespace Action_ReservationContract_ConvertToOE
 {
@@ -108,11 +109,49 @@ namespace Action_ReservationContract_ConvertToOE
             newOE["bsd_totalinterestremaining"] = GetValidFieldValue(enRC, "bsd_totalinterestremaining");
 
             newOE.Id = Guid.NewGuid();
-            service.Create(newOE);
-
+            Guid id = service.Create(newOE);
+            create_update_DataProjection(((EntityReference)newOE["bsd_unitnumber"]).Id, newOE, id);
             return newOE.Id;
         }
-
+        private void create_update_DataProjection(Guid idUnit, Entity enEntity, Guid id)
+        {
+            // get DataProjection theo unit
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_dataprojection"">
+                <filter>
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{idUnit}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection en = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (en.Entities.Count > 0)
+            {
+                Entity enDataprojection = en.Entities[0];
+                Entity enUp = new Entity(enDataprojection.LogicalName, enDataprojection.Id);
+                enUp["bsd_spaid"] = new EntityReference("bsd_salesorder", id);
+                if (enEntity.Contains("bsd_customerid")) enUp["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_project")) enUp["bsd_project"] = enEntity["bsd_project"];
+                if (enEntity.Contains("bsd_opportunityid")) enUp["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_phaseslaunch")) enUp["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunch"];
+                if (enEntity.Contains("bsd_reservationcontract")) enUp["bsd_raid"] = enEntity["bsd_reservationcontract"];
+                if (enEntity.Contains("bsd_quoteid")) enUp["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Update(enUp);
+            }
+            else
+            {
+                Entity enCre = new Entity("bsd_dataprojection");
+                enCre["bsd_spaid"] = new EntityReference("bsd_salesorder", id);
+                if (enEntity.Contains("bsd_customerid")) enCre["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_project")) enCre["bsd_project"] = enEntity["bsd_project"];
+                if (enEntity.Contains("bsd_opportunityid")) enCre["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_phaseslaunch")) enCre["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunch"];
+                if (enEntity.Contains("bsd_unitno")) enCre["bsd_productid"] = enEntity["bsd_unitno"];
+                if (enEntity.Contains("bsd_reservationcontract")) enCre["bsd_raid"] = enEntity["bsd_reservationcontract"];
+                if (enEntity.Contains("bsd_quoteid")) enCre["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Create(enCre);
+            }
+        }
         private object GetValidFieldValue(Entity enRC, string field)
         {
             return enRC.Contains(field) ? enRC[field] : null; ;

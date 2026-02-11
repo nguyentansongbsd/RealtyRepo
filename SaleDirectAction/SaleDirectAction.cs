@@ -103,12 +103,12 @@ namespace SaleDirectAction
                     else if ((((OptionSetValue)entity1["statuscode"]).Value == 100000000 || ((OptionSetValue)entity1["statuscode"]).Value == 100000004) && enfPhasesLaunch == null)
                     {
                         EntityReference entityReference2 = (EntityReference)entity1["bsd_projectcode"];
-                        Entity entity3 = service.Retrieve(entityReference2.LogicalName, entityReference2.Id, new ColumnSet(new string[]{ "bsd_bookingfee" }));
+                        Entity entity3 = service.Retrieve(entityReference2.LogicalName, entityReference2.Id, new ColumnSet(new string[] { "bsd_bookingfee" }));
                         if (entity3 == null)
                             throw new InvalidPluginExecutionException("Project named '" + entityReference2.Name + "' is not available!");
                         entity2["bsd_queuingfee"] = entity3.Contains("bsd_bookingfee") ? entity3["bsd_bookingfee"] : new Money(0);
                         entity2["statuscode"] = new OptionSetValue(100000003);
-                        
+
                         int longTimeQueue = getLongTimeQueueByProject((EntityReference)entity1["bsd_projectcode"]);
                         DateTime bsd_queuingexpired = dateNow.AddDays(longTimeQueue);
                         entity2["bsd_queuingexpired"] = RetrieveLocalTimeFromUTCTime(bsd_queuingexpired, service);
@@ -266,7 +266,7 @@ namespace SaleDirectAction
                         throw new InvalidPluginExecutionException("Please select project for this unit!");
                     //if (!enUnit.Contains("defaultuomid"))
                     //    throw new InvalidPluginExecutionException("Please select default unit for this unit!");
-                    
+
                     tracingService.Trace("3");
                     Entity entity2 = new Entity("bsd_quote");
                     tracingService.Trace("3.1");
@@ -274,7 +274,7 @@ namespace SaleDirectAction
                     tracingService.Trace("3.3");
                     entity2["bsd_projectid"] = enUnit["bsd_projectcode"];
                     entity2["transactioncurrencyid"] = enUnit["transactioncurrencyid"];
-                    
+
                     tracingService.Trace("3.4");
                     //entity2["bsd_phaseslaunchid"] = enUnit["bsd_phaseslaunchid"];
                     entity2["bsd_unitno"] = (object)entityReference1;
@@ -295,7 +295,7 @@ namespace SaleDirectAction
                         numberofmonthspaidmf = (int)entity3["bsd_numberofmonthspaidmf"];
                         entity2["bsd_numberofmonthspaidmf"] = entity3["bsd_numberofmonthspaidmf"];
                     }
-                    
+
                     entity2["bsd_totalamountpaid"] = new Money(0);
                     DateTime utcNow = DateTime.UtcNow;
                     DateTime localNow = RetrieveLocalTimeFromUTCTime(utcNow, service);
@@ -340,7 +340,7 @@ namespace SaleDirectAction
                         tracingService.Trace("6.033333");
                         pricelist_ref = (EntityReference)entity2["bsd_pricelistphaselaunch"];
                     }
-                    
+
                     tracingService.Trace("6.0");
                     strbuil.AppendLine("aaaaa");
                     if (pricelist_ref != null)
@@ -495,12 +495,12 @@ namespace SaleDirectAction
                     //        }
                     //    }
                     //}
-                    
+
                     entity2["bsd_pricelevel"] = enUnit.Contains("bsd_pricelevel") ? (EntityReference)enUnit["bsd_pricelevel"] : null;
                     if (enUnit.Contains("bsd_pricelevel") && enUnit["bsd_pricelevel"] != null)
                     {
                         EntityReference priceLevelRef = (EntityReference)enUnit["bsd_pricelevel"];
-                       
+
                         var fetchXml123 = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                             <fetch version=""1.0"" output-format=""xml-platform"" mapping=""logical"" distinct=""true"">
                               <entity name=""bsd_productpricelevel"">
@@ -519,14 +519,14 @@ namespace SaleDirectAction
                         EntityCollection rs_price123 = service.RetrieveMultiple(new FetchExpression(fetchXml123));
                         if (rs_price123.Entities.Count > 0)
                         {
-                           tracingService.Trace("vào if price_" + rs_price123.Entities.Count);
+                            tracingService.Trace("vào if price_" + rs_price123.Entities.Count);
                             if (rs_price123.Entities[0].Contains("p_price"))
                             {
                                 Entity result = rs_price123.Entities[0];
                                 tracingService.Trace("Có p_price");
                                 AliasedValue aliasedPrice = (AliasedValue)result["p_price"];
-                                
-                                
+
+
                                 Money moneyValue = (Money)aliasedPrice.Value;
                                 entity2["bsd_detailamount"] = moneyValue;
                                 if (enUnit.Contains("bsd_taxcode"))
@@ -574,13 +574,14 @@ namespace SaleDirectAction
                     // Gán mã mới vào entity: Ví dụ RSC-00000002
                     entity2["bsd_reservationno"] = "RSV-" + nextNumber.ToString("D7");
                     Guid guid = service.Create(entity2);
+                    create_update_DataProjection(entityReference1.Id, entity2, guid);
                     tracingService.Trace("16");
                     strbuil.AppendLine("bbbbbbbbbbbb");
                     //throw new InvalidPluginExecutionException(strbuil.ToString());
                     context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
                     tracingService.Trace("Done quotation");
                 }
-                else if(str1 == "Reservation")
+                else if (str1 == "Reservation")
                 {
 
                     Entity enUnit = RetrieveValidUnit(entityReference1.Id);
@@ -777,6 +778,7 @@ namespace SaleDirectAction
                     // Gán mã mới vào entity: Ví dụ RSC-00000002
                     entity2["bsd_reservationno"] = "RSV-" + nextNumber.ToString("D7");
                     Guid guid = service.Create(entity2);
+                    create_update_DataProjection(entityReference1.Id, entity2, guid);
                     context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
                 }
                 else if (str1 == "RAContract")
@@ -871,6 +873,7 @@ namespace SaleDirectAction
                     enReContract["bsd_projectid"] = enUnit["bsd_projectcode"];
                     //entity2["transactioncurrencyid"] = enUnit["transactioncurrencyid"];
                     enReContract["bsd_unitno"] = (object)entityReference1;
+
                     enReContract["statuscode"] = new OptionSetValue(1);
                     enReContract["bsd_approvalstatus"] = new OptionSetValue(100000000);
                     enReContract["bsd_landvaluededuction"] = new Money(0);
@@ -926,6 +929,7 @@ namespace SaleDirectAction
                     enReContract["bsd_racontractsigndate"] = DateTime.Today;
                     enReContract["bsd_reservationnumber"] = "RSC-" + nextNumber.ToString("D8");
                     Guid guid = service.Create(enReContract);
+                    create_update_DataProjection(entityReference1.Id, enReContract, guid);
                     context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
                 }
             }
@@ -934,13 +938,54 @@ namespace SaleDirectAction
                 throw ex;
             }
         }
+        private void create_update_DataProjection(Guid idUnit, Entity enEntity, Guid id)
+        {
+            // get DataProjection theo unit
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_dataprojection"">
+                <filter>
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{idUnit}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection en = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (en.Entities.Count > 0)
+            {
+                Entity enDataprojection = en.Entities[0];
+                Entity enUp = new Entity(enDataprojection.LogicalName, enDataprojection.Id);
+                if (enEntity.LogicalName == "bsd_quote") enUp["bsd_depositid"] = new EntityReference("bsd_quote", id);
+                if (enEntity.LogicalName == "bsd_reservationcontract") enUp["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enUp["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enUp["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enUp["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enUp["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enUp["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_quoteid")) enUp["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Update(enUp);
+            }
+            else
+            {
+                Entity enCre = new Entity("bsd_dataprojection");
+                if (enEntity.LogicalName == "bsd_quote") enCre["bsd_depositid"] = new EntityReference("bsd_quote", id);
+                if (enEntity.LogicalName == "bsd_reservationcontract") enCre["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enCre["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enCre["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enCre["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enCre["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enCre["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_unitno")) enCre["bsd_productid"] = enEntity["bsd_unitno"];
+                if (enEntity.Contains("bsd_quoteid")) enCre["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Create(enCre);
+            }
+        }
 
         private int getLongTimeQueueByProject(EntityReference enfProject)
         {
             Entity project = service.Retrieve(enfProject.LogicalName, enfProject.Id, new ColumnSet(new string[] {
                 "bsd_longqueuingtime"
             }));
-            if(project == null)
+            if (project == null)
                 return 0;
             else
                 return project.Contains("bsd_longqueuingtime") ? (int)project["bsd_longqueuingtime"] : 0;

@@ -39,10 +39,10 @@ namespace Action_Queue_Reservation
                 unitInfo = service.Retrieve(unitRef.LogicalName, unitRef.Id, new ColumnSet("bsd_name", "bsd_netsaleablearea", "bsd_taxcode", "bsd_maintenancefeespercent", "bsd_maintenancefees"));
                 unitName = unitInfo.GetAttributeValue<string>("bsd_name");
             }
-            
+
             //if (unitRef != null)
             //{
-                
+
             //    var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             //    <fetch>
             //      <entity name=""bsd_opportunity"">
@@ -68,7 +68,7 @@ namespace Action_Queue_Reservation
             service.Update(updateUnit);
             tracingService.Trace("1");
             Entity en_quote = new Entity("bsd_quote");
-            en_quote["bsd_opportunityid"] = target; 
+            en_quote["bsd_opportunityid"] = target;
             en_quote["bsd_name"] = unitName;
             en_quote["bsd_netusablearea"] = unitInfo.Contains("bsd_netsaleablearea") ? unitInfo["bsd_netsaleablearea"] : Decimal.Zero;
             if (unitInfo.Contains("bsd_taxcode"))
@@ -182,7 +182,49 @@ namespace Action_Queue_Reservation
             if (queue.Contains("bsd_customerid")) en_quote["bsd_customerid"] = queue.GetAttributeValue<EntityReference>("bsd_customerid");
             if (queue.Contains("bsd_queuingfeepaid")) en_quote["bsd_totalamountpaid"] = queue.GetAttributeValue<Money>("bsd_queuingfeepaid");
             Guid guid = service.Create(en_quote);
+            create_update_DataProjection(((EntityReference)en_quote["bsd_unitno"]).Id, en_quote, guid);
             context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
+        }
+        private void create_update_DataProjection(Guid idUnit, Entity enEntity, Guid id)
+        {
+            // get DataProjection theo unit
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_dataprojection"">
+                <filter>
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{idUnit}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection en = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (en.Entities.Count > 0)
+            {
+                Entity enDataprojection = en.Entities[0];
+                Entity enUp = new Entity(enDataprojection.LogicalName, enDataprojection.Id);
+                if (enEntity.LogicalName == "bsd_quote") enUp["bsd_depositid"] = new EntityReference("bsd_quote", id);
+                if (enEntity.LogicalName == "bsd_reservationcontract") enUp["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enUp["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enUp["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enUp["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enUp["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enUp["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_quoteid")) enUp["bsd_raid"] = enEntity["bsd_quoteid"];
+                service.Update(enUp);
+            }
+            else
+            {
+                Entity enCre = new Entity("bsd_dataprojection");
+                if (enEntity.LogicalName == "bsd_quote") enCre["bsd_depositid"] = new EntityReference("bsd_quote", id);
+                if (enEntity.LogicalName == "bsd_reservationcontract") enCre["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enCre["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enCre["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enCre["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enCre["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enCre["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_unitno")) enCre["bsd_productid"] = enEntity["bsd_unitno"];
+                if (enEntity.Contains("bsd_quoteid")) enCre["bsd_raid"] = enEntity["bsd_quoteid"];
+                service.Create(enCre);
+            }
         }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
