@@ -18,6 +18,7 @@ namespace Action_Queue_Reservation
         private StringBuilder strbuil = new StringBuilder();
         ITracingService tracingService = null;
         string unitName = "";
+        Entity unitInfo = null;
         public void Execute(IServiceProvider serviceProvider)
         {
             IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
@@ -32,40 +33,42 @@ namespace Action_Queue_Reservation
             Entity updateCurrentQueue = new Entity(target.LogicalName, target.Id);
             updateCurrentQueue["statuscode"] = new OptionSetValue(100000000);
             service.Update(updateCurrentQueue);
-
             EntityReference unitRef = queue.GetAttributeValue<EntityReference>("bsd_unit");
-            Entity unitInfo = service.Retrieve(unitRef.LogicalName, unitRef.Id, new ColumnSet("bsd_name", "bsd_netsaleablearea", "bsd_taxcode", "bsd_maintenancefeespercent", "bsd_maintenancefees"));
-            unitName = unitInfo.GetAttributeValue<string>("bsd_name");
             if (unitRef != null)
             {
-                
-                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                <fetch>
-                  <entity name=""bsd_opportunity"">
-                    <attribute name=""statuscode"" />
-                    <filter>
-                      <condition attribute=""bsd_unit"" operator=""eq"" value=""{unitRef.Id}"" />
-                      <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{target.Id}"" />
-                      <condition attribute=""statuscode"" operator=""ne"" value=""{100000005}"" />
-                      <condition attribute=""statuscode"" operator=""ne"" value=""{100000001}"" />
-                    </filter>
-                  </entity>
-                </fetch>";
-                EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
-                foreach (var q in rs.Entities)
-                {
-                    Entity updateOther = new Entity(target.LogicalName, q.Id);
-                    updateOther["statuscode"] = new OptionSetValue(100000002);
-                    service.Update(updateOther);
-                }
-
-                Entity updateUnit = new Entity(unitRef.LogicalName, unitRef.Id);
-                updateUnit["statuscode"] = new OptionSetValue(100000003);
-                service.Update(updateUnit);
-                tracingService.Trace("1");
+                unitInfo = service.Retrieve(unitRef.LogicalName, unitRef.Id, new ColumnSet("bsd_name", "bsd_netsaleablearea", "bsd_taxcode", "bsd_maintenancefeespercent", "bsd_maintenancefees"));
+                unitName = unitInfo.GetAttributeValue<string>("bsd_name");
             }
+
+            //if (unitRef != null)
+            //{
+
+            //    var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            //    <fetch>
+            //      <entity name=""bsd_opportunity"">
+            //        <attribute name=""statuscode"" />
+            //        <filter>
+            //          <condition attribute=""bsd_unit"" operator=""eq"" value=""{unitRef.Id}"" />
+            //          <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{target.Id}"" />
+            //          <condition attribute=""statuscode"" operator=""ne"" value=""{100000005}"" />
+            //          <condition attribute=""statuscode"" operator=""ne"" value=""{100000001}"" />
+            //        </filter>
+            //      </entity>
+            //    </fetch>";
+            //    EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            //    foreach (var q in rs.Entities)
+            //    {
+            //        Entity updateOther = new Entity(target.LogicalName, q.Id);
+            //        updateOther["statuscode"] = new OptionSetValue(100000002);
+            //        service.Update(updateOther);
+            //    }  
+            //}
+            Entity updateUnit = new Entity(unitRef.LogicalName, unitRef.Id);
+            updateUnit["statuscode"] = new OptionSetValue(100000003);
+            service.Update(updateUnit);
+            tracingService.Trace("1");
             Entity en_quote = new Entity("bsd_quote");
-            en_quote["bsd_opportunityid"] = target; 
+            en_quote["bsd_opportunityid"] = target;
             en_quote["bsd_name"] = unitName;
             en_quote["bsd_netusablearea"] = unitInfo.Contains("bsd_netsaleablearea") ? unitInfo["bsd_netsaleablearea"] : Decimal.Zero;
             if (unitInfo.Contains("bsd_taxcode"))
@@ -84,6 +87,8 @@ namespace Action_Queue_Reservation
                             <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
                               <attribute name=""bsd_name"" alias=""name"" />
                               <attribute name=""bsd_phaseslaunchid"" alias=""phaseid"" />
+                              <attribute name=""bsd_depositamount"" alias=""depositamount"" />
+                              <attribute name=""bsd_minimumdeposit"" alias=""minimumdeposit"" />
                               <filter>
                                 <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
                                 <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
@@ -102,6 +107,12 @@ namespace Action_Queue_Reservation
                 Guid phaseId = (Guid)aliased.Value;
 
                 en_quote["bsd_phaseslaunchid"] = new EntityReference("bsd_phaseslaunch", phaseId);
+                var aliased_money = (AliasedValue)rs1.Entities[0]["depositamount"];
+                Money moneyValue = (Money)aliased_money.Value;
+                en_quote["bsd_depositfee"] = moneyValue;
+                var minimum = (AliasedValue)rs1.Entities[0]["minimumdeposit"];
+                Money moneyminimum = (Money)minimum.Value;
+                en_quote["bsd_minimumdeposit"] = moneyminimum;
             }
             var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                     <fetch distinct=""true"">
@@ -171,7 +182,49 @@ namespace Action_Queue_Reservation
             if (queue.Contains("bsd_customerid")) en_quote["bsd_customerid"] = queue.GetAttributeValue<EntityReference>("bsd_customerid");
             if (queue.Contains("bsd_queuingfeepaid")) en_quote["bsd_totalamountpaid"] = queue.GetAttributeValue<Money>("bsd_queuingfeepaid");
             Guid guid = service.Create(en_quote);
+            create_update_DataProjection(((EntityReference)en_quote["bsd_unitno"]).Id, en_quote, guid);
             context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
+        }
+        private void create_update_DataProjection(Guid idUnit, Entity enEntity, Guid id)
+        {
+            // get DataProjection theo unit
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_dataprojection"">
+                <filter>
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{idUnit}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection en = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (en.Entities.Count > 0)
+            {
+                Entity enDataprojection = en.Entities[0];
+                Entity enUp = new Entity(enDataprojection.LogicalName, enDataprojection.Id);
+                if (enEntity.LogicalName == "bsd_quote") enUp["bsd_depositid"] = new EntityReference("bsd_quote", id);
+                if (enEntity.LogicalName == "bsd_reservationcontract") enUp["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enUp["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enUp["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enUp["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enUp["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enUp["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_quoteid")) enUp["bsd_raid"] = enEntity["bsd_quoteid"];
+                service.Update(enUp);
+            }
+            else
+            {
+                Entity enCre = new Entity("bsd_dataprojection");
+                if (enEntity.LogicalName == "bsd_quote") enCre["bsd_depositid"] = new EntityReference("bsd_quote", id);
+                if (enEntity.LogicalName == "bsd_reservationcontract") enCre["bsd_raid"] = new EntityReference("bsd_reservationcontract", id);
+                if (enEntity.Contains("bsd_customerid")) enCre["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_projectid")) enCre["bsd_project"] = enEntity["bsd_projectid"];
+                if (enEntity.Contains("bsd_opportunityid")) enCre["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_queue")) enCre["bsd_bookingid"] = enEntity["bsd_queue"];
+                if (enEntity.Contains("bsd_phaseslaunchid")) enCre["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunchid"];
+                if (enEntity.Contains("bsd_unitno")) enCre["bsd_productid"] = enEntity["bsd_unitno"];
+                if (enEntity.Contains("bsd_quoteid")) enCre["bsd_raid"] = enEntity["bsd_quoteid"];
+                service.Create(enCre);
+            }
         }
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {

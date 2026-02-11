@@ -1,5 +1,6 @@
 ﻿using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Query;
 using System;
 using System.Text;
@@ -35,9 +36,10 @@ namespace Action_UpdateQuote
                 Entity quote = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(true));
                 tracingService.Trace("Quote retrieved successfully.");
 
-                Entity up_quote = new Entity(quote.LogicalName, quote.Id);
+                    Entity up_quote = new Entity(quote.LogicalName, quote.Id);
                     Entity entity_unit = service.Retrieve(((EntityReference)quote["bsd_unitno"]).LogicalName, ((EntityReference)quote["bsd_unitno"]).Id, new ColumnSet(true));
                     Entity up_unit = new Entity(entity_unit.LogicalName, entity_unit.Id);
+
                 if (str1 == "confirm")
                 {
                     // Fetch Tiến độ thanh toán
@@ -68,7 +70,92 @@ namespace Action_UpdateQuote
                     up_quote["bsd_confirmer"] = new EntityReference("systemuser", context.UserId);
                     up_quote["statuscode"] = new OptionSetValue(100000000);
                     service.Update(up_quote);
+                    up_unit["statuscode"] = new OptionSetValue(100000003);
+                    service.Update(up_unit);
+                    if (quote.Contains("bsd_opportunityid"))
+                    {
+                        Entity entity_booking = service.Retrieve(((EntityReference)quote["bsd_opportunityid"]).LogicalName, ((EntityReference)quote["bsd_opportunityid"]).Id, new ColumnSet(true));
+                        Entity up_booking = new Entity(entity_booking.LogicalName, entity_booking.Id);
+                    
+                        var fetchXml_updatebooking = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+                        <fetch>
+                          <entity name=""bsd_opportunity"">
+                            <filter>
+                              <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{entity_booking.Id}"" />
+                              <condition attribute=""bsd_unit"" operator=""eq"" value=""{entity_unit.Id}"" />
+                            </filter>
+                          </entity>
+                        </fetch>";
+                        EntityCollection rs_booking = service.RetrieveMultiple(new FetchExpression(fetchXml_updatebooking));
+
+
+                        if (rs_booking.Entities.Count > 0)
+                        {
+                            foreach (var entity in rs_booking.Entities)
+                            {
+                                Entity updateTarget = new Entity("bsd_opportunity", entity.Id);
+                                updateTarget["statecode"] = new OptionSetValue(1);
+                                updateTarget["statuscode"] = new OptionSetValue(100000005);//canceled
+                                service.Update(updateTarget);
+                            }
+                        }
+                    }
+                    // 1. Định nghĩa FetchXML để tìm các Quote liên quan (trừ Quote hiện tại)
+                    var fetchXml_quote = $@"
+                        <fetch>
+                          <entity name=""bsd_quote"">
+                            <attribute name=""bsd_quoteid"" />
+                            <filter type=""and"">
+                              <condition attribute=""bsd_quoteid"" operator=""ne"" value=""{quote.Id}"" />
+                              <condition attribute=""bsd_unitno"" operator=""eq"" value=""{entity_unit.Id}"" />
+                              <condition attribute=""statuscode"" operator=""eq"" value=""{100000007}"" />
+                            </filter>
+                          </entity>
+                        </fetch>";
+
+                    // 2. Thực thi truy vấn
+                    EntityCollection otherQuotes = service.RetrieveMultiple(new FetchExpression(fetchXml_quote));
+
+                    // 3. Duyệt qua danh sách và cập nhật statuscode
+                    foreach (var quotests in otherQuotes.Entities)
+                    {
+                        Entity updateQuote = new Entity("bsd_quote");
+                        updateQuote.Id = quotests.Id;
+                        updateQuote["statecode"] = new OptionSetValue(1);//Canceled
+                        updateQuote["statuscode"] = new OptionSetValue(667980005);//Canceled
+                        service.Update(updateQuote);
+                    }
                     tracingService.Trace("Quote updated successfully");
+                    tracingService.Trace("Updating BPF Stage using Late-bound...");
+                    tracingService.Trace("Updating BPF Stage via Process Instance...");
+
+                    // 1. Tìm bản ghi Instance của quy trình đang chạy trên Quote này
+                    // Tên thực thể BPF thường là tên Quy trình viết liền (ví dụ: bsd_bpf_deposit_process)
+                    QueryExpression bpfQuery = new QueryExpression("new_reservationprocess") // Thay bằng Schema Name của BPF
+                    {
+                        ColumnSet = new ColumnSet("businessprocessflowinstanceid"),
+                        Criteria = new FilterExpression()
+                    };
+                    bpfQuery.Criteria.AddCondition("bpf_bsd_quoteid", ConditionOperator.Equal, quote.Id);
+
+                    EntityCollection bpfInstances = service.RetrieveMultiple(bpfQuery);
+
+                    if (bpfInstances.Entities.Count > 0)
+                    {
+                        Entity bpfInstance = bpfInstances.Entities[0];
+
+                        // 2. Cập nhật Stage hiện tại cho Instance này
+                        bpfInstance["activestageid"] = new EntityReference("processstage", new Guid("8afac8a7-4a01-4e87-9d5a-700fc50b26f7"));
+
+                        service.Update(bpfInstance);
+                        tracingService.Trace("BPF Instance updated successfully.");
+                    }
+                    else
+                    {
+                        tracingService.Trace("No BPF Instance found for this Quote.");
+                        // Nếu không tìm thấy, có nghĩa là bản ghi này chưa bao giờ được gán quy trình này
+                    }
+                    tracingService.Trace("BPF Stage updated successfully.");
                 }
                 if (str1 == "cancel")
                 {
@@ -78,7 +165,8 @@ namespace Action_UpdateQuote
                         Entity up_queue = new Entity(queue.LogicalName, queue.Id);
                         
                         tracingService.Trace("vào if cancel");
-                        up_quote["statuscode"] = new OptionSetValue(100000002);
+                        up_quote["statecode"] = new OptionSetValue(1);
+                        up_quote["statuscode"] = new OptionSetValue(667980005);
                         up_quote["bsd_canceldate"] = DateTime.Today;
                         up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_quote);

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 
 namespace Action_ReservationContract_ConvertToOE
 {
@@ -30,9 +31,9 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_queue", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid", "bsd_discountcheck", "bsd_discountdraw",
                 "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
-                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining"}));
+                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
-                if (status != 100000002) //Director Approval
+                if (status != 100000010) //Signed
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_reservationcontract"));
 
                 if (!enRC.Contains("bsd_unitno"))
@@ -50,7 +51,7 @@ namespace Action_ReservationContract_ConvertToOE
                 MapPaymentSchemeDetail(target, refOE);
                 MapPromotion(target, refOE);
                 MapDiscountTransaction(target, refOE);
-                MapPayment(target, refOE);
+                //MapPayment(target, refOE);
                 UpdateReservationContract(target);
                 UpdateUnit(refProduct);
 
@@ -96,6 +97,7 @@ namespace Action_ReservationContract_ConvertToOE
             newOE["bsd_freightamount"] = GetValidFieldValue(enRC, "bsd_freightamount");
             newOE["bsd_numberofmonthspaidmf"] = GetValidFieldValue(enRC, "bsd_numberofmonthspaidmf");
             newOE["bsd_managementfee"] = GetValidFieldValue(enRC, "bsd_managementfee");
+            newOE["bsd_customertype"] = GetValidFieldValue(enRC, "bsd_customertype");
 
             newOE["bsd_discountcheck"] = GetValidFieldValue(enRC, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enRC, "bsd_discountdraw");
@@ -107,11 +109,49 @@ namespace Action_ReservationContract_ConvertToOE
             newOE["bsd_totalinterestremaining"] = GetValidFieldValue(enRC, "bsd_totalinterestremaining");
 
             newOE.Id = Guid.NewGuid();
-            service.Create(newOE);
-
+            Guid id = service.Create(newOE);
+            create_update_DataProjection(((EntityReference)newOE["bsd_unitnumber"]).Id, newOE, id);
             return newOE.Id;
         }
-
+        private void create_update_DataProjection(Guid idUnit, Entity enEntity, Guid id)
+        {
+            // get DataProjection theo unit
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_dataprojection"">
+                <filter>
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{idUnit}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection en = service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (en.Entities.Count > 0)
+            {
+                Entity enDataprojection = en.Entities[0];
+                Entity enUp = new Entity(enDataprojection.LogicalName, enDataprojection.Id);
+                enUp["bsd_spaid"] = new EntityReference("bsd_salesorder", id);
+                if (enEntity.Contains("bsd_customerid")) enUp["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_project")) enUp["bsd_project"] = enEntity["bsd_project"];
+                if (enEntity.Contains("bsd_opportunityid")) enUp["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_phaseslaunch")) enUp["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunch"];
+                if (enEntity.Contains("bsd_reservationcontract")) enUp["bsd_raid"] = enEntity["bsd_reservationcontract"];
+                if (enEntity.Contains("bsd_quoteid")) enUp["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Update(enUp);
+            }
+            else
+            {
+                Entity enCre = new Entity("bsd_dataprojection");
+                enCre["bsd_spaid"] = new EntityReference("bsd_salesorder", id);
+                if (enEntity.Contains("bsd_customerid")) enCre["bsd_customerid"] = enEntity["bsd_customerid"];
+                if (enEntity.Contains("bsd_project")) enCre["bsd_project"] = enEntity["bsd_project"];
+                if (enEntity.Contains("bsd_opportunityid")) enCre["bsd_bookingid"] = enEntity["bsd_opportunityid"];
+                if (enEntity.Contains("bsd_phaseslaunch")) enCre["bsd_phaselaunchid"] = enEntity["bsd_phaseslaunch"];
+                if (enEntity.Contains("bsd_unitno")) enCre["bsd_productid"] = enEntity["bsd_unitno"];
+                if (enEntity.Contains("bsd_reservationcontract")) enCre["bsd_raid"] = enEntity["bsd_reservationcontract"];
+                if (enEntity.Contains("bsd_quoteid")) enCre["bsd_depositid"] = enEntity["bsd_quoteid"];
+                service.Create(enCre);
+            }
+        }
         private object GetValidFieldValue(Entity enRC, string field)
         {
             return enRC.Contains(field) ? enRC[field] : null; ;
@@ -160,7 +200,6 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    item["bsd_converted"] = true;
                     CreateNewFromItem(item, refOE);
                 }
             }
@@ -183,7 +222,8 @@ namespace Action_ReservationContract_ConvertToOE
             traceService.Trace("UpdateReservationContract");
 
             Entity upReservationContract = new Entity(target.LogicalName, target.Id);
-            upReservationContract["statuscode"] = new OptionSetValue(100000005);    //Convert to SPA
+            upReservationContract["statecode"] = new OptionSetValue(1);    //inactive
+            upReservationContract["statuscode"] = new OptionSetValue(100000008);    //Convert to Option Entry
             service.Update(upReservationContract);
         }
 

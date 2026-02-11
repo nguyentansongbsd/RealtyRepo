@@ -25,18 +25,22 @@ namespace Plugin_SubSale_CoOwner
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation", "bsd_optionentry" }));
+                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation", "bsd_reservationcontract", "bsd_optionentry" }));
 
                 if (!enSubSale.Contains("bsd_type"))
                     return;
                 int bsd_type = ((OptionSetValue)enSubSale["bsd_type"]).Value;
 
                 string logicalName = null;
-                if (bsd_type == 100000000 && enSubSale.Contains("bsd_reservation"))   //Reservation
+                if (bsd_type == 100000000 && enSubSale.Contains("bsd_reservation"))   //Deposit
                 {
                     logicalName = "bsd_reservation";
                 }
-                else if (bsd_type == 100000001 && enSubSale.Contains("bsd_optionentry"))   //Option Entry
+                else if (bsd_type == 100000001 && enSubSale.Contains("bsd_reservationcontract"))   //Reservation Contract
+                {
+                    logicalName = "bsd_reservationcontract";
+                }
+                else if (bsd_type == 100000002 && enSubSale.Contains("bsd_optionentry"))   //Option Entry
                 {
                     logicalName = "bsd_optionentry";
                 }
@@ -60,14 +64,14 @@ namespace Plugin_SubSale_CoOwner
                 {
                     foreach (var item in rs.Entities)
                     {
-                        Entity newSubSale = new Entity("bsd_assign");
-                        newSubSale = item;
-                        newSubSale.Attributes.Remove("bsd_coownerid");
-                        newSubSale.Attributes.Remove("ownerid");
-                        newSubSale.Attributes.Remove(logicalName);
-                        newSubSale["bsd_subsale"] = enSubSale.ToEntityReference();
-                        newSubSale.Id = Guid.NewGuid();
-                        service.Create(newSubSale);
+                        Entity newCoOwner = new Entity("bsd_coowner");
+                        newCoOwner = item;
+                        newCoOwner.Attributes.Remove("bsd_coownerid");
+                        newCoOwner.Attributes.Remove("ownerid");
+                        newCoOwner.Attributes.Remove(logicalName);
+                        newCoOwner["bsd_subsale"] = enSubSale.ToEntityReference();
+                        newCoOwner.Id = Guid.NewGuid();
+                        service.Create(newCoOwner);
                     }
                 }
 

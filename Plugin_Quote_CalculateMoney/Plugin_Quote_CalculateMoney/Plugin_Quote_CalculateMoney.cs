@@ -64,32 +64,34 @@ namespace Plugin_Quote_CalculateMoney
         {
             sumAmountDiscount = 0;
             netSellingPrice = unitprice;
-            List<Guid> strArrayAmount = new List<Guid>();
-            List<Guid> strArrayPercent = new List<Guid>();
+            //List<Guid> strArrayAmount = new List<Guid>();
+            //List<Guid> strArrayPercent = new List<Guid>();
             List<Guid> strArraySum = new List<Guid>();
             foreach (string input in strArray)
             {
                 Guid guid = Guid.Parse(input);
-                Entity pro = service.Retrieve("bsd_discount", guid, new ColumnSet(new string[1] { "bsd_method" }));
-                
-                if (pro == null)
-                    throw new InvalidPluginExecutionException(string.Format("Discount '{0}' dose not exist or deleted.", pro["bsd_name"]) + MessageProvider.GetMessage(service, context, "check_percent_ins"));
-                if (!pro.Contains("bsd_method"))
-                    throw new InvalidPluginExecutionException(string.Format("Please provide method for discount '{0}'!", pro["bsd_name"]));
-                int num = ((OptionSetValue)pro["bsd_method"]).Value;
-                if (num == 100000001)//percent
-                {
-                    strArrayPercent.Add(guid);
-                }
-                else
-                {
-                    strArrayAmount.Add(guid);
-                }
+                strArraySum.Add(guid);
+                //Entity pro = service.Retrieve("bsd_discount", guid, new ColumnSet(new string[1] { "bsd_method" }));
+
+                //if (pro == null)
+                //    throw new InvalidPluginExecutionException(string.Format("Discount '{0}' dose not exist or deleted.", pro["bsd_name"]) + MessageProvider.GetMessage(service, context, "check_percent_ins"));
+                //if (!pro.Contains("bsd_method"))
+                //    throw new InvalidPluginExecutionException(string.Format("Please provide method for discount '{0}'!", pro["bsd_name"]));
+                //int num = ((OptionSetValue)pro["bsd_method"]).Value;
+                //if (num == 100000001)//percent
+                //{
+                //    strArrayPercent.Add(guid);
+                //}
+                //else
+                //{
+                //    strArrayAmount.Add(guid);
+                //}
             }
-            strArraySum = strArrayAmount.Concat(strArrayPercent).Distinct().ToList();
+            //strArraySum = strArrayAmount.Concat(strArrayPercent).Distinct().ToList();
             int no = 1;
             foreach (Guid guid in strArraySum)
             {
+                trace.Trace("vào for");
                 Entity pro = service.Retrieve("bsd_discount", guid, new ColumnSet(new string[5]
                     {
                         "bsd_name",
@@ -142,8 +144,11 @@ namespace Plugin_Quote_CalculateMoney
                     trace.Trace("sumAmountDiscount: " + sumAmountDiscount);
                     trace.Trace("netSellingPrice: " + netSellingPrice);
                 }
+                trace.Trace("vào dis");
                 rsv["bsd_discount"] = pro.ToEntityReference();
+                trace.Trace("map dis");
                 rsv["bsd_quote"] = enTarget.ToEntityReference();
+                trace.Trace("map quote");
                 service.Create(rsv);
                 no++;
             }

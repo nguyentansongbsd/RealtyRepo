@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Units_CreateOE", "Action_Units_CreateOE\Action_Units_CreateOE.csproj", "{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\RealtyCommon\RealtyCommon\RealtyCommon.projitems*{c2f51e9f-1396-4d73-9478-9c7e8d57f17c}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2F51E9F-1396-4D73-9478-9C7E8D57F17C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {973FA132-BD35-43A3-81AC-DA2A2739F708}
+	EndGlobalSection
+EndGlobal
