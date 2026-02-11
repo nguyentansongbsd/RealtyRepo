@@ -71,7 +71,7 @@ namespace Action_MatchUnit_Approve
             queue["bsd_dateorder"] = RetrieveLocalTimeFromUTCTime(dateApprove, this._service);
             queue["bsd_souutien"] = sut;
             queue["bsd_douutien"] = dut;
-            queue["statuscode"] = isHasStsQueuing == true ? new OptionSetValue(100000003) : new OptionSetValue(100000004); // 100000003 - Wariting, 100000004 - Queuing
+            queue["statuscode"] = isHasStsQueuing == true ? new OptionSetValue(100000003) : new OptionSetValue(100000007); // 100000003 - Wariting, 100000007 - Confirmed
             this._service.Update(queue);
             this._tracingService.Trace("End Update Queue");
         }
@@ -145,21 +145,22 @@ namespace Action_MatchUnit_Approve
                   <condition attribute=""bsd_unit"" operator=""null"" />
                   <condition attribute=""bsd_queueforproject"" operator=""eq"" value=""1"" />
                 </filter>
-                <filter>
-                  <condition attribute=""statuscode"" operator=""in"">
-                    <value>100000003</value>
-                  </condition>
-                </filter>
+                
               </entity>
             </fetch>";
+            //<filter>
+            //      <condition attribute=""statuscode"" operator=""in"">
+            //        <value>100000003</value>
+            //      </condition>
+            //    </filter>
             EntityCollection result = this._service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (result.Entities.Count > 0)
             {
                 foreach (var item in result.Entities.OrderBy(x => x.GetAttributeValue<int>("bsd_douutien")))
                 {
                     Entity queueProject = new Entity(item.LogicalName, item.Id);
-                    if ((int)item["bsd_douutien"] == 2)// Neu do uu tien = 2 thi cap nhat lai trang thai thanh queuing va giam do uu tien = 1. với các GC khác thì chỉ giảm độ ưu tiên và không thay đổi status
-                        queueProject["statuscode"] = new OptionSetValue(100000004); // 100000004 - Queuing
+                    //if ((int)item["bsd_douutien"] == 2)// Neu do uu tien = 2 thi cap nhat lai trang thai thanh queuing va giam do uu tien = 1. với các GC khác thì chỉ giảm độ ưu tiên và không thay đổi status
+                    //    queueProject["statuscode"] = new OptionSetValue(100000004); // 100000004 - Queuing
                     queueProject["bsd_douutien"] = (int)item["bsd_douutien"] - 1;
                     this._service.Update(queueProject);
                 }
@@ -174,7 +175,7 @@ namespace Action_MatchUnit_Approve
                 <attribute name=""bsd_name"" />
                 <filter>
                   <condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enMatchUnit["bsd_unit"]).Id}"" />
-                  <condition attribute=""statuscode"" operator=""eq"" value=""100000004"" />
+                  <condition attribute=""statuscode"" operator=""eq"" value=""100000007"" />
                 </filter>
               </entity>
             </fetch>";

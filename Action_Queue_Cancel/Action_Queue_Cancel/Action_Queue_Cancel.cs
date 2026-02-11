@@ -28,8 +28,8 @@ namespace Action_Queue_Cancel
             this.Target = this._context.InputParameters["Target"] as EntityReference;
             Entity enQueue = this._service.Retrieve(this.Target.LogicalName, this.Target.Id, new ColumnSet("bsd_unit", "bsd_collectedqueuingfee", "bsd_project", "bsd_customerid", "bsd_douutien", "bsd_queuingfeepaid", "bsd_name"));
             CancelQueue(this.Target);
-            if (enQueue.Contains("bsd_unit"))
-                UpdateUnit((EntityReference)enQueue["bsd_unit"]);
+            //if (enQueue.Contains("bsd_unit"))
+            //    UpdateUnit((EntityReference)enQueue["bsd_unit"]);
             if (enQueue.Contains("bsd_queuingfeepaid"))
                 create_Refund(enQueue);
             UpdatePriority(enQueue);
@@ -107,7 +107,8 @@ namespace Action_Queue_Cancel
                 if ((int)enQueue["bsd_douutien"] == 1 && priority == 1)
                 {
                     enQueue_NewProority["bsd_douutien"] = priority;
-                    enQueue_NewProority["statuscode"] = new OptionSetValue(100000004); // Queuing
+                    if(enQueue.Contains("bsd_unit")) // GC sp
+                        enQueue_NewProority["statuscode"] = new OptionSetValue(100000007); // Confirmed
                     this._service.Update(enQueue_NewProority);
                 }
                 else if ((int)enQueue["bsd_douutien"] == 1 && priority != 1)

@@ -47,7 +47,11 @@ namespace Plugin_Queue_UpdatePriority
                         queueItem.Attributes["bsd_sothutu"] =  stt + 1 ;
                     if(!entityQueue.Contains("bsd_queueforproject") || (entityQueue.Contains("bsd_queueforproject") && (bool)entityQueue["bsd_queueforproject"] == false))
                         queueItem.Attributes["bsd_souutien"] = sut + 1;
-                    queueItem.Attributes["statuscode"] = isHadQueueing == false ? new OptionSetValue(100000004) : new OptionSetValue(100000003);//100000004: sts queueing; 100000003: sts waiting in queue
+
+                    if(entityQueue.Contains("bsd_queueforproject") && (bool)entityQueue["bsd_queueforproject"] == true)
+                        queueItem.Attributes["statuscode"] = new OptionSetValue(100000004);//100000004: sts Booking in booking
+                    else
+                        queueItem.Attributes["statuscode"] = isHadQueueing == false ? new OptionSetValue(100000007) : new OptionSetValue(100000003);//100000007: sts Confirmed; 100000003: sts waiting in booking
                     this._service.Update(queueItem);
                 }
                 catch (Exception ex)
@@ -72,6 +76,7 @@ namespace Plugin_Queue_UpdatePriority
                   <condition attribute=""statuscode"" operator=""in"">
                       <value>100000003</value>
                       <value>100000004</value>
+                      <value>100000007</value>
                   </condition>
                 </filter>
               </entity>
@@ -116,9 +121,10 @@ namespace Plugin_Queue_UpdatePriority
         }
         private bool checkStsQueue(Entity enQueue, Guid queueId)
         {
-            // sts queueing = 100000004
+            // sts Confirmed = 100000007
             string conditionUnit = enQueue.Contains("bsd_unit") ? $@"<condition attribute=""bsd_unit"" operator=""eq"" value=""{((EntityReference)enQueue["bsd_unit"]).Id}"" />" : $@"<condition attribute=""bsd_unit"" operator=""null"" />";
             string conditionProject = enQueue.Contains("bsd_project") ? $@"<condition attribute=""bsd_project"" operator=""eq"" value=""{((EntityReference)enQueue["bsd_project"]).Id}"" />" : "";
+            
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch>
               <entity name=""bsd_opportunity"">
@@ -127,7 +133,7 @@ namespace Plugin_Queue_UpdatePriority
                   {conditionUnit}
                   {conditionProject}
                   <condition attribute=""bsd_opportunityid"" operator=""ne"" value=""{queueId}"" />
-                  <condition attribute=""statuscode"" operator=""eq"" value=""100000004"" />
+                  <condition attribute=""statuscode"" operator=""eq"" value=""100000007"" />
                 </filter>
               </entity>
             </fetch>";
