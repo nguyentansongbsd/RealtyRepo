@@ -10,113 +10,126 @@ namespace Plugin_Update_quotation
         IOrganizationService service = null;
         IOrganizationServiceFactory factory = null;
         ITracingService trace = null;
+
         public void Execute(IServiceProvider serviceProvider)
         {
-
             IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
             factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             service = factory.CreateOrganizationService(context.UserId);
             trace = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+
+            if (!context.InputParameters.Contains("Target") || !(context.InputParameters["Target"] is Entity)) return;
+
             Entity target = context.InputParameters["Target"] as Entity;
 
+            // 1. Kiểm tra Depth để tránh lặp vô tận (Infinite Loop)
+            if (context.Depth > 1) return;
+
+            // 2. Lấy data đầy đủ của Quote
             Entity quote = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(true));
             Entity up_quote = new Entity(quote.LogicalName, quote.Id);
-            if (context.Depth > 3)
+
+            decimal detailAmount = 0;
+            Entity enUnit = null;
+
+            // 3. Xử lý lấy giá từ Price Level
+            if (quote.Contains("bsd_unitno") && quote.Contains("bsd_pricelevel"))
             {
-                return;
-            }
-            ////
-            if (quote.Contains("bsd_unitno") && quote.Contains("bsd_pricelevel")){
-                Entity enUnit = service.Retrieve(((EntityReference)quote["bsd_unitno"]).LogicalName, ((EntityReference)quote["bsd_unitno"]).Id, new ColumnSet(true));
-                Entity en_price = service.Retrieve(((EntityReference)quote["bsd_pricelevel"]).LogicalName, ((EntityReference)quote["bsd_pricelevel"]).Id, new ColumnSet(true));
+                enUnit = service.Retrieve(((EntityReference)quote["bsd_unitno"]).LogicalName, ((EntityReference)quote["bsd_unitno"]).Id, new ColumnSet(true));
+                EntityReference priceLevelRef = (EntityReference)quote["bsd_pricelevel"];
 
-                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-            <fetch distinct=""true"">
-              <entity name=""bsd_productpricelevel"">
-                <attribute name=""bsd_price"" alias=""prilist_price"" />
-                <filter>
-                  <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
-                </filter>
-                <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
-                  <filter>
-                    <condition attribute=""bsd_pricelevelid"" operator=""eq"" value=""{en_price.Id}"" />
-                  </filter>
-                </link-entity>
-              </entity>
-            </fetch>";
+                var fetchXml = $@"
+                <fetch distinct=""true"">
+                  <entity name=""bsd_productpricelevel"">
+                    <attribute name=""bsd_price"" alias=""prilist_price"" />
+                    <filter>
+                      <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
+                      <condition attribute=""bsd_pricelevel"" operator=""eq"" value=""{priceLevelRef.Id}"" />
+                    </filter>
+                  </entity>
+                </fetch>";
+
                 EntityCollection rs_price = service.RetrieveMultiple(new FetchExpression(fetchXml));
-                if (rs_price.Entities.Count >0)
+                if (rs_price.Entities.Count > 0 && rs_price.Entities[0].Contains("prilist_price"))
                 {
-                    trace.Trace("vào if price_" + rs_price.Entities.Count);
-                    if (rs_price.Entities[0].Contains("prilist_price"))
-                    {
-                        trace.Trace("Có prilist_price");
-                        var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
-                        Money moneyValue = (Money)aliased_money.Value;
-
-                        up_quote["bsd_detailamount"] = moneyValue;
-                        if (enUnit.Contains("bsd_taxcode"))
-                        {
-                            trace.Trace("Có bsd_taxcode");
-                            Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
-                            decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
-                            decimal taxRate = taxCodeValue / 100.0m;
-                            decimal detailAmount1 = moneyValue.Value;
-                            decimal vatAmount = detailAmount1 * taxRate;
-                            up_quote["bsd_vat"] = new Money(vatAmount);
-                            service.Update(up_quote);
-                        }
-                    }
+                    var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
+                    Money moneyValue = (Money)aliased_money.Value;
+                    detailAmount = moneyValue.Value;
+                    up_quote["bsd_detailamount"] = moneyValue;
                 }
             }
-                
 
-            
-            
-            ///
-                decimal detailAmount = quote.Contains("bsd_detailamount") ? ((Money)quote["bsd_detailamount"]).Value : 0;
-                decimal discountAmount = quote.Contains("bsd_discountamount") ? ((Money)quote["bsd_discountamount"]).Value : 0;
-                up_quote["bsd_totalamountlessfreight"] = new Money(detailAmount - discountAmount);
-                decimal bsd_packagesellingamount = quote.Contains("bsd_packagesellingamount") ? ((Money)quote["bsd_packagesellingamount"]).Value : 0;
-                decimal bsd_maintenancefees = quote.Contains("bsd_maintenancefees") ? ((Money)quote["bsd_maintenancefees"]).Value : 0;
-                decimal bsd_vat = quote.Contains("bsd_vat") ? ((Money)quote["bsd_vat"]).Value : 0;
-                up_quote["bsd_totalamount"] = new Money(detailAmount + discountAmount + bsd_packagesellingamount + bsd_maintenancefees+bsd_vat);
-            if (quote.Contains("bsd_handovercondition"))
+            // 4. Lấy các thông số cơ bản
+            decimal discountAmount = quote.Contains("bsd_discountamount") ? ((Money)quote["bsd_discountamount"]).Value : 0;
+            // Lưu ý: bsd_maintenancefeespercent thường là kiểu Decimal hoặc Double trong CRM
+            decimal maintPercent = 0;
+            if (quote.Contains("bsd_maintenancefeespercent"))
+            {
+                var val = quote["bsd_maintenancefeespercent"];
+                maintPercent = (val is Money) ? ((Money)val).Value : (val is decimal ? (decimal)val : Convert.ToDecimal(val));
+            }
+
+            // 5. Tính toán theo Điều kiện bàn giao
+            if (quote.Contains("bsd_handovercondition") && enUnit != null)
             {
                 Entity handover = service.Retrieve(((EntityReference)quote["bsd_handovercondition"]).LogicalName, ((EntityReference)quote["bsd_handovercondition"]).Id, new ColumnSet(true));
                 int bsd_method = handover.Contains("bsd_method") ? ((OptionSetValue)handover["bsd_method"]).Value : 0;
-                if(bsd_method == 100000001)
+
+                decimal packageSellingAmount = 0;
+
+                if (bsd_method == 100000001) // Fix Amount
                 {
-                    decimal amount_han = handover.Contains("bsd_amount") ? ((Money)handover["bsd_amount"]).Value : 0;
-                    up_quote["bsd_packagesellingamount"] = new Money(amount_han);
+                    packageSellingAmount = handover.Contains("bsd_amount") ? ((Money)handover["bsd_amount"]).Value : 0;
                 }
-                else if (bsd_method == 100000002)
+                else if (bsd_method == 100000002) // Percent
                 {
-                        decimal bsd_percent = handover.Contains("bsd_percent") ? (decimal)handover["bsd_percent"] : 0;
-                        decimal percen = bsd_percent / 100 * (detailAmount - discountAmount);
-                        up_quote["bsd_packagesellingamount"] = new Money(percen);
+                    decimal bsd_percent = handover.Contains("bsd_percent") ? (decimal)handover["bsd_percent"] : 0;
+                    packageSellingAmount = (bsd_percent / 100m) * (detailAmount - discountAmount);
                 }
 
-            }
+                // Công thức tính toán chung
+                decimal netAmount = detailAmount + packageSellingAmount - discountAmount;
 
+                // Lấy thông tin từ Unit (Sản phẩm)
+                decimal landValueUnit = enUnit.Contains("bsd_landvalueofunit") ? ((Money)enUnit["bsd_landvalueofunit"]).Value : 0;
+                decimal netArea = enUnit.Contains("bsd_netsaleablearea") ? Convert.ToDecimal(enUnit["bsd_netsaleablearea"]) : 0;
+
+                decimal landDeduction = landValueUnit * netArea;
+
+                // Thuế VAT (10% trên số tiền sau khi trừ khấu trừ đất)
+                decimal vat = (netAmount - landDeduction) * 0.1m;
+                if (vat < 0) vat = 0;
+
+                decimal maintenanceFee = netAmount * (maintPercent / 100m);
+
+                // Gán giá trị vào Entity cập nhật
+                up_quote["bsd_packagesellingamount"] = new Money(packageSellingAmount);
+                up_quote["bsd_totalamountlessfreight"] = new Money(netAmount);
+                up_quote["bsd_landvaluededuction"] = new Money(landDeduction);
+                up_quote["bsd_vat"] = new Money(vat);
+                up_quote["bsd_maintenancefees"] = new Money(maintenanceFee);
+                up_quote["bsd_totalamountlessfreightaftervat"] = new Money(netAmount + vat);
+                up_quote["bsd_totalamount"] = new Money(netAmount + vat + maintenanceFee);
+
+                // 6. THỰC THI CẬP NHẬT
                 service.Update(up_quote);
-
+                trace.Trace("Đã cập nhật Quote ID: " + target.Id);
+            }
         }
+
         private DateTime RetrieveLocalTimeFromUTCTime(DateTime utcTime, IOrganizationService service)
         {
             int? timeZoneCode = RetrieveCurrentUsersSettings(service);
             if (!timeZoneCode.HasValue)
                 throw new InvalidPluginExecutionException("Can't find time zone code");
+
             var request = new LocalTimeFromUtcTimeRequest
             {
                 TimeZoneCode = timeZoneCode.Value,
                 UtcTime = utcTime.ToUniversalTime()
             };
             var response = (LocalTimeFromUtcTimeResponse)service.Execute(request);
-
             return response.LocalTime;
-            //var utcTime = utcTime.ToString("MM/dd/yyyy HH:mm:ss");
-            //var localDateOnly = response.LocalTime.ToString("dd-MM-yyyy");
         }
 
         private int? RetrieveCurrentUsersSettings(IOrganizationService service)
@@ -124,16 +137,16 @@ namespace Plugin_Update_quotation
             var currentUserSettings = service.RetrieveMultiple(
             new QueryExpression("usersettings")
             {
-                ColumnSet = new ColumnSet("localeid", "timezonecode"),
+                ColumnSet = new ColumnSet("timezonecode"),
                 Criteria = new FilterExpression
                 {
                     Conditions = { new ConditionExpression("systemuserid", ConditionOperator.EqualUserId) }
                 }
-            }).Entities[0].ToEntity<Entity>();
+            });
 
-            return (int?)currentUserSettings.Attributes["timezonecode"];
+            if (currentUserSettings.Entities.Count > 0)
+                return (int?)currentUserSettings.Entities[0].Attributes["timezonecode"];
+            return null;
         }
-
     }
 }
-

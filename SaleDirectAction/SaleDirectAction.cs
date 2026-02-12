@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IdentityModel.Metadata;
 using System.IO;
+using System.Linq;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -268,15 +269,21 @@ namespace SaleDirectAction
                         throw new InvalidPluginExecutionException("Please select project for this unit!");
                     //if (!enUnit.Contains("defaultuomid"))
                     //    throw new InvalidPluginExecutionException("Please select default unit for this unit!");
-
+                    Entity entity3 = service.Retrieve(((EntityReference)enUnit["bsd_projectcode"]).LogicalName, ((EntityReference)enUnit["bsd_projectcode"]).Id, new ColumnSet(true));
                     tracingService.Trace("3");
                     Entity entity2 = new Entity("bsd_quote");
                     tracingService.Trace("3.1");
-                    entity2["bsd_name"] = enUnit["bsd_name"];
+                    string name = enUnit.GetAttributeValue<string>("bsd_name") ?? "";
+                    string projectCode = entity3.GetAttributeValue<string>("bsd_projectcode") ?? "";
+                    entity2["bsd_name"] = name + projectCode;
                     tracingService.Trace("3.3");
                     entity2["bsd_projectid"] = enUnit["bsd_projectcode"];
                     entity2["transactioncurrencyid"] = enUnit["transactioncurrencyid"];
-
+                    entity2["bsd_numberofmonthspaidmf"] = enUnit["bsd_numberofmonthspaidmf"];
+                    decimal bsd_netusablearea = ((Money)enUnit["bsd_netusablearea"]).Value;
+                    decimal bsd_managementamountmonth = ((Money)enUnit["bsd_managementamountmonth"]).Value;
+                    decimal bsd_numberofmonthspaidmf = ((Money)enUnit["bsd_numberofmonthspaidmf"]).Value;
+                    entity2["bsd_managementfee"] = bsd_netusablearea * bsd_managementamountmonth * bsd_numberofmonthspaidmf;
                     tracingService.Trace("3.4");
                     //entity2["bsd_phaseslaunchid"] = enUnit["bsd_phaseslaunchid"];
                     entity2["bsd_unitno"] = (object)entityReference1;
@@ -286,7 +293,7 @@ namespace SaleDirectAction
                     entity2["bsd_constructionarea"] = enUnit.Contains("bsd_constructionarea") ? enUnit["bsd_constructionarea"] : Decimal.Zero;
                     int numberofmonthspaidmf = -1;
                     strbuil.AppendLine("333333");
-                    Entity entity3 = service.Retrieve(((EntityReference)enUnit["bsd_projectcode"]).LogicalName, ((EntityReference)enUnit["bsd_projectcode"]).Id, new ColumnSet(true));
+                    
                     if (enUnit.Contains("bsd_numberofmonthspaidmf"))
                     {
                         numberofmonthspaidmf = (int)enUnit["bsd_numberofmonthspaidmf"];
@@ -575,6 +582,42 @@ namespace SaleDirectAction
                     }
                     // Gán mã mới vào entity: Ví dụ RSC-00000002
                     entity2["bsd_reservationno"] = "RSV-" + nextNumber.ToString("D7");
+                    var fetchData = new
+                    {
+                        bsd_projectid = "{0552756B-9AA2-F011-BBD2-000D3AC97FEC}"
+                    };
+
+                    // Lấy tất cả Bank Account thuộc Project này, không lọc Default ở đây
+                    var fetchXml_bankaccount = $@"
+                    <fetch>
+                      <entity name=""bsd_bankaccount"">
+                        <attribute name=""bsd_name"" />
+                        <attribute name=""bsd_default"" />
+                        <link-entity name=""bsd_bsd_bankaccount_bsd_project"" from=""bsd_bankaccountid"" to=""bsd_bankaccountid"" intersect=""true"">
+                          <filter>
+                            <condition attribute=""bsd_projectid"" operator=""eq"" value=""{entity3.Id}"" />
+                          </filter>
+                        </link-entity>
+                      </entity>
+                    </fetch>";
+                    // 1. Thực thi FetchXML (lấy tất cả bank account liên quan project)
+                    EntityCollection results_acc = service.RetrieveMultiple(new FetchExpression(fetchXml_bankaccount));
+
+                    if (results_acc.Entities.Count > 0)
+                    {
+                        Entity selectedAccount = results_acc.Entities
+                            .FirstOrDefault(e => e.GetAttributeValue<bool>("bsd_default") == true)
+                            ?? results_acc.Entities.FirstOrDefault();
+
+                        if (selectedAccount != null)
+                        {
+                            entity2["bsd_bankaccount"] = selectedAccount.ToEntityReference();
+                        }
+                    }
+                    else
+                    {
+                        tracingService.Trace("Không tìm thấy Bank Account nào cho Project này.");
+                    }
                     Guid guid = service.Create(entity2);
                     create_update_DataProjection(entityReference1.Id, entity2, guid);
                     tracingService.Trace("16");
