@@ -89,18 +89,19 @@ namespace SaleDirectAction
                     DateTime dateNow = DateTime.Now;
                     entity2["bsd_bookingtime"] = RetrieveLocalTimeFromUTCTime(dateNow, service);
 
-                    EntityReference enfPhasesLaunch = entity1.Contains("bsd_pricelevel") ? PhasesLaunchPriceList((EntityReference)entity1["bsd_pricelevel"]) : null;
-                    if (((OptionSetValue)entity1["statuscode"]).Value == 100000000 && enfPhasesLaunch != null) // 100000000 = Available
-                    {
-                        entity2["bsd_phaselaunch"] = entity1.Contains("bsd_pricelevel") ? PhasesLaunchPriceList((EntityReference)entity1["bsd_pricelevel"]) : null;
-                        entity2["bsd_queuingfee"] = new Money(0);
-                        entity2["statuscode"] = new OptionSetValue(100000004);
+                    //EntityReference enfPhasesLaunch = entity1.Contains("bsd_pricelevel") ? PhasesLaunchPriceList((EntityReference)entity1["bsd_pricelevel"]) : null;
+                    //if (((OptionSetValue)entity1["statuscode"]).Value == 100000000 && enfPhasesLaunch != null) // 100000000 = Available
+                    //{
+                    //    entity2["bsd_phaselaunch"] = entity1.Contains("bsd_pricelevel") ? PhasesLaunchPriceList((EntityReference)entity1["bsd_pricelevel"]) : null;
+                    //    entity2["bsd_queuingfee"] = new Money(0);
+                    //    entity2["statuscode"] = new OptionSetValue(100000006);
 
-                        int shortTimeQueue = getShortTimeQueueByProject((EntityReference)entity1["bsd_projectcode"]);
-                        DateTime bsd_queuingexpired = dateNow.AddHours(shortTimeQueue);
-                        entity2["bsd_queuingexpired"] = RetrieveLocalTimeFromUTCTime(bsd_queuingexpired, service);
-                    }
-                    else if ((((OptionSetValue)entity1["statuscode"]).Value == 100000000 || ((OptionSetValue)entity1["statuscode"]).Value == 100000004))// && enfPhasesLaunch == null
+                    //    int shortTimeQueue = getShortTimeQueueByProject((EntityReference)entity1["bsd_projectcode"]);
+                    //    DateTime bsd_queuingexpired = dateNow.AddHours(shortTimeQueue);
+                    //    entity2["bsd_queuingexpired"] = RetrieveLocalTimeFromUTCTime(bsd_queuingexpired, service);
+                    //}
+                    //else
+                    if ((((OptionSetValue)entity1["statuscode"]).Value == 100000000 )) //|| ((OptionSetValue)entity1["statuscode"]).Value == 100000004 && enfPhasesLaunch == null
                     {
                         EntityReference entityReference2 = (EntityReference)entity1["bsd_projectcode"];
                         Entity entity3 = service.Retrieve(entityReference2.LogicalName, entityReference2.Id, new ColumnSet(new string[] { "bsd_bookingfee" }));
