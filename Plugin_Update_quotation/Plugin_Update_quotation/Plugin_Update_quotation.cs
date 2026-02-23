@@ -23,7 +23,7 @@ namespace Plugin_Update_quotation
             Entity target = context.InputParameters["Target"] as Entity;
 
             // 1. Kiểm tra Depth để tránh lặp vô tận (Infinite Loop)
-            if (context.Depth > 1) return;
+            if (context.Depth > 10) return;
 
             // 2. Lấy data đầy đủ của Quote
             Entity quote = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(true));
@@ -61,6 +61,7 @@ namespace Plugin_Update_quotation
 
             // 4. Lấy các thông số cơ bản
             decimal discountAmount = quote.Contains("bsd_discountamount") ? ((Money)quote["bsd_discountamount"]).Value : 0;
+            trace.Trace("discount= " + discountAmount);
             // Lưu ý: bsd_maintenancefeespercent thường là kiểu Decimal hoặc Double trong CRM
             decimal maintPercent = 0;
             if (quote.Contains("bsd_maintenancefeespercent"))
@@ -89,7 +90,9 @@ namespace Plugin_Update_quotation
 
                 // Công thức tính toán chung
                 decimal netAmount = detailAmount + packageSellingAmount - discountAmount;
-
+                trace.Trace("detailAmount " + detailAmount);
+                trace.Trace("packageSellingAmount " + packageSellingAmount);
+                trace.Trace("ketqua" + netAmount);
                 // Lấy thông tin từ Unit (Sản phẩm)
                 decimal landValueUnit = enUnit.Contains("bsd_landvalueofunit") ? ((Money)enUnit["bsd_landvalueofunit"]).Value : 0;
                 decimal netArea = enUnit.Contains("bsd_netsaleablearea") ? Convert.ToDecimal(enUnit["bsd_netsaleablearea"]) : 0;

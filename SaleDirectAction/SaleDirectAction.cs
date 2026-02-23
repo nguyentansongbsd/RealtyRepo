@@ -11,6 +11,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IdentityModel.Metadata;
 using System.IO;
 using System.Linq;
@@ -18,6 +19,7 @@ using System.Runtime.ConstrainedExecution;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Web.Routing;
 using System.Web.UI.WebControls;
 
 namespace SaleDirectAction
@@ -251,6 +253,9 @@ namespace SaleDirectAction
                     //service = factory.CreateOrganizationService(context.UserId);
                     tracingService.Trace("2");
                     Entity enUnit = RetrieveValidUnit(entityReference1.Id);
+                    Entity updateUnit = new Entity("bsd_product", entityReference1.Id);
+                    updateUnit["statuscode"] = new OptionSetValue(100000003);//deposit
+                    service.Update(updateUnit);
                     if (enUnit == null)
                         throw new InvalidPluginExecutionException("Unit is not avaliable please check detail of unit!");
                     if (((OptionSetValue)enUnit["statecode"]).Value == 1)
@@ -275,17 +280,22 @@ namespace SaleDirectAction
                     tracingService.Trace("3.1");
                     string name = enUnit.GetAttributeValue<string>("bsd_name") ?? "";
                     string projectCode = entity3.GetAttributeValue<string>("bsd_projectcode") ?? "";
-                    entity2["bsd_name"] = name + projectCode;
+                    entity2["bsd_name"] = "Deposit " + name;
                     tracingService.Trace("3.3");
                     entity2["bsd_projectid"] = enUnit["bsd_projectcode"];
                     entity2["transactioncurrencyid"] = enUnit["transactioncurrencyid"];
                     entity2["bsd_numberofmonthspaidmf"] = enUnit["bsd_numberofmonthspaidmf"];
-                    decimal bsd_netusablearea = ((Money)enUnit["bsd_netusablearea"]).Value;
-                    decimal bsd_managementamountmonth = ((Money)enUnit["bsd_managementamountmonth"]).Value;
-                    decimal bsd_numberofmonthspaidmf = ((Money)enUnit["bsd_numberofmonthspaidmf"]).Value;
-                    entity2["bsd_managementfee"] = bsd_netusablearea * bsd_managementamountmonth * bsd_numberofmonthspaidmf;
+                    decimal bsd_netsaleablearea = 0;
+                    decimal bsd_managementamountmonth = 0;
+                    decimal bsd_numberofmonthspaidmf = 0;
+                    if (enUnit.Contains("bsd_netsaleablearea") && enUnit["bsd_netsaleablearea"] != null)
+                        bsd_netsaleablearea = (decimal)enUnit["bsd_netsaleablearea"];
+                    if (enUnit.Contains("bsd_managementamountmonth") && enUnit["bsd_managementamountmonth"] != null)
+                        bsd_managementamountmonth = ((Money)enUnit["bsd_managementamountmonth"]).Value;
+                    if (enUnit.Contains("bsd_numberofmonthspaidmf") && enUnit["bsd_numberofmonthspaidmf"] != null)
+                        bsd_numberofmonthspaidmf = (decimal)(int)enUnit["bsd_numberofmonthspaidmf"];
+                    entity2["bsd_managementfee"] = new Money(bsd_netsaleablearea * bsd_managementamountmonth * bsd_numberofmonthspaidmf);
                     tracingService.Trace("3.4");
-                    //entity2["bsd_phaseslaunchid"] = enUnit["bsd_phaseslaunchid"];
                     entity2["bsd_unitno"] = (object)entityReference1;
                     entity2["statuscode"] = new OptionSetValue(100000007);
                     strbuil.AppendLine("22222");
@@ -456,56 +466,8 @@ namespace SaleDirectAction
                         Money moneyminimum = (Money)minimum.Value;
                         entity2["bsd_minimumdeposit"] = moneyminimum;
                     }
-                    //var fetchXml_pricelist = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                    //<fetch distinct=""true"">
-                    //  <entity name=""bsd_productpricelevel"">
-                    //    <attribute name=""bsd_price"" alias=""prilist_price"" />
-                    //    <filter>
-                    //      <condition attribute=""bsd_product"" operator=""eq"" value=""{enUnit.Id}"" />
-                    //    </filter>
-                    //    <link-entity name=""bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevel"" alias=""price"">
-                    //      <attribute name=""bsd_name"" alias=""price_name"" />
-                    //      <attribute name=""bsd_pricelevelid"" alias=""price_id"" />
-                    //      <link-entity name=""bsd_bsd_phaseslaunch_bsd_pricelevel"" from=""bsd_pricelevelid"" to=""bsd_pricelevelid"" intersect=""true"">
-                    //        <link-entity name=""bsd_phaseslaunch"" from=""bsd_phaseslaunchid"" to=""bsd_phaseslaunchid"" alias=""phase"" intersect=""true"">
-                    //          <filter>
-                    //            <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
-                    //            <condition attribute=""bsd_stopselling"" operator=""eq"" value=""{0}"" />
-                    //          </filter>
-                    //        </link-entity>
-                    //      </link-entity>
-                    //    </link-entity>
-                    //  </entity>
-                    //</fetch>";
-                    //EntityCollection rs_price = service.RetrieveMultiple(new FetchExpression(fetchXml_pricelist));
-                    //if (rs_price.Entities.Count == 1)
-                    //{
-                    //    tracingService.Trace("vào if price_" + rs_price.Entities.Count);
-
-                    //    var aliased_price = (AliasedValue)rs_price.Entities[0]["price_id"];
-                    //    Guid price_id = (Guid)aliased_price.Value;
-                    //    entity2["bsd_pricelevel"] = new EntityReference("bsd_pricelevel", price_id);
-                    //    if (rs_price.Entities[0].Contains("prilist_price"))
-                    //    {
-                    //        tracingService.Trace("Có prilist_price");
-                    //        var aliased_money = (AliasedValue)rs_price.Entities[0]["prilist_price"];
-                    //        Money moneyValue = (Money)aliased_money.Value;
-
-                    //        entity2["bsd_detailamount"] = moneyValue;
-                    //        if (enUnit.Contains("bsd_taxcode"))
-                    //        {
-                    //            tracingService.Trace("Có bsd_taxcode");
-                    //            Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
-                    //            decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
-                    //            decimal taxRate = taxCodeValue / 100.0m;
-                    //            decimal detailAmount = moneyValue.Value;
-                    //            decimal vatAmount = detailAmount * taxRate;
-                    //            entity2["bsd_vat"] = new Money(vatAmount);
-                    //        }
-                    //    }
-                    //}
-
                     entity2["bsd_pricelevel"] = enUnit.Contains("bsd_pricelevel") ? (EntityReference)enUnit["bsd_pricelevel"] : null;
+                    decimal detailAmount = 0;
                     if (enUnit.Contains("bsd_pricelevel") && enUnit["bsd_pricelevel"] != null)
                     {
                         EntityReference priceLevelRef = (EntityReference)enUnit["bsd_pricelevel"];
@@ -544,14 +506,45 @@ namespace SaleDirectAction
                                     Entity entity_taxcode = service.Retrieve(((EntityReference)enUnit["bsd_taxcode"]).LogicalName, ((EntityReference)enUnit["bsd_taxcode"]).Id, new ColumnSet(true));
                                     decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
                                     decimal taxRate = taxCodeValue / 100.0m;
-                                    decimal detailAmount = moneyValue.Value;
+                                    detailAmount = moneyValue.Value;
                                     decimal vatAmount = detailAmount * taxRate;
-                                    entity2["bsd_vat"] = new Money(vatAmount);
+                                    //entity2["bsd_vat"] = new Money(vatAmount);
                                 }
                             }
                         }
                     }
+                    //Tính toán tab Price
+                    decimal maintPercent = 0;
+                    if (enUnit.Contains("bsd_maintenancefeespercent"))
+                    {
+                        var val = enUnit["bsd_maintenancefeespercent"];
+                        maintPercent = (val is Money) ? ((Money)val).Value : (val is decimal ? (decimal)val : Convert.ToDecimal(val));
+                    }
+                    decimal discountAmount = 0;
+                    decimal packageSellingAmount = 0;
+                    decimal netAmount = detailAmount + packageSellingAmount - discountAmount;
+                    // Lấy thông tin từ Unit (Sản phẩm)
+                    decimal landValueUnit = enUnit.Contains("bsd_landvalueofunit") ? ((Money)enUnit["bsd_landvalueofunit"]).Value : 0;
+                    decimal netArea = enUnit.Contains("bsd_netsaleablearea") ? Convert.ToDecimal(enUnit["bsd_netsaleablearea"]) : 0;
 
+                    decimal landDeduction = landValueUnit * netArea;
+
+                    // Thuế VAT (10% trên số tiền sau khi trừ khấu trừ đất)
+                    decimal vat = (netAmount - landDeduction) * 0.1m;
+                    if (vat < 0) vat = 0;
+
+                    decimal maintenanceFee = netAmount * (maintPercent / 100m);
+
+                    // Gán giá trị vào Entity cập nhật
+                    entity2["bsd_packagesellingamount"] = new Money(packageSellingAmount);
+                    entity2["bsd_totalamountlessfreight"] = new Money(netAmount);
+                    entity2["bsd_landvaluededuction"] = new Money(landDeduction);
+                    entity2["bsd_vat"] = new Money(vat);
+                    entity2["bsd_maintenancefees"] = new Money(maintenanceFee);
+                    entity2["bsd_totalamountlessfreightaftervat"] = new Money(netAmount + vat);
+                    entity2["bsd_totalamount"] = new Money(netAmount + vat + maintenanceFee);
+                    entity2["bsd_discountamount"] = new Money(0);
+                    entity2["bsd_packagesellingamount"] = new Money(0);
                     tracingService.Trace("12");
                     strbuil.AppendLine("aaaaa");
 

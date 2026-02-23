@@ -183,8 +183,9 @@ namespace Action_UpdateQuote
                     else
                     {
                         tracingService.Trace("vào else cancel");
-                        
-                        up_quote["statuscode"] = new OptionSetValue(100000002);
+
+                        up_quote["statecode"] = new OptionSetValue(1);
+                        up_quote["statuscode"] = new OptionSetValue(667980005);
                         up_quote["bsd_canceldate"] = DateTime.Today;
                         up_quote["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_quote);
