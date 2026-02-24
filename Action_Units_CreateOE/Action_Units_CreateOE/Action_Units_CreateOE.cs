@@ -28,7 +28,8 @@ namespace Action_Units_CreateOE
 
                 EntityReference target = (EntityReference)context.InputParameters["Target"];
                 Entity enUnit = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_name", "bsd_projectcode",
-                "bsd_pricelevel", "bsd_taxcode", "bsd_unittype", "bsd_netsaleablearea", "bsd_numberofmonthspaidmf", "bsd_managementamountmonth", "bsd_price"}));
+                "bsd_pricelevel", "bsd_taxcode", "bsd_unittype", "bsd_netsaleablearea", "bsd_numberofmonthspaidmf", "bsd_managementamountmonth", "bsd_price",
+                "bsd_landvalueofunit"}));
                 int status = enUnit.Contains("statuscode") ? ((OptionSetValue)enUnit["statuscode"]).Value : -99;
                 if (status != 100000000) //Available
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_unit"));
@@ -63,12 +64,11 @@ namespace Action_Units_CreateOE
             newOE["bsd_taxcode"] = GetValidFieldValue(enUnit, "bsd_taxcode");
             newOE["bsd_unittype"] = GetValidFieldValue(enUnit, "bsd_unittype");
             newOE["bsd_unitnumber"] = target;
-            decimal bsd_netsaleablearea = 0;
-            if (enUnit.Contains("bsd_netsaleablearea"))
-            {
-                bsd_netsaleablearea = (decimal)enUnit["bsd_netsaleablearea"];
-                newOE["bsd_netusablearea"] = bsd_netsaleablearea;
-            }
+            decimal bsd_netsaleablearea = enUnit.Contains("bsd_netsaleablearea") ? (decimal)enUnit["bsd_netsaleablearea"] : 0;
+            newOE["bsd_netusablearea"] = bsd_netsaleablearea;
+
+            decimal bsd_landvalueofunit = enUnit.Contains("bsd_landvalueofunit") ? (decimal)enUnit["bsd_landvalueofunit"] : 0;
+            newOE["bsd_landvaluededuction"] = bsd_landvalueofunit * bsd_netsaleablearea;
 
             //Management Fee Information
             #region Management Fee Information
