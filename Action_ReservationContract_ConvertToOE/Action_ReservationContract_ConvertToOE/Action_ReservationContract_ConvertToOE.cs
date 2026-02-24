@@ -31,7 +31,7 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_queue", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid", "bsd_discountcheck", "bsd_discountdraw",
                 "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
-                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype"}));
+                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype", "bsd_landvaluededuction", "bsd_totalamountlessfreightaftervat"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
                 if (status != 100000010) //Signed
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_reservationcontract"));
@@ -92,12 +92,14 @@ namespace Action_ReservationContract_ConvertToOE
             newOE["bsd_discount"] = GetValidFieldValue(enRC, "bsd_discountamount");
             newOE["bsd_packagesellingamount"] = GetValidFieldValue(enRC, "bsd_packagesellingamount");
             newOE["bsd_totalamountlessfreight"] = GetValidFieldValue(enRC, "bsd_totalamountlessfreight");
+            newOE["bsd_totalamountlessfreightaftervat"] = GetValidFieldValue(enRC, "bsd_totalamountlessfreightaftervat");
             newOE["bsd_totaltax"] = GetValidFieldValue(enRC, "bsd_totaltax");
             newOE["bsd_totalamount"] = GetValidFieldValue(enRC, "bsd_totalamount");
             newOE["bsd_freightamount"] = GetValidFieldValue(enRC, "bsd_freightamount");
             newOE["bsd_numberofmonthspaidmf"] = GetValidFieldValue(enRC, "bsd_numberofmonthspaidmf");
             newOE["bsd_managementfee"] = GetValidFieldValue(enRC, "bsd_managementfee");
             newOE["bsd_customertype"] = GetValidFieldValue(enRC, "bsd_customertype");
+            newOE["bsd_landvaluededuction"] = GetValidFieldValue(enRC, "bsd_landvaluededuction");
 
             newOE["bsd_discountcheck"] = GetValidFieldValue(enRC, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enRC, "bsd_discountdraw");
