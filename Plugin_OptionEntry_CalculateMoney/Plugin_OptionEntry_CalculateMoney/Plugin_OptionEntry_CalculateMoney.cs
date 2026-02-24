@@ -178,6 +178,7 @@ namespace Plugin_OptionEntry_CalculateMoney
 
                 decimal bsd_packagesellingamount = GetPackageSellingAmount(enOE, bsd_detailamount);
                 enUp["bsd_packagesellingamount"] = new Money(bsd_packagesellingamount);
+                bsd_totalamountlessfreight += bsd_packagesellingamount;
 
                 bsd_freightamount = GetFreightAmount(enOE, bsd_totalamountlessfreight);
                 enUp["bsd_freightamount"] = new Money(bsd_freightamount);
@@ -189,6 +190,9 @@ namespace Plugin_OptionEntry_CalculateMoney
                 if (context.MessageName == "Update")
                 {
                     trace.Trace("từ convert");
+                    decimal bsd_packagesellingamount = GetMoney(enOE, "bsd_packagesellingamount");
+                    bsd_totalamountlessfreight += bsd_packagesellingamount;
+
                     bsd_freightamount = GetMoney(enOE, "bsd_freightamount");
 
                     SetTotalTaxAndTotalAmount(enOE, bsd_totalamountlessfreight, bsd_freightamount, ref enUp);
