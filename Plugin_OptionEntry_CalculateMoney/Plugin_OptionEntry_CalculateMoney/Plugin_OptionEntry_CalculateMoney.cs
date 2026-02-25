@@ -35,7 +35,7 @@ namespace Plugin_OptionEntry_CalculateMoney
                 decimal unitPrice = GetUnitPrice(enTarget, target, ref enUp);
                 decimal bsd_totalamountlessfreight = 0;
 
-                if (context.MessageName == "Update")
+                if (context.MessageName == "Update" && (target.Contains("bsd_pricelevel") || target.Contains("bsd_discountcheck")))
                     CalcDiscount(enTarget, ref enUp, unitPrice, ref bsd_totalamountlessfreight);
 
                 SetPrice(enTarget, ref enUp, unitPrice, bsd_totalamountlessfreight);

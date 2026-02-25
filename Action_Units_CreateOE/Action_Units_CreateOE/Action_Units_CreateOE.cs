@@ -67,8 +67,8 @@ namespace Action_Units_CreateOE
             decimal bsd_netsaleablearea = enUnit.Contains("bsd_netsaleablearea") ? (decimal)enUnit["bsd_netsaleablearea"] : 0;
             newOE["bsd_netusablearea"] = bsd_netsaleablearea;
 
-            decimal bsd_landvalueofunit = enUnit.Contains("bsd_landvalueofunit") ? (decimal)enUnit["bsd_landvalueofunit"] : 0;
-            newOE["bsd_landvaluededuction"] = bsd_landvalueofunit * bsd_netsaleablearea;
+            decimal bsd_landvalueofunit = enUnit.Contains("bsd_landvalueofunit") ? ((Money)enUnit["bsd_landvalueofunit"]).Value : 0;
+            newOE["bsd_landvaluededuction"] = new Money(bsd_landvalueofunit * bsd_netsaleablearea);
 
             //Management Fee Information
             #region Management Fee Information
