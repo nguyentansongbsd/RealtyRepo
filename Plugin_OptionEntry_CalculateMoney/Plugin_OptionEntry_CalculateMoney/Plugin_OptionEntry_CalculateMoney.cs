@@ -28,7 +28,7 @@ namespace Plugin_OptionEntry_CalculateMoney
                 Entity enTarget = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[]
                 {
                     "bsd_detailamount", "bsd_discountcheck", "bsd_quoteid", "bsd_reservationcontract", "bsd_unitnumber", "bsd_taxcode", "bsd_handovercondition",
-                    "bsd_pricelevel", "bsd_packagesellingamount", "bsd_freightamount", "bsd_totalamountlessfreight", "bsd_landvaluededuction"
+                    "bsd_pricelevel", "bsd_packagesellingamount", "bsd_freightamount", "bsd_totalamountlessfreight", "bsd_landvaluededuction", "bsd_totaltax"
                 }));
 
                 Entity enUp = new Entity(target.LogicalName, target.Id);
@@ -174,13 +174,17 @@ namespace Plugin_OptionEntry_CalculateMoney
 
                 decimal bsd_packagesellingamount = GetPackageSellingAmount(enOE, bsd_detailamount);
                 enUp["bsd_packagesellingamount"] = new Money(bsd_packagesellingamount);
+
                 bsd_totalamountlessfreight += bsd_packagesellingamount;
                 enUp["bsd_totalamountlessfreight"] = new Money(bsd_totalamountlessfreight);
 
                 decimal bsd_freightamount = GetFreightAmount(enOE, bsd_totalamountlessfreight);
                 enUp["bsd_freightamount"] = new Money(bsd_freightamount);
 
-                SetTotalTaxAndTotalAmount(enOE, bsd_totalamountlessfreight, bsd_freightamount, ref enUp);
+                decimal bsd_totaltax = GetTotalTax(enOE, bsd_totalamountlessfreight, ref enUp);
+                enUp["bsd_totaltax"] = new Money(bsd_totaltax);
+
+                SetTotalAmount(bsd_totalamountlessfreight, bsd_freightamount, bsd_totaltax, ref enUp);
             }
             else  // từ convert
             {
@@ -192,8 +196,9 @@ namespace Plugin_OptionEntry_CalculateMoney
                     enUp["bsd_totalamountlessfreight"] = new Money(bsd_totalamountlessfreight);
 
                     decimal bsd_freightamount = GetMoney(enOE, "bsd_freightamount");
+                    decimal bsd_totaltax = GetMoney(enOE, "bsd_totaltax");
 
-                    SetTotalTaxAndTotalAmount(enOE, bsd_totalamountlessfreight, bsd_freightamount, ref enUp);
+                    SetTotalAmount(bsd_totalamountlessfreight, bsd_freightamount, bsd_totaltax, ref enUp);
                 }
             }
         }
@@ -233,9 +238,9 @@ namespace Plugin_OptionEntry_CalculateMoney
             return bsd_maintenancefeespercent * bsd_totalamountlessfreight;
         }
 
-        private void SetTotalTaxAndTotalAmount(Entity enOE, decimal bsd_totalamountlessfreight, decimal bsd_freightamount, ref Entity enUp)
+        private decimal GetTotalTax(Entity enOE, decimal bsd_totalamountlessfreight, ref Entity enUp)
         {
-            trace.Trace("SetTotalTaxAndTotalAmount");
+            trace.Trace("GetTotalTax");
 
             decimal percentTax = 0;
             if (enOE.Contains("bsd_taxcode"))
@@ -246,7 +251,12 @@ namespace Plugin_OptionEntry_CalculateMoney
             }
             decimal bsd_landvaluededuction = GetMoney(enOE, "bsd_landvaluededuction");
             decimal bsd_totaltax = (bsd_totalamountlessfreight - bsd_landvaluededuction) * percentTax;
-            enUp["bsd_totaltax"] = new Money(bsd_totaltax);
+            return bsd_totaltax;
+        }
+
+        private void SetTotalAmount(decimal bsd_totalamountlessfreight, decimal bsd_freightamount, decimal bsd_totaltax, ref Entity enUp)
+        {
+            trace.Trace("SetTotalAmount");
             decimal bsd_totalamountlessfreightaftervat = bsd_totalamountlessfreight + bsd_totaltax;
             enUp["bsd_totalamountlessfreightaftervat"] = new Money(bsd_totalamountlessfreightaftervat);
             enUp["bsd_totalamount"] = new Money(bsd_totalamountlessfreightaftervat + bsd_freightamount);
