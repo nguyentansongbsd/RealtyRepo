@@ -28,12 +28,12 @@ namespace Plugin_OptionEntry_CalculateMoney
                 Entity enTarget = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[]
                 {
                     "bsd_detailamount", "bsd_discountcheck", "bsd_quoteid", "bsd_reservationcontract", "bsd_unitnumber", "bsd_taxcode", "bsd_handovercondition",
-                    "bsd_pricelevel", "bsd_packagesellingamount", "bsd_freightamount", "bsd_totalamountlessfreight"
+                    "bsd_pricelevel", "bsd_packagesellingamount", "bsd_freightamount", "bsd_totalamountlessfreight", "bsd_landvaluededuction"
                 }));
 
                 Entity enUp = new Entity(target.LogicalName, target.Id);
                 decimal unitPrice = GetUnitPrice(enTarget, target, ref enUp);
-                decimal bsd_totalamountlessfreight = 0;
+                decimal bsd_totalamountlessfreight = unitPrice;
 
                 if (context.MessageName == "Update" && (target.Contains("bsd_pricelevel") || target.Contains("bsd_discountcheck")))
                     CalcDiscount(enTarget, ref enUp, unitPrice, ref bsd_totalamountlessfreight);
@@ -244,7 +244,8 @@ namespace Plugin_OptionEntry_CalculateMoney
                 Entity enTax = service.Retrieve(refTax.LogicalName, refTax.Id, new ColumnSet(new string[] { "bsd_value" }));
                 percentTax = enTax.Contains("bsd_value") ? (decimal)enTax["bsd_value"] / 100 : 0;
             }
-            decimal bsd_totaltax = bsd_totalamountlessfreight * percentTax;
+            decimal bsd_landvaluededuction = GetMoney(enOE, "bsd_landvaluededuction");
+            decimal bsd_totaltax = (bsd_totalamountlessfreight - bsd_landvaluededuction) * percentTax;
             enUp["bsd_totaltax"] = new Money(bsd_totaltax);
             decimal bsd_totalamountlessfreightaftervat = bsd_totalamountlessfreight + bsd_totaltax;
             enUp["bsd_totalamountlessfreightaftervat"] = new Money(bsd_totalamountlessfreightaftervat);
