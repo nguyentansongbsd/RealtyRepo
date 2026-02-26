@@ -175,16 +175,7 @@ namespace Plugin_OptionEntry_CalculateMoney
                 decimal bsd_packagesellingamount = GetPackageSellingAmount(enOE, bsd_detailamount);
                 enUp["bsd_packagesellingamount"] = new Money(bsd_packagesellingamount);
 
-                bsd_totalamountlessfreight += bsd_packagesellingamount;
-                enUp["bsd_totalamountlessfreight"] = new Money(bsd_totalamountlessfreight);
-
-                decimal bsd_freightamount = GetFreightAmount(enOE, bsd_totalamountlessfreight);
-                enUp["bsd_freightamount"] = new Money(bsd_freightamount);
-
-                decimal bsd_totaltax = GetTotalTax(enOE, bsd_totalamountlessfreight, ref enUp);
-                enUp["bsd_totaltax"] = new Money(bsd_totaltax);
-
-                SetTotalAmount(bsd_totalamountlessfreight, bsd_freightamount, bsd_totaltax, ref enUp);
+                ReSetPrice(enOE, bsd_totalamountlessfreight, bsd_packagesellingamount, ref enUp);
             }
             else  // từ convert
             {
@@ -192,13 +183,8 @@ namespace Plugin_OptionEntry_CalculateMoney
                 {
                     trace.Trace("từ convert");
                     decimal bsd_packagesellingamount = GetMoney(enOE, "bsd_packagesellingamount");
-                    bsd_totalamountlessfreight += bsd_packagesellingamount;
-                    enUp["bsd_totalamountlessfreight"] = new Money(bsd_totalamountlessfreight);
 
-                    decimal bsd_freightamount = GetMoney(enOE, "bsd_freightamount");
-                    decimal bsd_totaltax = GetMoney(enOE, "bsd_totaltax");
-
-                    SetTotalAmount(bsd_totalamountlessfreight, bsd_freightamount, bsd_totaltax, ref enUp);
+                    ReSetPrice(enOE, bsd_totalamountlessfreight, bsd_packagesellingamount, ref enUp);
                 }
             }
         }
@@ -254,9 +240,19 @@ namespace Plugin_OptionEntry_CalculateMoney
             return bsd_totaltax;
         }
 
-        private void SetTotalAmount(decimal bsd_totalamountlessfreight, decimal bsd_freightamount, decimal bsd_totaltax, ref Entity enUp)
+        private void ReSetPrice(Entity enOE, decimal bsd_totalamountlessfreight, decimal bsd_packagesellingamount, ref Entity enUp)
         {
-            trace.Trace("SetTotalAmount");
+            trace.Trace("ReSetPrice");
+
+            bsd_totalamountlessfreight += bsd_packagesellingamount;
+            enUp["bsd_totalamountlessfreight"] = new Money(bsd_totalamountlessfreight);
+
+            decimal bsd_freightamount = GetFreightAmount(enOE, bsd_totalamountlessfreight);
+            enUp["bsd_freightamount"] = new Money(bsd_freightamount);
+
+            decimal bsd_totaltax = GetTotalTax(enOE, bsd_totalamountlessfreight, ref enUp);
+            enUp["bsd_totaltax"] = new Money(bsd_totaltax);
+
             decimal bsd_totalamountlessfreightaftervat = bsd_totalamountlessfreight + bsd_totaltax;
             enUp["bsd_totalamountlessfreightaftervat"] = new Money(bsd_totalamountlessfreightaftervat);
             enUp["bsd_totalamount"] = new Money(bsd_totalamountlessfreightaftervat + bsd_freightamount);
