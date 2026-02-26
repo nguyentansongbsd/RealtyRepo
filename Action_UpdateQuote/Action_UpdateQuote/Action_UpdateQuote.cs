@@ -177,7 +177,7 @@ namespace Action_UpdateQuote
                             up_unit["statuscode"] = new OptionSetValue(100000000);
                             service.Update(up_unit);
                         }
-                        up_queue["statuscode"] = new OptionSetValue(100000004);
+                        up_queue["statuscode"] = new OptionSetValue(100000007);
                         service.Update(up_queue);
                     }
                     else
