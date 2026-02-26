@@ -12,6 +12,9 @@ namespace Plugin_QueryBuilderGroup_Create_Update
             var context =
                 (IPluginExecutionContext)
                 sp.GetService(typeof(IPluginExecutionContext));
+            ITracingService traceService = (ITracingService)sp.GetService(typeof(ITracingService));
+            traceService.Trace("Plugin_QueryBuilderGroup_Create_Update");
+            traceService.Trace("Depth\n" + context.Depth);
             if (context.Depth > 2) return;
             if (!context.InputParameters.Contains("Target"))
                 return;
@@ -21,7 +24,7 @@ namespace Plugin_QueryBuilderGroup_Create_Update
 
             if (!entity.Contains("bsd_jsonconfig"))
                 return;
-            ITracingService traceService = (ITracingService)sp.GetService(typeof(ITracingService));
+            
             string json =
                 entity.GetAttributeValue<string>(
                     "bsd_jsonconfig");
