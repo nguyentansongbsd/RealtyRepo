@@ -29,7 +29,7 @@ namespace Action_Queue_Reservation
             tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
             Entity queue = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(
-                "bsd_phaselaunch", "bsd_pricelist", "bsd_unit", "bsd_project", "bsd_queuingfee", "bsd_customerid", "bsd_queuingfeepaid"));
+                "bsd_phaselaunch", "bsd_pricelist", "bsd_unit", "bsd_project", "bsd_queuingfee", "bsd_customerid", "bsd_queuingfeepaid", "bsd_salesagentcompany"));
             Entity updateCurrentQueue = new Entity(target.LogicalName, target.Id);
             updateCurrentQueue["statuscode"] = new OptionSetValue(100000000);
             service.Update(updateCurrentQueue);
@@ -181,6 +181,7 @@ namespace Action_Queue_Reservation
             if (queue.Contains("bsd_project")) en_quote["bsd_projectid"] = queue.GetAttributeValue<EntityReference>("bsd_project");
             if (queue.Contains("bsd_customerid")) en_quote["bsd_customerid"] = queue.GetAttributeValue<EntityReference>("bsd_customerid");
             if (queue.Contains("bsd_queuingfeepaid")) en_quote["bsd_totalamountpaid"] = queue.GetAttributeValue<Money>("bsd_queuingfeepaid");
+            if (queue.Contains("bsd_salesagentcompany")) en_quote["bsd_salessgentcompany"] = queue.GetAttributeValue<EntityReference>("bsd_salesagentcompany");
             Guid guid = service.Create(en_quote);
             create_update_DataProjection(((EntityReference)en_quote["bsd_unitno"]).Id, en_quote, guid);
             context.OutputParameters["Result"] = "tmp={type:'Success',content:'" + guid.ToString() + "'}";
