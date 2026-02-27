@@ -103,6 +103,7 @@ namespace Plugin_Update_ReservationContract
             decimal taxCodeValue = entity_taxcode.Contains("bsd_value") ? (decimal)entity_taxcode["bsd_value"] : 0;
             decimal taxRate = taxCodeValue / 100.0m;
             up_Re_contract["bsd_totaltax"] = new Money((totalamountlessfreight - bsd_landvaluededuction) * taxRate);
+            up_Re_contract["bsd_totalamountlessfreightaftervat"] = new Money(totalamountlessfreight + ((totalamountlessfreight - bsd_landvaluededuction) * taxRate));
             Entity entity_unit = service.Retrieve(((EntityReference)Re_contract["bsd_unitno"]).LogicalName, ((EntityReference)Re_contract["bsd_unitno"]).Id, new ColumnSet("bsd_maintenancefeespercent"));
             decimal percen1 = entity_unit.Contains("bsd_maintenancefeespercent") ? (decimal)entity_unit["bsd_maintenancefeespercent"] : 0;
             decimal taxper = percen1 / 100.0m;

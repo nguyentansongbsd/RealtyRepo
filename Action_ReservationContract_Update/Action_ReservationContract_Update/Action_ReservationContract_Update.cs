@@ -22,6 +22,7 @@ namespace Action_ReservationContract_Update
                 IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
                 tracingService.Trace($"Context Depth: {context.Depth}");
                 string str1 = context.InputParameters["Command"].ToString();
+                string reason = context.InputParameters["Reason"].ToString();
                 if (context.Depth > 2)
                 {
                     tracingService.Trace("Depth > 3 => Stop plugin");
@@ -55,14 +56,16 @@ namespace Action_ReservationContract_Update
        
                 if (str1 == "cancel")
                 {
+                    
                     checkpayment(RA_Contract.Id, service);
                     if (!RA_Contract.Contains("bsd_quoteid"))
                     {
                         tracingService.Trace("vào if cancel_RAContract");
                         up_RA_Contract["statecode"] = new OptionSetValue(1);
                         up_RA_Contract["statuscode"] = new OptionSetValue(100000005);
-                        //up_RA_Contract["bsd_canceldate"] = DateTime.Today;
-                        //up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
+                        up_RA_Contract["bsd_canceldate"] = DateTime.Today;
+                        up_RA_Contract["bsd_cancelreason"] = reason;
+                        up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_RA_Contract);
 
                         up_unit["statuscode"] = new OptionSetValue(100000000);
@@ -92,8 +95,9 @@ namespace Action_ReservationContract_Update
                         service.Update(up_unit);
                         up_quote["statecode"] = new OptionSetValue(0);
                         up_quote["statuscode"] = new OptionSetValue(667980008); //Deposited
-                        //up_RA_Contract["bsd_canceldate"] = DateTime.Today;
-                        //up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
+                        up_RA_Contract["bsd_canceldate"] = DateTime.Today;
+                        up_RA_Contract["bsd_cancelreason"] = reason;
+                        up_RA_Contract["bsd_canceller"] = new EntityReference("systemuser", context.UserId);
                         service.Update(up_quote);
                         up_RA_Contract["statecode"] = new OptionSetValue(1);
                         up_RA_Contract["statuscode"] = new OptionSetValue(100000005);//Canceled

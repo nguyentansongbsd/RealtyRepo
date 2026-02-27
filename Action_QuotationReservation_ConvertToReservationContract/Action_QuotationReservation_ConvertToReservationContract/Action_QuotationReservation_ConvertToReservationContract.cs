@@ -26,20 +26,22 @@ namespace Action_QuotationReservation_ConvertToReservationContract
                 Entity enReservation = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_unitno", "bsd_projectid",
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_bookingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_opportunityid", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
-                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount","bsd_totalamountpaid", "bsd_discountcheck", "bsd_discountdraw"}));
+                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount","bsd_totalamountpaid", "bsd_discountcheck", "bsd_discountdraw","bsd_opportunityid","bsd_landvaluededuction","bsd_totalamountlessfreightaftervat","bsd_maintenancefees","bsd_managementfee","bsd_waivermanafeemonth","bsd_numberofmonthspaidmf"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
 
                 EntityReference refProduct = (EntityReference)enReservation["bsd_unitno"];
-                Entity enProduct = service.Retrieve(refProduct.LogicalName, refProduct.Id, new ColumnSet(new string[] { "statuscode", "bsd_unittype" }));
+                Entity enProduct = service.Retrieve(refProduct.LogicalName, refProduct.Id, new ColumnSet(new string[] { "statuscode", "bsd_name", "bsd_unittype" }));
+                EntityReference project = (EntityReference)enReservation["bsd_projectid"];
+                Entity enproject = service.Retrieve(project.LogicalName, project.Id, new ColumnSet(new string[] { "statuscode", "bsd_projectcode" }));
                 int statusProduct = enProduct.Contains("statuscode") ? ((OptionSetValue)enProduct["statuscode"]).Value : -99;
 
-                Guid idOE = CreateRAContract(enReservation, target, refProduct, enProduct);
+                Guid idOE = CreateRAContract(enReservation, target, refProduct, enProduct, enproject);
                 EntityReference refOE = new EntityReference("bsd_reservationcontract", idOE);
 
                 //MapCoowner(target, refOE);
                 MapPaymentSchemeDetail(target, refOE);
                 //MapPromotion(target, refOE);
-                //MapDiscountTransaction(target, refOE);
+                MapDiscountTransaction(target, refOE);
                 UpdateReservation(target);
                 UpdateUnit(refProduct);
 
@@ -51,7 +53,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             }
         }
 
-        private Guid CreateRAContract(Entity enReservation, EntityReference target, EntityReference refProduct, Entity enProduct)
+        private Guid CreateRAContract(Entity enReservation, EntityReference target, EntityReference refProduct, Entity enProduct, Entity enproject)
         {
             traceService.Trace("CreateRAContract");
 
@@ -81,9 +83,18 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             newOE["bsd_totalamountlessfreight"] = GetValidFieldValue(enReservation, "bsd_totalamountlessfreight");
             newOE["bsd_totaltax"] = GetValidFieldValue(enReservation, "bsd_vat");
             newOE["bsd_totalamount"] = GetValidFieldValue(enReservation, "bsd_totalamount");
-
+            newOE["bsd_queue"] = GetValidFieldValue(enReservation, "bsd_opportunityid");
             newOE["bsd_discountcheck"] = GetValidFieldValue(enReservation, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enReservation, "bsd_discountdraw");
+            newOE["bsd_landvaluededuction"] = GetValidFieldValue(enReservation, "bsd_landvaluededuction");
+            newOE["bsd_totalamountlessfreightaftervat"] = GetValidFieldValue(enReservation, "bsd_totalamountlessfreightaftervat");
+            newOE["bsd_freightamount"] = GetValidFieldValue(enReservation, "bsd_maintenancefees");
+            newOE["bsd_numberofmonthspaidmf"] = GetValidFieldValue(enReservation, "bsd_numberofmonthspaidmf");
+            newOE["bsd_managementfee"] = GetValidFieldValue(enReservation, "bsd_managementfee");
+            newOE["bsd_waivermanafeemonth"] = GetValidFieldValue(enReservation, "bsd_waivermanafeemonth");
+            newOE["bsd_radate"] = DateTime.Today;
+            string shortDate = DateTime.Today.ToString("ddMMyyyy");
+            newOE["bsd_reservationoptionno"] = enProduct["bsd_name"] + "/" + enproject["bsd_projectcode"] + "-" + "RA" + "/" + shortDate;
             int nextNumber = 1;
             string fetchMaxCode = $@"
                     <fetch top='1'>
