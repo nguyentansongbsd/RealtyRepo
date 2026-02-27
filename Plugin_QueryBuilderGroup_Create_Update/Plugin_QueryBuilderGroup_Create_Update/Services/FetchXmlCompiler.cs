@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Text;
 using Newtonsoft.Json.Linq;
 using Plugin_QueryBuilderGroup_Create_Update.Models;
@@ -69,13 +70,13 @@ namespace Plugin_QueryBuilderGroup_Create_Update.Services
             if (value == null) return "";
 
             DateTime dt = Convert.ToDateTime(value);
-
+            DateTime dt2 = dt.Date.AddDays(1);
             //if (endOfDay)
-                dt = dt.Date.AddDays(1).AddSeconds(-1);
+            //    dt = dt.Date.AddDays(1).AddSeconds(-1);
             //else
             //    dt = dt.Date;
-
-            return dt.ToUniversalTime()
+            //throw new Exception(dt + " dt " + dt2);
+            return dt2.ToUniversalTime()
                      .ToString("yyyy-MM-ddTHH:mm:ssZ");
         }
 
@@ -96,9 +97,8 @@ namespace Plugin_QueryBuilderGroup_Create_Update.Services
 
             string conditionXml = "";
 
-            bool isDate =
-                rule.FieldType?.ToLower() == "date";
-
+            bool isDate = rule.FieldType.ToString() == "DateTime" ? true : false;
+            //throw new Exception(" isDate " + isDate);
             // =====================================================
             // BETWEEN / NOT BETWEEN
             // =====================================================

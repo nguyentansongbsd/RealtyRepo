@@ -48,7 +48,7 @@ namespace Plugin_QueryBuilderGroup_Create_Update
 
             string fetch =
                 compiler.Build(tree, parentEntity);
-
+            traceService.Trace("fetch\n" + fetch);
             entity["bsd_fetchxml"] = fetch;
         }
     }
