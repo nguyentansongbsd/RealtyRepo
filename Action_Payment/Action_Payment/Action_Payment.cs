@@ -211,8 +211,9 @@ namespace Action_Payment
             );
             decimal totalamount = enHD.Contains("bsd_totalamount") ? ((Money)enHD["bsd_totalamount"]).Value : 0;
             decimal totalamountpaid = enHD.Contains("bsd_totalamountpaid") ? ((Money)enHD["bsd_totalamountpaid"]).Value : 0;
-            totalamountpaid += amountPay;
+            
             decimal balance = totalamount - totalamountpaid;
+            totalamountpaid += amountPay;
             decimal bsd_totalinterest = enHD.Contains("bsd_totalinterest") ? ((Money)enHD["bsd_totalinterest"]).Value : 0;
             decimal totalinterestpaid = enHD.Contains("bsd_totalinterestpaid") ? ((Money)enHD["bsd_totalinterestpaid"]).Value : 0;
             //_tracingService.Trace("totalamount " + totalamount);
