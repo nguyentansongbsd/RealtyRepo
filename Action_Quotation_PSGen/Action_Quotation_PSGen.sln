@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Quotation_PSGen", "Action_Quotation_PSGen\Action_Quotation_PSGen.csproj", "{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\RealtyCommon\RealtyCommon\RealtyCommon.projitems*{0a0a66ef-51dd-4b11-877d-0ee6680ac26d}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {47540B2E-D03A-4168-BB00-568DE5318C6A}
+	EndGlobalSection
+EndGlobal
