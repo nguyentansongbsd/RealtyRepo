@@ -54,6 +54,7 @@ namespace Action_Units_CreateQuotation
 
             Entity newQuotation = new Entity("bsd_quotation");
             newQuotation["bsd_name"] = $"Quotation {GetValidFieldValue(enUnit, "bsd_name")}";
+            newQuotation["bsd_date"] = DateTime.UtcNow;
             newQuotation["bsd_project"] = GetValidFieldValue(enUnit, "bsd_projectcode");
             newQuotation["bsd_phaseslaunch"] = GetPhasesLaunch(enUnit, ref newQuotation);
             newQuotation["bsd_pricelevel"] = GetValidFieldValue(enUnit, "bsd_pricelevel");

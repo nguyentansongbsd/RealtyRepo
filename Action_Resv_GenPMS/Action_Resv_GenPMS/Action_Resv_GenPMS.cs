@@ -158,7 +158,7 @@ namespace Action_Resv_GenPMS
             traceS.Trace("vào GenPaymentScheme");
             decimal sumper = 0;
             decimal sumamount = 0;
-            //bsd_freightamount = enQuote.Contains("bsd_freightamount") ? ((Money)enQuote["bsd_freightamount"]).Value : 0;
+            bsd_freightamount = enQuote.Contains("bsd_maintenancefees") ? ((Money)enQuote["bsd_maintenancefees"]).Value : 0;
             //bsd_managementfee = enQuote.Contains("bsd_managementfee") ? ((Money)enQuote["bsd_managementfee"]).Value : 0;
             decimal amountCalcIns = enQuote.Contains("bsd_totalamountlessfreightaftervat") ? ((Money)enQuote["bsd_totalamountlessfreightaftervat"]).Value : 0;
             decimal netSellingPrice = enQuote.Contains("bsd_totalamountlessfreight") ? ((Money)enQuote["bsd_totalamountlessfreight"]).Value : 0;

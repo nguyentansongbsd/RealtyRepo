@@ -159,7 +159,7 @@ namespace Action_Quotation_PSGen
             traceS.Trace("vào GenPaymentScheme");
             decimal sumper = 0;
             decimal sumamount = 0;
-            //bsd_freightamount = enHD.Contains("bsd_freightamount") ? ((Money)enHD["bsd_freightamount"]).Value : 0;
+            bsd_freightamount = enHD.Contains("bsd_freightamount") ? ((Money)enHD["bsd_freightamount"]).Value : 0;
             //bsd_managementfee = enHD.Contains("bsd_managementfee") ? ((Money)enHD["bsd_managementfee"]).Value : 0;
             decimal amountCalcIns = enHD.Contains("bsd_totalamountlessfreightaftervat") ? ((Money)enHD["bsd_totalamountlessfreightaftervat"]).Value : 0;
             decimal netSellingPrice = enHD.Contains("bsd_totalamountlessfreight") ? ((Money)enHD["bsd_totalamountlessfreight"]).Value : 0;
