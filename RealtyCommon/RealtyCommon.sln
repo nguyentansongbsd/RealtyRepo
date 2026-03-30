@@ -29,10 +29,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Units_CreateQuotatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Quotation_PSGen", "..\Action_Quotation_PSGen\Action_Quotation_PSGen\Action_Quotation_PSGen.csproj", "{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_ConstructionMilestone_CreateUpdate", "..\Plugin_ConstructionMilestone_CreateUpdate\Plugin_ConstructionMilestone_CreateUpdate\Plugin_ConstructionMilestone_CreateUpdate.csproj", "{0CC58E5A-0312-48AB-916B-DA09A27D1515}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
 		RealtyCommon\RealtyCommon.projitems*{0a0a66ef-51dd-4b11-877d-0ee6680ac26d}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{0cc58e5a-0312-48ab-916b-da09a27d1515}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{370a37f7-4625-4a6f-b0b3-54836d90a7d3}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{50b386f7-9c2f-4637-89bf-9ecbfbab1d22}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{565c8cc9-95f2-418c-bca1-f925491658a0}*SharedItemsImports = 4
@@ -98,6 +101,10 @@ Global
 		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

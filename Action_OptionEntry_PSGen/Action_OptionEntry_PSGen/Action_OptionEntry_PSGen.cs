@@ -62,7 +62,12 @@ namespace Action_OptionEntry_PSGen
                 //    refPS = (EntityReference)enHD["bsd_paymentschemeland"];
                 //}
 
-                Entity enPS = service.Retrieve(refPS.LogicalName, refPS.Id, new ColumnSet(new string[] { "bsd_interestratemaster", "bsd_name" }));
+                Entity enPS = service.Retrieve(refPS.LogicalName, refPS.Id, new ColumnSet(new string[] { "bsd_interestratemaster", "bsd_name",
+                    "bsd_constructionprogress", "bsd_hasconstructionprogress" }));
+                bool bsd_hasconstructionprogress = enPS.Contains("bsd_hasconstructionprogress") ? (bool)enPS["bsd_hasconstructionprogress"] : false;
+                if (bsd_hasconstructionprogress)
+                    CheckProgressBlock(enHD, enPS);
+
                 Entity interate = service.Retrieve(((EntityReference)enPS["bsd_interestratemaster"]).LogicalName, ((EntityReference)enPS["bsd_interestratemaster"]).Id,
                         new ColumnSet(new string[] { "bsd_gracedays", "bsd_depositinterest", "bsd_basecontractinterest" }));
                 int graceday = interate.Contains("bsd_gracedays") ? (int)interate["bsd_gracedays"] : 0;
@@ -248,7 +253,7 @@ namespace Action_OptionEntry_PSGen
                         ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster, wordTemplateList,
                         ref isSPA, depositInterest, baseContractInterest, depositAmountPL, vatAmount, netSellingPrice);
                 }
-                else if (i_dueCalMethod == 100000000 || i_dueCalMethod == 100000002) // fixx
+                else if (i_dueCalMethod == 100000000 || i_dueCalMethod == 100000002 || i_dueCalMethod == 100000003) // fixx
                 {
                     //traceS.Trace("4.9.1");
 
@@ -574,6 +579,11 @@ namespace Action_OptionEntry_PSGen
                     tmp["bsd_duedate"] = en["bsd_fixeddate"];
                     tmp["bsd_fixeddate"] = en["bsd_fixeddate"];
                 }
+            }
+
+            if (i_dueCalMethod == 100000003)    //Construction Milestone
+            {
+                tmp["bsd_constructionmilestone"] = en.Contains("bsd_constructionmilestone") ? en["bsd_constructionmilestone"] : null;
             }
 
             #region if bsd_maintenancefees/ bsd_managementfee = yes => set amount
@@ -1187,6 +1197,29 @@ namespace Action_OptionEntry_PSGen
                 tmp["bsd_text9"] = item.Contains("bsd_text9") ? item["bsd_text9"] : null;
                 tmp["bsd_text10"] = item.Contains("bsd_text10") ? item["bsd_text10"] : null;
             }
+        }
+
+        private void CheckProgressBlock(Entity enHD, Entity enPS)
+        {
+            traceS.Trace("CheckProgressBlock");
+
+            EntityReference reCP = (EntityReference)enPS["bsd_constructionprogress"];
+            Entity enCP = service.Retrieve(reCP.LogicalName, reCP.Id, new ColumnSet(new string[] { "bsd_block" }));
+            if (!enCP.Contains("bsd_block"))
+                return;
+            EntityReference refBlockCP = (EntityReference)enCP["bsd_block"];
+
+            if (!enHD.Contains("bsd_unitnumber"))
+                throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitinformation"));
+
+            EntityReference refUnit = (EntityReference)enHD["bsd_unitnumber"];
+            Entity enUnit = service.Retrieve(refUnit.LogicalName, refUnit.Id, new ColumnSet(new string[] { "bsd_blocknumber" }));
+            if (!enUnit.Contains("bsd_blocknumber"))
+                return;
+            EntityReference refBlockUnit = (EntityReference)enUnit["bsd_blocknumber"];
+
+            if (refBlockCP.Id != refBlockUnit.Id)
+                throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "construction_progress_not_match_block"));
         }
     }
 }
