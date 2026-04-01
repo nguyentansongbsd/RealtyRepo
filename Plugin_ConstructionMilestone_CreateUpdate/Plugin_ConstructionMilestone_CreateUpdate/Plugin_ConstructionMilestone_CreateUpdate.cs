@@ -153,8 +153,16 @@ namespace Plugin_ConstructionMilestone_CreateUpdate
                 <attribute name=""bsd_planneddate"" />
                 <filter>
                   <condition attribute=""bsd_constructionprogress"" operator=""eq"" value=""{refCP.Id}"" />
-                  <condition attribute=""bsd_sequence"" operator=""lt"" value=""{bsd_sequence}"" />
-                  <condition attribute=""bsd_planneddate"" operator=""gt"" value=""{bsd_planneddate.ToShortDateString()}"" />
+                </filter>
+                <filter type=""or"">
+                  <filter>
+                    <condition attribute=""bsd_sequence"" operator=""lt"" value=""{bsd_sequence}"" />
+                    <condition attribute=""bsd_planneddate"" operator=""gt"" value=""{bsd_planneddate.ToShortDateString()}"" />
+                  </filter>
+                  <filter>
+                    <condition attribute=""bsd_sequence"" operator=""gt"" value=""{bsd_sequence}"" />
+                    <condition attribute=""bsd_planneddate"" operator=""lt"" value=""{bsd_planneddate.ToShortDateString()}"" />
+                  </filter>
                 </filter>
               </entity>
             </fetch>";

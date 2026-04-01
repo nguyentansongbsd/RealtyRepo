@@ -33,12 +33,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_ConstructionMileston
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_ConstructionMilestone_Delete", "..\Plugin_ConstructionMilestone_Delete\Plugin_ConstructionMilestone_Delete\Plugin_ConstructionMilestone_Delete.csproj", "{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_MilestoneChangeRequest_Approve", "..\Plugin_MilestoneChangeRequest_Approve\Plugin_MilestoneChangeRequest_Approve\Plugin_MilestoneChangeRequest_Approve.csproj", "{4B01576A-980D-458E-8699-5BCA704B97F0}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
 		RealtyCommon\RealtyCommon.projitems*{0a0a66ef-51dd-4b11-877d-0ee6680ac26d}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{0cc58e5a-0312-48ab-916b-da09a27d1515}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{370a37f7-4625-4a6f-b0b3-54836d90a7d3}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{4b01576a-980d-458e-8699-5bca704b97f0}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{50b386f7-9c2f-4637-89bf-9ecbfbab1d22}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{565c8cc9-95f2-418c-bca1-f925491658a0}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{64a03fa1-f560-49dc-b714-9778d5887621}*SharedItemsImports = 4
@@ -112,6 +115,10 @@ Global
 		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

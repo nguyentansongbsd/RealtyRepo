@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_MilestoneChangeRequest_Approve", "Plugin_MilestoneChangeRequest_Approve\Plugin_MilestoneChangeRequest_Approve.csproj", "{4B01576A-980D-458E-8699-5BCA704B97F0}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\RealtyCommon\RealtyCommon\RealtyCommon.projitems*{4b01576a-980d-458e-8699-5bca704b97f0}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FC860321-D054-4821-BCEF-6847D54D53D8}
+	EndGlobalSection
+EndGlobal
