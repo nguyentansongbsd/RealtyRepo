@@ -71,12 +71,14 @@ namespace Plugin_Update_ReservationContract
             //    }
             //}
             ///
+            decimal bsd_promotion = 0;
             decimal discountAmount = 0;
             decimal detailAmount = 0;
             decimal bsd_landvaluededuction = 0;
             decimal bsd_packagesellingamount = 0;
             detailAmount = Re_contract.Contains("bsd_detailamount") ? ((Money)Re_contract["bsd_detailamount"]).Value : 0;
             discountAmount = Re_contract.Contains("bsd_discountamount") ? ((Money)Re_contract["bsd_discountamount"]).Value : 0;
+            bsd_promotion = Re_contract.Contains("bsd_promotion") ? ((Money)Re_contract["bsd_promotion"]).Value : 0;
             bsd_landvaluededuction = Re_contract.Contains("bsd_landvaluededuction") ? ((Money)Re_contract["bsd_landvaluededuction"]).Value : 0;
             bsd_packagesellingamount = Re_contract.Contains("bsd_packagesellingamount") ? ((Money)Re_contract["bsd_packagesellingamount"]).Value : 0;
             if (Re_contract.Contains("bsd_handovercondition"))
@@ -96,7 +98,7 @@ namespace Plugin_Update_ReservationContract
                 }
             }   
             
-            decimal totalamountlessfreight = detailAmount - discountAmount + bsd_packagesellingamount;
+            decimal totalamountlessfreight = detailAmount - discountAmount + bsd_packagesellingamount - bsd_promotion;
             up_Re_contract["bsd_totalamountlessfreight"] = new Money(totalamountlessfreight);
 
             Entity entity_taxcode = service.Retrieve(((EntityReference)Re_contract["bsd_taxcode"]).LogicalName, ((EntityReference)Re_contract["bsd_taxcode"]).Id, new ColumnSet("bsd_value"));
