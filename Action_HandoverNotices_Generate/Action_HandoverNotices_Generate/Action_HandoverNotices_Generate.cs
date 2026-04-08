@@ -83,13 +83,13 @@ namespace Action_HandoverNotices_Generate
                 enNew["bsd_name"] = "Notice Type - " + (string)enSPA["bsd_name"];
                 enNew["bsd_handovernotices"] = enTarget.ToEntityReference();
                 enNew["bsd_notificationattemptno"] = countHN(enSPA.Id);
-                enNew["bsd_customer"] = enSPA["bsd_customerid"];
-                enNew["bsd_project"] = enSPA["bsd_project"];
-                enNew["bsd_unit"] = enSPA["bsd_unitnumber"];
+                enNew["bsd_customer"] = enSPA.Contains("bsd_customerid") ? enSPA["bsd_customerid"] : null;
+                enNew["bsd_project"] = enSPA.Contains("bsd_project") ? enSPA["bsd_project"] : null;
+                enNew["bsd_unit"] = enSPA.Contains("bsd_unitnumber") ? enSPA["bsd_unitnumber"] : null;
                 enNew["bsd_spa"] = enSPA.ToEntityReference();
-                enNew["bsd_totalamountpaid"] = enSPA["bsd_totalpercent"];
-                enNew["bsd_totalamountpaid2"] = enSPA["bsd_totalamountpaid"];
-                enNew["bsd_depositamount"] = enSPA["bsd_depositfee"];
+                enNew["bsd_totalamountpaid"] = enSPA.Contains("bsd_totalpercent") ? enSPA["bsd_totalpercent"] : null;
+                enNew["bsd_totalamountpaid2"] = enSPA.Contains("bsd_totalamountpaid") ? enSPA["bsd_totalamountpaid"] : null;
+                enNew["bsd_depositamount"] = enSPA.Contains("bsd_depositfee") ? enSPA["bsd_depositfee"] : null;
                 var fetchXml_instalment = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                                         <fetch>
                                           <entity name=""bsd_paymentschemedetail"">
@@ -110,7 +110,7 @@ namespace Action_HandoverNotices_Generate
                 {
                     int bsd_ordernumber = (int)entity["bsd_ordernumber"];
                     enNew["bsd_installment"] = entity.ToEntityReference();
-                    enNew["bsd_duedate"] = entity["bsd_duedate"];
+                    enNew["bsd_duedate"] = entity.Contains("bsd_duedate") ? entity["bsd_duedate"] : null;
                     bsd_amountofthisphase = entity.Contains("bsd_amountofthisphase") ? ((Money)entity["bsd_amountofthisphase"]).Value : 0;
                     enNew["bsd_installmentamount"] = new Money(bsd_amountofthisphase);
                     fetchXml_instalment = $@"<?xml version=""1.0"" encoding=""utf-16""?>
@@ -134,11 +134,11 @@ namespace Action_HandoverNotices_Generate
                 }
                 decimal bsd_freightamount = enSPA.Contains("bsd_freightamount") ? ((Money)enSPA["bsd_freightamount"]).Value : 0;
                 enNew["bsd_maintenancefee"] = new Money(bsd_freightamount);
-                enNew["bsd_numberofmonthspaidmf"] = enSPA["bsd_numberofmonthspaidmf"];
+                enNew["bsd_numberofmonthspaidmf"] = enSPA.Contains("bsd_numberofmonthspaidmf") ? enSPA["bsd_numberofmonthspaidmf"] : null;
                 decimal bsd_managementfee = enSPA.Contains("bsd_managementfee") ? ((Money)enSPA["bsd_managementfee"]).Value : 0;
                 enNew["bsd_managementfee"] = new Money(bsd_managementfee);
-                enNew["bsd_totalinterestamount"] = enSPA["bsd_totalinterest"];
-                enNew["bsd_totalinterestpaid"] = enSPA["bsd_totalinterestpaid"];
+                enNew["bsd_totalinterestamount"] = enSPA.Contains("bsd_totalinterest") ? enSPA["bsd_totalinterest"] : null;
+                enNew["bsd_totalinterestpaid"] = enSPA.Contains("bsd_totalinterestpaid") ? enSPA["bsd_totalinterestpaid"] : null;
                 decimal bsd_totalinterestremaining = enSPA.Contains("bsd_totalinterestremaining") ? ((Money)enSPA["bsd_totalinterestremaining"]).Value : 0;
                 enNew["bsd_totalinterestremaining"] = new Money(bsd_totalinterestremaining);
                 enNew["bsd_totalamount"] = bsd_amountofthisphase + bsd_freightamount + bsd_managementfee + sumBalance + bsd_totalinterestremaining;
