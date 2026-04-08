@@ -151,7 +151,7 @@ namespace Action_HandoverNotices_Generate
                 Entity enUp = new Entity("bsd_handovernotices");
                 enUp.Id = Guid.Parse(input02);
                 enUp["bsd_processing"] = false;
-                enUp["statuscode"] = new OptionSetValue(100000000);
+                enUp["statuscode"] = new OptionSetValue(100000001);
                 enUp["bsd_generateddate"] = DateTime.Now;
                 enUp["bsd_generatedby"] = new EntityReference("systemuser", Guid.Parse(input04));
                 service.Update(enUp);
