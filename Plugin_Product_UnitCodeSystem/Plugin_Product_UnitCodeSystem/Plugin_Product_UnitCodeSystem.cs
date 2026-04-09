@@ -28,7 +28,7 @@ namespace Plugin_Product_UnitCodeSystem
                 if (this.context.Depth > 3) return;
                 if (this.context.MessageName != "Create" && this.context.MessageName != "Update") return;
                 var target = (Entity)this.context.InputParameters["Target"];
-                this.enUnit = this.service.Retrieve(target.LogicalName, target.Id, new Microsoft.Xrm.Sdk.Query.ColumnSet("bsd_name", "bsd_floor"));
+                this.enUnit = this.service.Retrieve(target.LogicalName, target.Id, new Microsoft.Xrm.Sdk.Query.ColumnSet("bsd_name", "bsd_floor", "bsd_projectcode"));
 
                 UpdateUnitCodeSystem();
             }
@@ -42,9 +42,10 @@ namespace Plugin_Product_UnitCodeSystem
             try
             {
                 tracingService.Trace("Start update unit code system");
+                string projectCode = getProjectCode(enUnit.GetAttributeValue<EntityReference>("bsd_projectcode"));
                 string floorCode = getFloorCode(enUnit.GetAttributeValue<EntityReference>("bsd_floor"));
                 string unitCode = enUnit.GetAttributeValue<string>("bsd_name");
-                string unitCodeSystem = floorCode + unitCode;
+                string unitCodeSystem = projectCode + floorCode + unitCode;
                 Entity enUnit_Up = new Entity(enUnit.LogicalName, enUnit.Id);
                 enUnit_Up["bsd_unitcodesystem"] = unitCodeSystem;
                 service.Update(enUnit_Up);
@@ -63,6 +64,21 @@ namespace Plugin_Product_UnitCodeSystem
                 Entity enFloor = service.Retrieve(enfFloor.LogicalName, enfFloor.Id, new Microsoft.Xrm.Sdk.Query.ColumnSet("bsd_name"));
                 if(enFloor.Contains("bsd_name"))
                     return enFloor["bsd_name"].ToString() + "-";
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidPluginExecutionException(ex.Message);
+            }
+        }
+        private string getProjectCode(EntityReference enfProject)
+        {
+            try
+            {
+                tracingService.Trace("Get project code");
+                Entity enProject = service.Retrieve(enfProject.LogicalName, enfProject.Id, new Microsoft.Xrm.Sdk.Query.ColumnSet("bsd_projectcode"));
+                if (enProject.Contains("bsd_projectcode"))
+                    return enProject["bsd_projectcode"].ToString() + "-";
                 return string.Empty;
             }
             catch (Exception ex)

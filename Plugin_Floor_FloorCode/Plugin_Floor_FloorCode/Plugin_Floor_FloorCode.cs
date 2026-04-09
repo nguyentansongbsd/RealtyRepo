@@ -59,9 +59,9 @@ namespace Plugin_Floor_FloorCode
             try
             {
                 tracingService.Trace("Get block code");
-                Entity enProject = service.Retrieve(enfBlock.LogicalName, enfBlock.Id, new Microsoft.Xrm.Sdk.Query.ColumnSet("bsd_blockcode"));
-                if (enProject.Contains("bsd_blockcode"))
-                    return enProject["bsd_blockcode"].ToString() + "-";
+                Entity enProject = service.Retrieve(enfBlock.LogicalName, enfBlock.Id, new Microsoft.Xrm.Sdk.Query.ColumnSet("bsd_name"));
+                if (enProject.Contains("bsd_name"))
+                    return enProject["bsd_name"].ToString() + "-";
                 return string.Empty;
             }
             catch (Exception ex)
