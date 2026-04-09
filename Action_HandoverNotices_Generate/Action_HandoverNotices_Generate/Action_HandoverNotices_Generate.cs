@@ -102,6 +102,7 @@ namespace Action_HandoverNotices_Generate
                 enNew["bsd_totalamountpaid"] = enSPA.Contains("bsd_totalpercent") ? enSPA["bsd_totalpercent"] : null;
                 enNew["bsd_totalamountpaid2"] = enSPA.Contains("bsd_totalamountpaid") ? enSPA["bsd_totalamountpaid"] : null;
                 enNew["bsd_depositamount"] = enSPA.Contains("bsd_depositfee") ? enSPA["bsd_depositfee"] : null;
+                string nameField = bsd_type == 100000001 ? "bsd_lastinstallment" : "bsd_pinkbookhandover";
                 var fetchXml_instalment = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                                         <fetch>
                                           <entity name=""bsd_paymentschemedetail"">
@@ -110,7 +111,7 @@ namespace Action_HandoverNotices_Generate
                                             <attribute name=""bsd_duedate"" />
                                             <filter>
                                               <condition attribute=""bsd_optionentry"" operator=""eq"" value=""{enSPA.Id}"" />
-                                              <condition attribute=""bsd_pinkbookhandover"" operator=""eq"" value=""1"" />
+                                              <condition attribute=""{nameField}"" operator=""eq"" value=""1"" />
                                               <condition attribute=""statecode"" operator=""eq"" value=""0"" />
                                             </filter>
                                           </entity>
