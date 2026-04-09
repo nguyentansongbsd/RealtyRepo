@@ -26,7 +26,7 @@ namespace Action_Termination_Complete
 
                 EntityReference target = (EntityReference)context.InputParameters["Target"];
                 Entity enTermination = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_source", "bsd_reservation",
-                    "bsd_reservationcontract", "bsd_optionentry", "bsd_units", "bsd_source", "bsd_resell", "bsd_customer", "bsd_project", "bsd_totalamountpaid", "bsd_forfeitureamount"}));
+                    "bsd_reservationcontract", "bsd_optionentry", "bsd_units", "bsd_source", "bsd_resell", "bsd_customer", "bsd_project", "bsd_totalamountpaid", "bsd_totalforfeitureamount"}));
 
                 int bsd_source = ((OptionSetValue)enTermination["bsd_source"]).Value;
                 if (bsd_source == 100000000 && enTermination.Contains("bsd_reservation"))   //Deposit
@@ -61,8 +61,8 @@ namespace Action_Termination_Complete
             EntityReference refUnit = (EntityReference)enTermination["bsd_units"];
             UpdateUnit(enTermination, refUnit);
 
-            decimal bsd_forfeitureamount = enTermination.Contains("bsd_forfeitureamount") ? ((Money)enTermination["bsd_forfeitureamount"]).Value : 0;
-            if (bsd_forfeitureamount > 0)
+            decimal bsd_totalforfeitureamount = enTermination.Contains("bsd_totalforfeitureamount") ? ((Money)enTermination["bsd_totalforfeitureamount"]).Value : 0;
+            if (bsd_totalforfeitureamount > 0)
                 CreateRefund(enTermination, refUnit, refContract, logicalName);
         }
 
@@ -112,6 +112,7 @@ namespace Action_Termination_Complete
             newRefund["bsd_totalamountpaid"] = enTermination.Contains("bsd_totalamountpaid") ? enTermination["bsd_totalamountpaid"] : null;
             newRefund["bsd_refundableamount"] = enTermination.Contains("bsd_totalamountpaid") ? enTermination["bsd_totalamountpaid"] : null;
             newRefund["bsd_source"] = enTermination.Contains("bsd_source") ? enTermination["bsd_source"] : null;
+            newRefund["bsd_termination"] = enTermination.ToEntityReference();
 
             newRefund.Id = Guid.NewGuid();
             service.Create(newRefund);

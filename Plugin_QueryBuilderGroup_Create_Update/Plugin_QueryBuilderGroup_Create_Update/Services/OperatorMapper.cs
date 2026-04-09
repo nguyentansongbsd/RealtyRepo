@@ -7,26 +7,35 @@ namespace Plugin_QueryBuilderGroup_Create_Update.Services
     {
         public static OperatorMapResult Map(string op)
         {
-            op = op.ToLower();
+            if (string.IsNullOrWhiteSpace(op))
+                throw new Exception("Operator is null or empty.");
+
+            op = op.Trim().ToLower();
 
             switch (op)
             {
                 case "equal":
+                case "eq":
                     return new OperatorMapResult { FetchOperator = "eq" };
 
                 case "notequal":
+                case "ne":
                     return new OperatorMapResult { FetchOperator = "ne" };
 
                 case "greaterthan":
+                case "gt":
                     return new OperatorMapResult { FetchOperator = "gt" };
 
                 case "greaterthanorequal":
+                case "ge":
                     return new OperatorMapResult { FetchOperator = "ge" };
 
                 case "lessthan":
+                case "lt":
                     return new OperatorMapResult { FetchOperator = "lt" };
 
                 case "lessthanorequal":
+                case "le":
                     return new OperatorMapResult { FetchOperator = "le" };
 
                 case "contains":
@@ -37,10 +46,27 @@ namespace Plugin_QueryBuilderGroup_Create_Update.Services
                         Suffix = "%"
                     };
 
+                case "doesnotcontain":
+                case "notcontains":
+                    return new OperatorMapResult
+                    {
+                        FetchOperator = "not-like",
+                        Prefix = "%",
+                        Suffix = "%"
+                    };
+
                 case "beginswith":
+                case "startswith":
                     return new OperatorMapResult
                     {
                         FetchOperator = "like",
+                        Suffix = "%"
+                    };
+
+                case "notbeginswith":
+                    return new OperatorMapResult
+                    {
+                        FetchOperator = "not-like",
                         Suffix = "%"
                     };
 
@@ -48,6 +74,13 @@ namespace Plugin_QueryBuilderGroup_Create_Update.Services
                     return new OperatorMapResult
                     {
                         FetchOperator = "like",
+                        Prefix = "%"
+                    };
+
+                case "notendswith":
+                    return new OperatorMapResult
+                    {
+                        FetchOperator = "not-like",
                         Prefix = "%"
                     };
 
@@ -77,14 +110,12 @@ namespace Plugin_QueryBuilderGroup_Create_Update.Services
                         RequireValue = false
                     };
 
-                // ✅ BETWEEN
                 case "between":
                     return new OperatorMapResult
                     {
                         IsBetween = true
                     };
 
-                // ✅ NOT BETWEEN
                 case "not-between":
                 case "notbetween":
                     return new OperatorMapResult

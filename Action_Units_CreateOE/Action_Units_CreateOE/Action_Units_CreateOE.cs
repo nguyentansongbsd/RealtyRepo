@@ -59,7 +59,7 @@ namespace Action_Units_CreateOE
             newOE["bsd_name"] = GetValidFieldValue(enUnit, "bsd_name");
             newOE["bsd_date"] = DateTime.UtcNow;
             newOE["bsd_project"] = GetValidFieldValue(enUnit, "bsd_projectcode");
-            newOE["bsd_phaseslaunch"] = GetPhasesLaunch(enUnit);
+            newOE["bsd_phaseslaunch"] = GetPhasesLaunch(enUnit, ref newOE);
             //newOE["bsd_pricelevel"] = GetValidFieldValue(enUnit, "bsd_pricelevel");
             newOE["bsd_taxcode"] = GetValidFieldValue(enUnit, "bsd_taxcode");
             newOE["bsd_unittype"] = GetValidFieldValue(enUnit, "bsd_unittype");
@@ -141,7 +141,7 @@ namespace Action_Units_CreateOE
             service.Update(upUnit);
         }
 
-        private EntityReference GetPhasesLaunch(Entity enUnit)
+        private EntityReference GetPhasesLaunch(Entity enUnit, ref Entity newOE)
         {
             traceService.Trace("GetPhasesLaunch");
 
@@ -151,6 +151,7 @@ namespace Action_Units_CreateOE
                 <attribute name=""bsd_phaseslaunchid"" />
                 <attribute name=""bsd_name"" />
                 <attribute name=""createdon"" />
+                <attribute name=""bsd_depositamount"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
                   <condition attribute=""statuscode"" operator=""eq"" value=""100000000"" />
@@ -166,7 +167,9 @@ namespace Action_Units_CreateOE
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count == 1)
             {
-                return rs.Entities[0].ToEntityReference();
+                Entity item = rs.Entities[0];
+                newOE["bsd_depositfee"] = item.Contains("bsd_depositamount") ? item["bsd_depositamount"] : null;
+                return item.ToEntityReference();
             }
             return null;
         }

@@ -203,23 +203,23 @@ namespace Action_Payment
         {
             Entity enHD = _service.Retrieve(enrHD.LogicalName, enrHD.Id,
                 new ColumnSet(
-                    "bsd_totalamount",
+                    "bsd_totalamountlessfreightaftervat",
                     "bsd_totalinterest",
                     "bsd_totalinterestpaid",
                     "bsd_totalamountpaid"
                 )
             );
-            decimal totalamount = enHD.Contains("bsd_totalamount") ? ((Money)enHD["bsd_totalamount"]).Value : 0;
+            decimal bsd_totalamountlessfreightaftervat = enHD.Contains("bsd_totalamountlessfreightaftervat") ? ((Money)enHD["bsd_totalamountlessfreightaftervat"]).Value : 0;
             decimal totalamountpaid = enHD.Contains("bsd_totalamountpaid") ? ((Money)enHD["bsd_totalamountpaid"]).Value : 0;
-            
-            decimal balance = totalamount - totalamountpaid;
+            bool Handover = false;
+            decimal balance = bsd_totalamountlessfreightaftervat - totalamountpaid;
             totalamountpaid += amountPay;
             decimal bsd_totalinterest = enHD.Contains("bsd_totalinterest") ? ((Money)enHD["bsd_totalinterest"]).Value : 0;
             decimal totalinterestpaid = enHD.Contains("bsd_totalinterestpaid") ? ((Money)enHD["bsd_totalinterestpaid"]).Value : 0;
-            //_tracingService.Trace("totalamount " + totalamount);
+            //_tracingService.Trace("bsd_totalamountlessfreightaftervat " + bsd_totalamountlessfreightaftervat);
             //_tracingService.Trace("totalamountpaid " + totalamountpaid);
             //_tracingService.Trace("balance " + balance);
-            //_tracingService.Trace("amountPay " + amountPay);
+            _tracingService.Trace("amountPay " + amountPay);
             if (balance <= 0) throw new InvalidPluginExecutionException("The installment has been paid in full.");
             if (amountPay > balance) throw new InvalidPluginExecutionException("The amount payable is more than the installment required.");
             string nameField = enrHD.LogicalName == "bsd_reservationcontract" ? "bsd_reservationcontract" : "bsd_optionentry";
@@ -241,6 +241,7 @@ namespace Action_Payment
                 <attribute name=""bsd_official"" />
                 <attribute name=""bsd_duedate"" />
                 <attribute name=""bsd_ordernumber"" />
+                <attribute name=""bsd_pinkbookhandover"" />
                 <filter>
                   <condition attribute=""statuscode"" operator=""eq"" value=""{100000000}"" />
                   <condition attribute=""bsd_balance"" operator=""gt"" value=""{0}"" />
@@ -257,11 +258,13 @@ namespace Action_Payment
                 decimal bsd_amountofthisphase = entity.Contains("bsd_amountofthisphase") ? ((Money)entity["bsd_amountofthisphase"]).Value : 0;
                 decimal bsd_depositamount = entity.Contains("bsd_depositamount") ? ((Money)entity["bsd_depositamount"]).Value : 0;
                 decimal bsd_amountwaspaid = entity.Contains("bsd_amountwaspaid") ? ((Money)entity["bsd_amountwaspaid"]).Value : 0;
+                bool bsd_pinkbookhandover = entity.Contains("bsd_pinkbookhandover") ? (bool)entity["bsd_pinkbookhandover"] : false;
                 decimal bsd_balance = bsd_amountofthisphase - bsd_depositamount - bsd_amountwaspaid;
                 _tracingService.Trace("bsd_amountofthisphase " + bsd_amountofthisphase);
                 _tracingService.Trace("bsd_depositamount " + bsd_depositamount);
                 _tracingService.Trace("bsd_amountwaspaid " + bsd_amountwaspaid);
                 _tracingService.Trace("bsd_balance " + bsd_balance);
+
                 InterestCharge interest = new InterestCharge();
                 caculateLai(entity, enPayment, bsd_balance, interest);
                 Entity upIntallment = new Entity(entity.LogicalName, entity.Id);
@@ -274,7 +277,10 @@ namespace Action_Payment
                     upIntallment["bsd_balance"] = new Money(bsd_balance - amountPay);
 
                     if (amountPay == bsd_balance && ((bsd_interestchargestatus == 100000001 && bsd_interestchargeamount > 0) || (bsd_interestchargestatus == 100000000 && bsd_interestchargeamount <= 0) || !interest.isLai))
+                    {
                         upIntallment["statuscode"] = new OptionSetValue(100000001);
+                        if (bsd_pinkbookhandover) Handover = true;
+                    }
                     amountPay = 0;
                 }
                 else
@@ -282,8 +288,11 @@ namespace Action_Payment
                     upIntallment["bsd_amountwaspaid"] = new Money(bsd_amountwaspaid + bsd_balance);
                     upIntallment["bsd_balance"] = new Money(0);
                     if ((bsd_interestchargestatus == 100000001 && bsd_interestchargeamount > 0) || (bsd_interestchargestatus == 100000000 && bsd_interestchargeamount <= 0) && !interest.isLai)
+                    {
                         upIntallment["statuscode"] = new OptionSetValue(100000001);
-                    amountPay -= bsd_balance;
+                        if (bsd_pinkbookhandover) Handover = true;
+                    }
+                    amountPay = amountPay - bsd_balance;
                 }
                 if (interest.isLai)
                 {
@@ -293,6 +302,7 @@ namespace Action_Payment
                     bsd_totalinterest += interest.InterestChargeAmount;
                     upIntallment["bsd_actualgracedays"] = interest.Gracedays;
                 }
+                _tracingService.Trace("amountPay " + amountPay);
                 _service.Update(upIntallment);
                 if (amountPay <= 0) break;
             }
@@ -301,8 +311,9 @@ namespace Action_Payment
             upHD["bsd_totalinterest"] = new Money(bsd_totalinterest);
             upHD["bsd_totalinterestremaining"] = new Money(bsd_totalinterest - totalinterestpaid);
             upHD["bsd_totalamountpaid"] = new Money(totalamountpaid);
-            decimal percenPaid = Math.Round((totalamountpaid / totalamount * 100), 2, MidpointRounding.AwayFromZero);
+            decimal percenPaid = Math.Round(totalamountpaid / bsd_totalamountlessfreightaftervat * 100, 2, MidpointRounding.AwayFromZero);
             upHD["bsd_totalpercent"] = percenPaid;
+            upHD["bsd_pinkbookhandover"] = Handover;
             _service.Update(upHD);
             if (amountPay > 0)
             {
@@ -312,7 +323,7 @@ namespace Action_Payment
         // tính phát sinh lãi
         private void caculateLai(Entity enInstallment, Entity enPayment, decimal bsd_balance, InterestCharge interest)
         {
-            _tracingService.Trace("vào caculateLai");
+            //_tracingService.Trace("vào caculateLai");
             bool bsd_official = enInstallment.Contains("bsd_official") ? (bool)enInstallment["bsd_official"] : false;
             if (bsd_official && enInstallment.Contains("bsd_duedate") && enPayment.Contains("bsd_paymentactualtime"))
             {
@@ -322,15 +333,15 @@ namespace Action_Payment
                 DateTime receiptDate = RetrieveLocalTimeFromUTCTime((DateTime)enPayment["bsd_paymentactualtime"], _service);
                 receiptDate = new DateTime(receiptDate.Year, receiptDate.Month, receiptDate.Day);
                 int gracedays = (int)receiptDate.Date.Subtract(dueDate.Date).TotalDays;
-                _tracingService.Trace("bsd_balance " + bsd_balance);
+                //_tracingService.Trace("bsd_balance " + bsd_balance);
                 if (gracedays > 0)
                 {
-                    _tracingService.Trace("gracedays " + gracedays);
+                    //_tracingService.Trace("gracedays " + gracedays);
                     interest.Gracedays = gracedays < 0 ? 0 : gracedays;
                     decimal bsd_interestpercent = enInstallment.Contains("bsd_interestpercent") ? (decimal)enInstallment["bsd_interestpercent"] : 0;
-                    _tracingService.Trace("bsd_interestpercent " + bsd_interestpercent);
+                    //_tracingService.Trace("bsd_interestpercent " + bsd_interestpercent);
                     interest.InterestChargeAmount = Math.Round(bsd_balance * gracedays * bsd_interestpercent / 100, MidpointRounding.AwayFromZero);
-                    _tracingService.Trace("InterestChargeAmount " + interest.InterestChargeAmount);
+                    //_tracingService.Trace("InterestChargeAmount " + interest.InterestChargeAmount);
                     interest.isLai = true;
                     interest.dueDate = dueDate;
                 }
@@ -419,7 +430,7 @@ namespace Action_Payment
             try
             {
                 if (!enPayment.Contains("bsd_queue")) return;
-                _tracingService.Trace("Updating Queue Record...");
+                //_tracingService.Trace("Updating Queue Record...");
                 decimal amountWasPaid = enPayment.Contains("bsd_amountwaspaid") ? ((Money)enPayment["bsd_amountwaspaid"]).Value : 0;
                 decimal totalPaid = amountWasPaid + amountPay;
                 decimal queuingFee = getQueuingFee(enPayment);
@@ -430,7 +441,7 @@ namespace Action_Payment
                 enQueue["bsd_dateorder"] = RetrieveLocalTimeFromUTCTime(DateTime.Now, _service);
                 enQueue["bsd_queuingfeepaid"] = new Money(totalPaid);
                 _service.Update(enQueue);
-                _tracingService.Trace("Queue Record Updated.");
+                //_tracingService.Trace("Queue Record Updated.");
             }
             catch (Exception ex)
             {

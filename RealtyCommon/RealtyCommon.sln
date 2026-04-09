@@ -23,16 +23,34 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Units_CreateOE", "..
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_OptionEntry_PSGen", "..\Action_OptionEntry_PSGen\Action_OptionEntry_PSGen\Action_OptionEntry_PSGen.csproj", "{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_Event_Update", "..\Plugin_Event_Update\Plugin_Event_Update\Plugin_Event_Update.csproj", "{64A03FA1-F560-49DC-B714-9778D5887621}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Units_CreateQuotation", "..\Action_Units_CreateQuotation\Action_Units_CreateQuotation\Action_Units_CreateQuotation.csproj", "{565C8CC9-95F2-418C-BCA1-F925491658A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Quotation_PSGen", "..\Action_Quotation_PSGen\Action_Quotation_PSGen\Action_Quotation_PSGen.csproj", "{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_ConstructionMilestone_CreateUpdate", "..\Plugin_ConstructionMilestone_CreateUpdate\Plugin_ConstructionMilestone_CreateUpdate\Plugin_ConstructionMilestone_CreateUpdate.csproj", "{0CC58E5A-0312-48AB-916B-DA09A27D1515}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_ConstructionMilestone_Delete", "..\Plugin_ConstructionMilestone_Delete\Plugin_ConstructionMilestone_Delete\Plugin_ConstructionMilestone_Delete.csproj", "{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_MilestoneChangeRequest_Approve", "..\Plugin_MilestoneChangeRequest_Approve\Plugin_MilestoneChangeRequest_Approve\Plugin_MilestoneChangeRequest_Approve.csproj", "{4B01576A-980D-458E-8699-5BCA704B97F0}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
+		RealtyCommon\RealtyCommon.projitems*{0a0a66ef-51dd-4b11-877d-0ee6680ac26d}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{0cc58e5a-0312-48ab-916b-da09a27d1515}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{370a37f7-4625-4a6f-b0b3-54836d90a7d3}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{4b01576a-980d-458e-8699-5bca704b97f0}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{50b386f7-9c2f-4637-89bf-9ecbfbab1d22}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{565c8cc9-95f2-418c-bca1-f925491658a0}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{64a03fa1-f560-49dc-b714-9778d5887621}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{6c3e5fa7-83ac-48d3-8cb0-1c0a8a1c45af}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{708f3e3b-6d53-4465-89cb-6899512ea772}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{719de0da-96a5-4f3b-9bce-294450757c56}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{c2f51e9f-1396-4d73-9478-9c7e8d57f17c}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{cac3d054-9ad4-4aa9-be4f-db9d0997976b}*SharedItemsImports = 4
+		RealtyCommon\RealtyCommon.projitems*{e585063a-f5c7-419b-afe8-21e2e1da4ac6}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{f40097b7-73bf-46b8-94ce-f6a56911f625}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{f8652f26-2150-4483-8184-71641194f372}*SharedItemsImports = 4
 	EndGlobalSection
@@ -77,6 +95,30 @@ Global
 		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C3E5FA7-83AC-48D3-8CB0-1C0A8A1C45AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64A03FA1-F560-49DC-B714-9778D5887621}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64A03FA1-F560-49DC-B714-9778D5887621}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64A03FA1-F560-49DC-B714-9778D5887621}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64A03FA1-F560-49DC-B714-9778D5887621}.Release|Any CPU.Build.0 = Release|Any CPU
+		{565C8CC9-95F2-418C-BCA1-F925491658A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{565C8CC9-95F2-418C-BCA1-F925491658A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{565C8CC9-95F2-418C-BCA1-F925491658A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{565C8CC9-95F2-418C-BCA1-F925491658A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A0A66EF-51DD-4B11-877D-0EE6680AC26D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CC58E5A-0312-48AB-916B-DA09A27D1515}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E585063A-F5C7-419B-AFE8-21E2E1DA4AC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B01576A-980D-458E-8699-5BCA704B97F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

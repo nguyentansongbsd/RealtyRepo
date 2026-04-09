@@ -2,6 +2,7 @@
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
+using System.Security.Policy;
 
 namespace Plugin_Update_quotation
 {
@@ -62,6 +63,8 @@ namespace Plugin_Update_quotation
             // 4. Lấy các thông số cơ bản
             decimal discountAmount = quote.Contains("bsd_discountamount") ? ((Money)quote["bsd_discountamount"]).Value : 0;
             trace.Trace("discount= " + discountAmount);
+            decimal bsd_promotion = quote.Contains("bsd_promotion") ? ((Money)quote["bsd_promotion"]).Value : 0;
+            trace.Trace("bsd_promotion= " + bsd_promotion);
             // Lưu ý: bsd_maintenancefeespercent thường là kiểu Decimal hoặc Double trong CRM
             decimal maintPercent = 0;
             if (quote.Contains("bsd_maintenancefeespercent"))
@@ -89,7 +92,7 @@ namespace Plugin_Update_quotation
                 }
 
                 // Công thức tính toán chung
-                decimal netAmount = detailAmount + packageSellingAmount - discountAmount;
+                decimal netAmount = detailAmount + packageSellingAmount - discountAmount - bsd_promotion;
                 trace.Trace("detailAmount " + detailAmount);
                 trace.Trace("packageSellingAmount " + packageSellingAmount);
                 trace.Trace("ketqua" + netAmount);
