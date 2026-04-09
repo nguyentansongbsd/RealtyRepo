@@ -46,11 +46,22 @@ namespace Action_HandoverNotices_Generate
                 Entity enUp = new Entity("bsd_handovernotices");
                 enUp.Id = Guid.Parse(input02);
                 Entity enTarget = service.Retrieve(enUp.LogicalName, enUp.Id, new ColumnSet(true));
-
+                int bsd_type = enTarget.Contains("bsd_type") ? ((OptionSetValue)enTarget["bsd_type"]).Value : 0;
                 //LAY DANH SACH CAC SPA HOP LE
                 var query = new QueryExpression("bsd_salesorder");
                 query.ColumnSet.AddColumn("bsd_salesorderid");
-                query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000013);
+                if (bsd_type == 100000000)//Property Handover
+                    query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000013);
+                else if (bsd_type == 100000001)//Certificate Handover
+                {
+                    query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000015);
+                    query.Criteria.AddCondition("bsd_totalpercent", ConditionOperator.Equal, 100);
+                    query.Criteria.AddCondition("bsd_totalinterestremaining", ConditionOperator.Equal, 0);
+                }
+                else if (bsd_type == 100000002)//Submit To Authority
+                {
+                    query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000013);
+                }
                 query.Criteria.AddCondition("bsd_project", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_project"]).Id);
                 query.Criteria.AddCondition("createdon", ConditionOperator.LessEqual, RetrieveLocalTimeFromUTCTime((DateTime)enTarget["bsd_date"], service));
                 var U = query.AddLink("bsd_product", "bsd_unitnumber", "bsd_productid");
@@ -76,13 +87,14 @@ namespace Action_HandoverNotices_Generate
                 traceService.Trace("Bước 02");
                 service = factory.CreateOrganizationService(Guid.Parse(input04));
                 Entity enTarget = service.Retrieve("bsd_handovernotices", Guid.Parse(input02), new ColumnSet(true));
+                int bsd_type = enTarget.Contains("bsd_type") ? ((OptionSetValue)enTarget["bsd_type"]).Value : 0;
                 Entity enSPA = service.Retrieve("bsd_salesorder", Guid.Parse(input03), new ColumnSet(
                     new string[] { "bsd_customerid", "bsd_project", "bsd_unitnumber", "bsd_totalpercent", "bsd_totalamountpaid", "bsd_depositfee", "bsd_freightamount", "bsd_numberofmonthspaidmf",
                         "bsd_managementfee", "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_name" }));
                 Entity enNew = new Entity("bsd_handovernoticedetail");
                 enNew["bsd_name"] = "Notice Type - " + (string)enSPA["bsd_name"];
                 enNew["bsd_handovernotices"] = enTarget.ToEntityReference();
-                enNew["bsd_notificationattemptno"] = countHN(enSPA.Id);
+                enNew["bsd_notificationattemptno"] = countHN(enSPA.Id, bsd_type);
                 enNew["bsd_customer"] = enSPA.Contains("bsd_customerid") ? enSPA["bsd_customerid"] : null;
                 enNew["bsd_project"] = enSPA.Contains("bsd_project") ? enSPA["bsd_project"] : null;
                 enNew["bsd_unit"] = enSPA.Contains("bsd_unitnumber") ? enSPA["bsd_unitnumber"] : null;
@@ -186,7 +198,7 @@ namespace Action_HandoverNotices_Generate
 
             return response.LocalTime;
         }
-        private int countHN(Guid inSPA)
+        private int countHN(Guid inSPA, int bsd_type)
         {
             var fetchXml_instalment = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                                         <fetch>
@@ -196,6 +208,11 @@ namespace Action_HandoverNotices_Generate
                                               <condition attribute=""bsd_spa"" operator=""eq"" value=""{inSPA}"" />
                                               <condition attribute=""statuscode"" operator=""eq"" value=""1"" />
                                             </filter>
+                                            <link-entity name=""bsd_handovernotices"" from=""bsd_handovernoticesid"" to=""bsd_handovernotices"" alias=""HN"">
+                                              <filter>
+                                                <condition attribute=""bsd_type"" operator=""eq"" value=""{bsd_type}"" />
+                                              </filter>
+                                            </link-entity>
                                           </entity>
                                         </fetch>";
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml_instalment));
