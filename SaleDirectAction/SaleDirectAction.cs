@@ -92,6 +92,12 @@ namespace SaleDirectAction
                     DateTime dateNow = DateTime.Now;
                     entity2["bsd_bookingtime"] = RetrieveLocalTimeFromUTCTime(dateNow, service);
 
+                    if(context.InputParameters.Contains("Parameters") && context.InputParameters["Parameters"] != null)
+                    {
+                        string customterId = (string)context.InputParameters["Parameters"];
+                        entity2["bsd_customerid"] = new EntityReference("contact", Guid.Parse(customterId));
+                    }
+
                     //EntityReference enfPhasesLaunch = entity1.Contains("bsd_pricelevel") ? PhasesLaunchPriceList((EntityReference)entity1["bsd_pricelevel"]) : null;
                     //if (((OptionSetValue)entity1["statuscode"]).Value == 100000000 && enfPhasesLaunch != null) // 100000000 = Available
                     //{
