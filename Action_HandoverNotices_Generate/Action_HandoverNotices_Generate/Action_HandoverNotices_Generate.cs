@@ -155,7 +155,7 @@ namespace Action_HandoverNotices_Generate
                 enNew["bsd_totalinterestpaid"] = enSPA.Contains("bsd_totalinterestpaid") ? enSPA["bsd_totalinterestpaid"] : null;
                 decimal bsd_totalinterestremaining = enSPA.Contains("bsd_totalinterestremaining") ? ((Money)enSPA["bsd_totalinterestremaining"]).Value : 0;
                 enNew["bsd_totalinterestremaining"] = new Money(bsd_totalinterestremaining);
-                enNew["bsd_totalamount"] = new Money(bsd_amountofthisphase + bsd_freightamount + bsd_managementfee + sumBalance + bsd_totalinterestremaining);
+                enNew["bsd_totalamount"] = new Money((bsd_type == 100000001 ? 0 : bsd_freightamount + bsd_managementfee) + bsd_amountofthisphase + sumBalance + bsd_totalinterestremaining);
                 service.Create(enNew);
             }
             else if (input01 == "Buoc03" && input02 != "" && input04 != "")
