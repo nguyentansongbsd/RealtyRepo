@@ -63,6 +63,7 @@ namespace Action_HandoverNotices_Generate
                     query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000013);
                 }
                 query.Criteria.AddCondition("bsd_project", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_project"]).Id);
+                query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, 1);
                 query.Criteria.AddCondition("createdon", ConditionOperator.LessEqual, RetrieveLocalTimeFromUTCTime((DateTime)enTarget["bsd_date"], service));
                 var U = query.AddLink("bsd_product", "bsd_unitnumber", "bsd_productid");
                 U.EntityAlias = "U";
@@ -157,6 +158,9 @@ namespace Action_HandoverNotices_Generate
                 enNew["bsd_totalinterestremaining"] = new Money(bsd_totalinterestremaining);
                 enNew["bsd_totalamount"] = new Money((bsd_type == 100000001 ? 0 : bsd_freightamount + bsd_managementfee) + bsd_amountofthisphase + sumBalance + bsd_totalinterestremaining);
                 service.Create(enNew);
+                Entity enUpSPA = new Entity(enSPA.LogicalName, enSPA.Id);
+                enUpSPA["bsd_havehandovernotices"] = true;
+                service.Update(enUpSPA);
             }
             else if (input01 == "Buoc03" && input02 != "" && input04 != "")
             {
