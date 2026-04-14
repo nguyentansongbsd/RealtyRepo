@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Action_HandoverNotices_Generate
@@ -86,10 +87,14 @@ namespace Action_HandoverNotices_Generate
                 {
                     listUnit.Add(detail.Id.ToString());
                 }
-                if (listUnit.Count == 0)
+                List<string> listUnitGold = list.Entities
+                   .Select(e => e.Id.ToString())
+                   .Distinct()
+                   .ToList();
+                if (listUnitGold.Count == 0)
                     throw new InvalidPluginExecutionException("The list is empty. Please check again.");
                 enUp["bsd_processing"] = true;
-                enUp["bsd_list"] = string.Join(";", listUnit);
+                enUp["bsd_list"] = string.Join(";", listUnitGold);
                 service.Update(enUp);
             }
             else if (input01 == "Buoc02" && input02 != "" && input03 != "" && input04 != "")
@@ -134,7 +139,7 @@ namespace Action_HandoverNotices_Generate
                 {
                     int bsd_ordernumber = (int)entity["bsd_ordernumber"];
                     enNew["bsd_installment"] = entity.ToEntityReference();
-                    enNew["bsd_duedate"] = entity.Contains("bsd_duedate") ? entity["bsd_duedate"] : null;
+                    if (entity.Contains("bsd_duedate")) enNew["bsd_duedate"] = RetrieveLocalTimeFromUTCTime((DateTime)entity["bsd_duedate"], service);
                     bsd_amountofthisphase = entity.Contains("bsd_amountofthisphase") ? ((Money)entity["bsd_amountofthisphase"]).Value : 0;
                     enNew["bsd_installmentamount"] = new Money(bsd_amountofthisphase);
                     fetchXml_instalment = $@"<?xml version=""1.0"" encoding=""utf-16""?>
