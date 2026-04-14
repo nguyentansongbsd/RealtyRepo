@@ -64,7 +64,7 @@ namespace Action_HandoverNotices_Generate
                 }
                 query.Criteria.AddCondition("bsd_project", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_project"]).Id);
                 query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, 1);
-                query.Criteria.AddCondition("createdon", ConditionOperator.LessEqual, RetrieveLocalTimeFromUTCTime((DateTime)enTarget["bsd_date"], service));
+                //query.Criteria.AddCondition("createdon", ConditionOperator.LessEqual, RetrieveLocalTimeFromUTCTime((DateTime)enTarget["bsd_date"], service));
                 var U = query.AddLink("bsd_product", "bsd_unitnumber", "bsd_productid");
                 U.EntityAlias = "U";
                 if (enTarget.Contains("bsd_block")) U.LinkCriteria.AddCondition("bsd_blocknumber", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_block"]).Id);

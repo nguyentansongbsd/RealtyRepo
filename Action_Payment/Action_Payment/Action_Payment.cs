@@ -313,7 +313,7 @@ namespace Action_Payment
             upHD["bsd_totalamountpaid"] = new Money(totalamountpaid);
             decimal percenPaid = Math.Round(totalamountpaid / bsd_totalamountlessfreightaftervat * 100, 2, MidpointRounding.AwayFromZero);
             upHD["bsd_totalpercent"] = percenPaid;
-            upHD["bsd_pinkbookhandover"] = Handover;
+            if (Handover) upHD["bsd_pinkbookhandover"] = Handover;
             _service.Update(upHD);
             if (amountPay > 0)
             {
