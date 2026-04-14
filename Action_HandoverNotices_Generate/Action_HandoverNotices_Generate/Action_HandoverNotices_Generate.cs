@@ -63,14 +63,23 @@ namespace Action_HandoverNotices_Generate
                     query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000013);
                 }
                 query.Criteria.AddCondition("bsd_project", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_project"]).Id);
-                query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, 1);
-                //query.Criteria.AddCondition("createdon", ConditionOperator.LessEqual, RetrieveLocalTimeFromUTCTime((DateTime)enTarget["bsd_date"], service));
+                if (bsd_type == 100000000)//Property Handover
+                    query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, 1);
                 var U = query.AddLink("bsd_product", "bsd_unitnumber", "bsd_productid");
                 U.EntityAlias = "U";
                 if (enTarget.Contains("bsd_block")) U.LinkCriteria.AddCondition("bsd_blocknumber", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_block"]).Id);
                 if (enTarget.Contains("bsd_floor")) U.LinkCriteria.AddCondition("bsd_floor", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_floor"]).Id);
                 if (enTarget.Contains("bsd_unit")) U.LinkCriteria.AddCondition("bsd_productid", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_unit"]).Id);
-                U.LinkCriteria.AddCondition("bsd_estimatehandoverdate", ConditionOperator.NotNull);
+                var query_bsd_updateestimatehandoverdatedetail = query.AddLink(
+                "bsd_updateestimatehandoverdatedetail",
+                "bsd_salesorderid",
+                "bsd_optionentry");
+                var query_bsd_updateestimatehandoverdatedetail_bsd_updateestimatehandoverdate = query_bsd_updateestimatehandoverdatedetail.AddLink(
+                    "bsd_updateestimatehandoverdate",
+                    "bsd_updateestimatehandoverdate",
+                    "bsd_updateestimatehandoverdateid");
+
+                query_bsd_updateestimatehandoverdatedetail_bsd_updateestimatehandoverdate.LinkCriteria.AddCondition("bsd_createhandovernotices", ConditionOperator.Equal, true);
                 EntityCollection list = service.RetrieveMultiple(query);
                 List<string> listUnit = new List<string>();
                 foreach (Entity detail in list.Entities)
