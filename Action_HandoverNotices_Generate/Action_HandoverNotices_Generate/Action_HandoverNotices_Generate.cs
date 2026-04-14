@@ -64,7 +64,7 @@ namespace Action_HandoverNotices_Generate
                 }
                 query.Criteria.AddCondition("bsd_project", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_project"]).Id);
                 if (bsd_type == 100000000)//Property Handover
-                    query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, 1);
+                    query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, true);
                 var U = query.AddLink("bsd_product", "bsd_unitnumber", "bsd_productid");
                 U.EntityAlias = "U";
                 if (enTarget.Contains("bsd_block")) U.LinkCriteria.AddCondition("bsd_blocknumber", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_block"]).Id);
