@@ -122,7 +122,7 @@ namespace Action_HandoverNotices_Generate
                                         <fetch>
                                           <entity name=""bsd_paymentschemedetail"">
                                             <attribute name=""bsd_paymentschemedetailid"" />
-                                            <attribute name=""bsd_amountofthisphase"" />
+                                            <attribute name=""bsd_balance"" />
                                             <attribute name=""bsd_ordernumber"" />
                                             <attribute name=""bsd_duedate"" />
                                             <filter>
@@ -133,15 +133,15 @@ namespace Action_HandoverNotices_Generate
                                           </entity>
                                         </fetch>";
                 EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml_instalment));
-                decimal bsd_amountofthisphase = 0;
+                decimal bsd_balance = 0;
                 decimal sumBalance = 0;
                 foreach (Entity entity in rs.Entities)
                 {
                     int bsd_ordernumber = (int)entity["bsd_ordernumber"];
                     enNew["bsd_installment"] = entity.ToEntityReference();
                     if (entity.Contains("bsd_duedate")) enNew["bsd_duedate"] = RetrieveLocalTimeFromUTCTime((DateTime)entity["bsd_duedate"], service);
-                    bsd_amountofthisphase = entity.Contains("bsd_amountofthisphase") ? ((Money)entity["bsd_amountofthisphase"]).Value : 0;
-                    enNew["bsd_installmentamount"] = new Money(bsd_amountofthisphase);
+                    bsd_balance = entity.Contains("bsd_balance") ? ((Money)entity["bsd_balance"]).Value : 0;
+                    enNew["bsd_installmentamount"] = new Money(bsd_balance);
                     fetchXml_instalment = $@"<?xml version=""1.0"" encoding=""utf-16""?>
                                         <fetch>
                                           <entity name=""bsd_paymentschemedetail"">
@@ -170,7 +170,7 @@ namespace Action_HandoverNotices_Generate
                 enNew["bsd_totalinterestpaid"] = enSPA.Contains("bsd_totalinterestpaid") ? enSPA["bsd_totalinterestpaid"] : null;
                 decimal bsd_totalinterestremaining = enSPA.Contains("bsd_totalinterestremaining") ? ((Money)enSPA["bsd_totalinterestremaining"]).Value : 0;
                 enNew["bsd_totalinterestremaining"] = new Money(bsd_totalinterestremaining);
-                enNew["bsd_totalamount"] = new Money((bsd_type == 100000001 ? 0 : bsd_freightamount + bsd_managementfee) + bsd_amountofthisphase + sumBalance + bsd_totalinterestremaining);
+                enNew["bsd_totalamount"] = new Money((bsd_type == 100000001 ? 0 : bsd_freightamount + bsd_managementfee) + bsd_balance + sumBalance + bsd_totalinterestremaining);
                 service.Create(enNew);
                 Entity enUpSPA = new Entity(enSPA.LogicalName, enSPA.Id);
                 enUpSPA["bsd_havehandovernotices"] = true;
