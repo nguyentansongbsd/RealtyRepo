@@ -87,6 +87,13 @@ namespace Action_Payment
 
                 case PaymentType.Fees:
                     // logic Fees
+                    if (!enPayment.Contains("bsd_transactiontype"))
+                    {
+                        throw new InvalidPluginExecutionException("No Transaction Type value");
+                    }
+                    if (((OptionSetValue)enPayment["bsd_transactiontype"]).Value == 100000001 && !enPayment.Contains("bsd_optionentry"))
+                        throw new InvalidPluginExecutionException("No Optionentry value");
+                    fee(enPayment, (EntityReference)enPayment["bsd_optionentry"], amountPay);
                     break;
 
                 case PaymentType.Other:
@@ -405,6 +412,38 @@ namespace Action_Payment
                 Entity upIntallment = new Entity(entity.LogicalName, entity.Id);
                 upIntallment["bsd_depositamount"] = new Money(bsd_depositamount + amountPay);
                 upIntallment["bsd_balance"] = new Money(bsd_amountofthisphase - bsd_depositamount - amountPay - bsd_amountwaspaid);
+                _service.Update(upIntallment);
+            }
+        }
+        // case thanh toán tiền cọc
+        private void fee(Entity enPayment, EntityReference enrHD, decimal amountPay)
+        {
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_paymentschemedetail"">
+                <attribute name=""bsd_maintenanceamount"" />
+                <attribute name=""bsd_maintenancefeepaid"" />
+                <attribute name=""bsd_maintenancefeewaiver"" />
+                <filter>
+                  <condition attribute=""statecode"" operator=""eq"" value=""{0}"" />
+                  <condition attribute=""bsd_maintenancefees"" operator=""eq"" value=""{1}"" />
+                  <condition attribute=""bsd_maintenancefeeremaining"" operator=""gt"" value=""0"" />
+                  <condition attribute=""bsd_optionentry"" operator=""eq"" value=""{enrHD.Id}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection enIntallment = _service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (enIntallment.Entities.Count == 0) throw new InvalidPluginExecutionException("Installment not found.");
+            foreach (Entity entity in enIntallment.Entities)
+            {
+                decimal bsd_maintenanceamount = entity.Contains("bsd_maintenanceamount") ? ((Money)entity["bsd_maintenanceamount"]).Value : 0;
+                decimal bsd_maintenancefeepaid = entity.Contains("bsd_maintenancefeepaid") ? ((Money)entity["bsd_maintenancefeepaid"]).Value : 0;
+                decimal bsd_maintenancefeewaiver = entity.Contains("bsd_maintenancefeewaiver") ? ((Money)entity["bsd_maintenancefeewaiver"]).Value : 0;
+                decimal bsd_balance = bsd_maintenanceamount - bsd_maintenancefeepaid - bsd_maintenancefeewaiver;
+                if (amountPay > bsd_balance) throw new InvalidPluginExecutionException("The amount payable is more than the fee required.");
+                Entity upIntallment = new Entity(entity.LogicalName, entity.Id);
+                upIntallment["bsd_maintenancefeepaid"] = new Money(bsd_maintenancefeepaid + amountPay);
+                if (bsd_balance - amountPay == 0) upIntallment["bsd_maintenancefeesstatus"] = true;
                 _service.Update(upIntallment);
             }
         }
