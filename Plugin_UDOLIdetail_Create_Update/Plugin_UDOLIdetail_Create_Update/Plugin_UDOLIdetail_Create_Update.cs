@@ -89,7 +89,7 @@ namespace Plugin_UDOLIdetail_Create_Update
                 int statuscode = ((OptionSetValue)target["statuscode"]).Value;
                 if (statuscode == 667980001)//aprove
                 {
-                    Entity enDetail = service.Retrieve(target.LogicalName, target.Id, new ColumnSet("bsd_spa"));
+                    Entity enDetail = service.Retrieve(target.LogicalName, target.Id, new ColumnSet("bsd_spa", "bsd_installment", "bsd_duedatenew"));
                     if (enDetail.Contains("bsd_spa"))
                     {
                         var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
