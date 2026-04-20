@@ -2,6 +2,7 @@
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -56,8 +57,6 @@ namespace Action_HandoverNotices_Generate
                 else if (bsd_type == 100000001)//Certificate Handover
                 {
                     query.Criteria.AddCondition("statuscode", ConditionOperator.Equal, 100000015);
-                    query.Criteria.AddCondition("bsd_totalpercent", ConditionOperator.Equal, 100);
-                    query.Criteria.AddCondition("bsd_totalinterestremaining", ConditionOperator.Equal, 0);
                 }
                 else if (bsd_type == 100000002)//Submit To Authority
                 {
@@ -66,21 +65,34 @@ namespace Action_HandoverNotices_Generate
                 query.Criteria.AddCondition("bsd_project", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_project"]).Id);
                 if (bsd_type == 100000000)//Property Handover
                     query.Criteria.AddCondition("bsd_havehandovernotices", ConditionOperator.NotEqual, true);
+                else if (bsd_type == 100000001)//Certificate Handover
+                    query.Criteria.AddCondition("bsd_certificatehandovernotice", ConditionOperator.NotEqual, true);
                 var U = query.AddLink("bsd_product", "bsd_unitnumber", "bsd_productid");
                 U.EntityAlias = "U";
                 if (enTarget.Contains("bsd_block")) U.LinkCriteria.AddCondition("bsd_blocknumber", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_block"]).Id);
                 if (enTarget.Contains("bsd_floor")) U.LinkCriteria.AddCondition("bsd_floor", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_floor"]).Id);
                 if (enTarget.Contains("bsd_unit")) U.LinkCriteria.AddCondition("bsd_productid", ConditionOperator.Equal, ((EntityReference)enTarget["bsd_unit"]).Id);
-                var query_bsd_updateestimatehandoverdatedetail = query.AddLink(
-                "bsd_updateestimatehandoverdatedetail",
-                "bsd_salesorderid",
-                "bsd_optionentry");
-                var query_bsd_updateestimatehandoverdatedetail_bsd_updateestimatehandoverdate = query_bsd_updateestimatehandoverdatedetail.AddLink(
-                    "bsd_updateestimatehandoverdate",
-                    "bsd_updateestimatehandoverdate",
-                    "bsd_updateestimatehandoverdateid");
+                if (bsd_type == 100000000)//Property Handover
+                {
+                    var query_bsd_updateestimatehandoverdatedetail = query.AddLink(
+                    "bsd_updateestimatehandoverdatedetail",
+                    "bsd_salesorderid",
+                    "bsd_optionentry");
+                    var query_bsd_updateestimatehandoverdatedetail_bsd_updateestimatehandoverdate = query_bsd_updateestimatehandoverdatedetail.AddLink(
+                        "bsd_updateestimatehandoverdate",
+                        "bsd_updateestimatehandoverdate",
+                        "bsd_updateestimatehandoverdateid");
 
-                query_bsd_updateestimatehandoverdatedetail_bsd_updateestimatehandoverdate.LinkCriteria.AddCondition("bsd_createhandovernotices", ConditionOperator.Equal, true);
+                    query_bsd_updateestimatehandoverdatedetail_bsd_updateestimatehandoverdate.LinkCriteria.AddCondition("bsd_createhandovernotices", ConditionOperator.Equal, true);
+                }
+                else if (bsd_type == 100000001)//Certificate Handover
+                {
+                    var UDOLI = query.AddLink("bsd_updateduedateoflastinstallmentdetail", "bsd_salesorderid", "bsd_spa");
+                    UDOLI.EntityAlias = "UDOLI";
+
+                    UDOLI.LinkCriteria.AddCondition("statuscode", ConditionOperator.Equal, 667980001);
+                }
+
                 EntityCollection list = service.RetrieveMultiple(query);
                 List<string> listUnit = new List<string>();
                 foreach (Entity detail in list.Entities)
@@ -173,7 +185,10 @@ namespace Action_HandoverNotices_Generate
                 enNew["bsd_totalamount"] = new Money((bsd_type == 100000001 ? 0 : bsd_freightamount + bsd_managementfee) + bsd_balance + sumBalance + bsd_totalinterestremaining);
                 service.Create(enNew);
                 Entity enUpSPA = new Entity(enSPA.LogicalName, enSPA.Id);
-                enUpSPA["bsd_havehandovernotices"] = true;
+                if (bsd_type == 100000000)//Property Handover
+                    enUpSPA["bsd_havehandovernotices"] = true;
+                else if (bsd_type == 100000001)//Certificate Handover
+                    enUpSPA["bsd_certificatehandovernotice"] = true;
                 service.Update(enUpSPA);
             }
             else if (input01 == "Buoc03" && input02 != "" && input04 != "")
