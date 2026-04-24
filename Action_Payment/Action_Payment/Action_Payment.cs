@@ -85,19 +85,28 @@ namespace Action_Payment
                     Interest_Charge(enPayment, (transactiontype == 100000000 ? (EntityReference)enPayment["bsd_reservationcontract"] : (EntityReference)enPayment["bsd_optionentry"]), amountPay);
                     break;
 
-                case PaymentType.Fees:
-                    // logic Fees
+                case PaymentType.MaintenanceFee:
+                    // logic Maintenance Fee
                     if (!enPayment.Contains("bsd_transactiontype"))
                     {
                         throw new InvalidPluginExecutionException("No Transaction Type value");
                     }
                     if (((OptionSetValue)enPayment["bsd_transactiontype"]).Value == 100000001 && !enPayment.Contains("bsd_optionentry"))
                         throw new InvalidPluginExecutionException("No Optionentry value");
-                    fee(enPayment, (EntityReference)enPayment["bsd_optionentry"], amountPay);
+                    MaintenanceFee(enPayment, (EntityReference)enPayment["bsd_optionentry"], amountPay);
                     break;
 
-                case PaymentType.Other:
-                    // logic Other
+                case PaymentType.ManagementFee:
+                    // logic Management Fee
+                    if (!enPayment.Contains("bsd_certificatehandover"))
+                        throw new InvalidPluginExecutionException("No Certificate Handover value");
+                    ManagementFee(enPayment, (EntityReference)enPayment["bsd_certificatehandover"], amountPay);
+                    break;
+                case PaymentType.OtherFee:
+                    // logic Other fee
+                    if (!enPayment.Contains("bsd_certificatehandover"))
+                        throw new InvalidPluginExecutionException("No Certificate Handover value");
+                    OtherFee(enPayment, (EntityReference)enPayment["bsd_certificatehandover"], amountPay);
                     break;
 
                 default:
@@ -117,6 +126,7 @@ namespace Action_Payment
                     "bsd_quotationreservation",
                     "bsd_reservationcontract",
                     "bsd_optionentry",
+                    "bsd_certificatehandover",
                     "bsd_paymenttype",
                     "bsd_transactiontype",
                     "bsd_paymentactualtime",
@@ -415,8 +425,8 @@ namespace Action_Payment
                 _service.Update(upIntallment);
             }
         }
-        // case thanh toán tiền cọc
-        private void fee(Entity enPayment, EntityReference enrHD, decimal amountPay)
+        // case thanh toán MaintenanceFee
+        private void MaintenanceFee(Entity enPayment, EntityReference enrHD, decimal amountPay)
         {
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch top=""1"">
@@ -445,6 +455,64 @@ namespace Action_Payment
                 upIntallment["bsd_maintenancefeepaid"] = new Money(bsd_maintenancefeepaid + amountPay);
                 if (bsd_balance - amountPay == 0) upIntallment["bsd_maintenancefeesstatus"] = true;
                 _service.Update(upIntallment);
+            }
+        }
+        // case thanh toán ManagementFee
+        private void ManagementFee(Entity enPayment, EntityReference enrHD, decimal amountPay)
+        {
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_certificatehandover"">
+                <attribute name=""bsd_managementfee"" />
+                <attribute name=""bsd_managementfeepaid"" />
+                <filter>
+                  <condition attribute=""statuscode"" operator=""eq"" value=""{667980001}"" />
+                  <condition attribute=""bsd_managementfeeremaining"" operator=""gt"" value=""0"" />
+                  <condition attribute=""bsd_certificatehandoverid"" operator=""eq"" value=""{enrHD.Id}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection enMaster = _service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (enMaster.Entities.Count == 0) throw new InvalidPluginExecutionException("Certificate Handover not found.");
+            foreach (Entity entity in enMaster.Entities)
+            {
+                decimal bsd_managementfee = entity.Contains("bsd_managementfee") ? ((Money)entity["bsd_managementfee"]).Value : 0;
+                decimal bsd_managementfeepaid = entity.Contains("bsd_managementfeepaid") ? ((Money)entity["bsd_managementfeepaid"]).Value : 0;
+                decimal bsd_balance = bsd_managementfee - bsd_managementfeepaid;
+                if (amountPay > bsd_balance) throw new InvalidPluginExecutionException("The amount payable is more than the fee required.");
+                Entity upMaster = new Entity(entity.LogicalName, entity.Id);
+                upMaster["bsd_managementfeepaid"] = new Money(bsd_managementfeepaid + amountPay);
+                upMaster["bsd_managementfeeremaining"] = new Money(bsd_balance - amountPay);
+                _service.Update(upMaster);
+            }
+        }
+        // case thanh toán ManagementFee
+        private void OtherFee(Entity enPayment, EntityReference enrHD, decimal amountPay)
+        {
+            var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
+            <fetch top=""1"">
+              <entity name=""bsd_certificatehandover"">
+                <attribute name=""bsd_otherfees"" />
+                <attribute name=""bsd_otherfeespaid"" />
+                <filter>
+                  <condition attribute=""statuscode"" operator=""eq"" value=""{667980001}"" />
+                  <condition attribute=""bsd_managementfeeremaining"" operator=""gt"" value=""0"" />
+                  <condition attribute=""bsd_certificatehandoverid"" operator=""eq"" value=""{enrHD.Id}"" />
+                </filter>
+              </entity>
+            </fetch>";
+            EntityCollection enMaster = _service.RetrieveMultiple(new FetchExpression(fetchXml));
+            if (enMaster.Entities.Count == 0) throw new InvalidPluginExecutionException("Certificate Handover not found.");
+            foreach (Entity entity in enMaster.Entities)
+            {
+                decimal bsd_otherfees = entity.Contains("bsd_otherfees") ? ((Money)entity["bsd_otherfees"]).Value : 0;
+                decimal bsd_otherfeespaid = entity.Contains("bsd_otherfeespaid") ? ((Money)entity["bsd_otherfeespaid"]).Value : 0;
+                decimal bsd_balance = bsd_otherfees - bsd_otherfeespaid;
+                if (amountPay > bsd_balance) throw new InvalidPluginExecutionException("The amount payable is more than the fee required.");
+                Entity upMaster = new Entity(entity.LogicalName, entity.Id);
+                upMaster["bsd_otherfeespaid"] = new Money(bsd_otherfeespaid + amountPay);
+                upMaster["bsd_otherfeesremaining"] = new Money(bsd_balance - amountPay);
+                _service.Update(upMaster);
             }
         }
         // cập nhật sts = Paid cho phiếu thu và ghi nhận ngày + người thanh toán
@@ -527,8 +595,9 @@ namespace Action_Payment
             DepositFee = 100000001,
             Installment = 100000002,
             InterestCharge = 100000003,
-            Fees = 100000004,
-            Other = 100000005
+            MaintenanceFee = 100000004,
+            ManagementFee = 667980001,
+            OtherFee = 100000005
         }
     }
 }
