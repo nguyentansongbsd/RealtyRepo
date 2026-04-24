@@ -496,7 +496,7 @@ namespace Action_Payment
                 <attribute name=""bsd_otherfeespaid"" />
                 <filter>
                   <condition attribute=""statuscode"" operator=""eq"" value=""{667980001}"" />
-                  <condition attribute=""bsd_managementfeeremaining"" operator=""gt"" value=""0"" />
+                  <condition attribute=""bsd_otherfeesremaining"" operator=""gt"" value=""0"" />
                   <condition attribute=""bsd_certificatehandoverid"" operator=""eq"" value=""{enrHD.Id}"" />
                 </filter>
               </entity>
