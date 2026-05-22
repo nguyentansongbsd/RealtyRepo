@@ -6,18 +6,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Action_SubSale_Cancel
+namespace Action_FollowUpList_Cancel
 {
-    public class Action_SubSale_Cancel : IPlugin
+    public class Action_FollowUpList_Cancel : IPlugin
     {
         IOrganizationService service = null;
         ITracingService traceService = null;
-        IPluginExecutionContext context = null;
         public void Execute(IServiceProvider serviceProvider)
         {
             try
             {
-                context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+                IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
                 IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                 service = factory.CreateOrganizationService(context.UserId);
                 traceService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
@@ -27,21 +26,21 @@ namespace Action_SubSale_Cancel
                 EntityReference target = (EntityReference)context.InputParameters["Target"];
                 string reason = (string)context.InputParameters["reason"];
 
-                // up oe
-                Entity upSubSale = new Entity(target.LogicalName, target.Id);
-                upSubSale["statecode"] = new OptionSetValue(1);    //inactive
-                upSubSale["statuscode"] = new OptionSetValue(100000003);  //Cancel
-                upSubSale["bsd_canceldate"] = DateTime.UtcNow;
-                upSubSale["bsd_canceler"] = new EntityReference("systemuser", context.UserId);
-                upSubSale["bsd_cancelreason"] = reason;
-                service.Update(upSubSale);
+                // up ful
+                Entity upFUL = new Entity(target.LogicalName, target.Id);
+                upFUL["statecode"] = new OptionSetValue(1);    //inactive
+                upFUL["statuscode"] = new OptionSetValue(100000003);  //Cancel
+                upFUL["bsd_canceldate"] = DateTime.UtcNow;
+                upFUL["bsd_canceler"] = new EntityReference("systemuser", context.UserId);
+                upFUL["bsd_cancelreason"] = reason;
+                service.Update(upFUL);
 
                 // up unit
-                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_unit" }));
-                EntityReference refUnit = (EntityReference)enSubSale["bsd_unit"];
+                Entity enFUL = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_units" }));
+                EntityReference refUnit = (EntityReference)enFUL["bsd_units"];
 
                 Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
-                upUnit["bsd_issubsale"] = false;
+                upUnit["bsd_isfollowuplist"] = false;
                 service.Update(upUnit);
 
                 traceService.Trace("done");

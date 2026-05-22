@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_Termination_CreateUpdate", "Plugin_Termination_CreateUpdate\Plugin_Termination_CreateUpdate.csproj", "{A2BBE1E6-889C-4D46-93AF-8F6223B3E552}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2BBE1E6-889C-4D46-93AF-8F6223B3E552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2BBE1E6-889C-4D46-93AF-8F6223B3E552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2BBE1E6-889C-4D46-93AF-8F6223B3E552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2BBE1E6-889C-4D46-93AF-8F6223B3E552}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {55F28CD2-8F6B-4079-99E0-D945A5618AAA}
+	EndGlobalSection
+EndGlobal

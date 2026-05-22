@@ -570,7 +570,6 @@ namespace Action_Resv_GenPMS
             if (i_dueCalMethod == 100000002)    //Estimate handove date
             {
                 tmp["bsd_duedate"] = d_estimate;
-                tmp["bsd_fixeddate"] = d_estimate;
             }
             else
             {

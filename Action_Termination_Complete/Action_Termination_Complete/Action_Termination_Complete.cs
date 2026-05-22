@@ -10,6 +10,7 @@ namespace Action_Termination_Complete
 {
     public class Action_Termination_Complete : IPlugin
     {
+        IPluginExecutionContext context = null;
         IOrganizationService service = null;
         ITracingService traceService = null;
 
@@ -17,7 +18,7 @@ namespace Action_Termination_Complete
         {
             try
             {
-                IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+                context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
                 IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                 service = factory.CreateOrganizationService(context.UserId);
                 traceService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
@@ -73,6 +74,8 @@ namespace Action_Termination_Complete
             Entity upTermination = new Entity(enTermination.LogicalName, enTermination.Id);
             upTermination["statecode"] = new OptionSetValue(1);    //inactive
             upTermination["statuscode"] = new OptionSetValue(100000005);    //Complete
+            upTermination["bsd_releasedby"] = new EntityReference("systemuser", context.UserId);
+            upTermination["bsd_releasedate"] = DateTime.UtcNow;
             service.Update(upTermination);
         }
 
@@ -94,6 +97,7 @@ namespace Action_Termination_Complete
 
             Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
             upUnit["statuscode"] = new OptionSetValue(bsd_resell ? 100000000 : 1);  //Available, Preparing
+            upUnit["bsd_isterminate"] = false;
             service.Update(upUnit);
         }
 

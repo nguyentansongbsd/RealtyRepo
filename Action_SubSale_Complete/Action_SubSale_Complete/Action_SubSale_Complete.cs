@@ -10,6 +10,7 @@ namespace Action_SubSale_Complete
 {
     public class Action_SubSale_Complete : IPlugin
     {
+        IPluginExecutionContext context = null;
         IOrganizationService service = null;
         ITracingService traceService = null;
 
@@ -17,7 +18,7 @@ namespace Action_SubSale_Complete
         {
             try
             {
-                IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+                context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
                 IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                 service = factory.CreateOrganizationService(context.UserId);
                 traceService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
@@ -26,7 +27,7 @@ namespace Action_SubSale_Complete
 
                 EntityReference target = (EntityReference)context.InputParameters["Target"];
                 Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation",
-                    "bsd_reservationcontract", "bsd_optionentry", "bsd_newcustomer" }));
+                    "bsd_reservationcontract", "bsd_optionentry", "bsd_newcustomer", "bsd_unit" }));
 
                 int bsd_type = ((OptionSetValue)enSubSale["bsd_type"]).Value;
                 string logicalName = null;
@@ -48,6 +49,7 @@ namespace Action_SubSale_Complete
                 EntityReference refContract = (EntityReference)enSubSale[logicalName];
 
                 UpdateSubSale(enSubSale);
+                UpdateUnit(enSubSale);
                 UpdateContract(refContract, logicalName, enSubSale);
 
                 traceService.Trace("done");
@@ -62,10 +64,26 @@ namespace Action_SubSale_Complete
         {
             traceService.Trace("UpdateSubSale");
 
+            string subsaleCode = (string)context.InputParameters["subsaleCode"];
+
             Entity upSubSale = new Entity(enSubSale.LogicalName, enSubSale.Id);
             upSubSale["statecode"] = new OptionSetValue(1);    //inactive
             upSubSale["statuscode"] = new OptionSetValue(100000005);    //Complete
+            upSubSale["bsd_subsalecode"] = subsaleCode;
+            upSubSale["bsd_releasedby"] = new EntityReference("systemuser", context.UserId);
+            upSubSale["bsd_releasedate"] = DateTime.UtcNow;
             service.Update(upSubSale);
+        }
+
+        private void UpdateUnit(Entity enSubSale)
+        {
+            traceService.Trace("UpdateUnit");
+
+            EntityReference refUnit = (EntityReference)enSubSale["bsd_unit"];
+
+            Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
+            upUnit["bsd_issubsale"] = false;
+            service.Update(upUnit);
         }
 
         private void UpdateContract(EntityReference refContract, string logicalName, Entity enSubSale)

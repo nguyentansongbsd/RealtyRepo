@@ -25,7 +25,9 @@ namespace Plugin_SubSale_CoOwner
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation", "bsd_reservationcontract", "bsd_optionentry" }));
+                Entity enSubSale = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_type", "bsd_reservation", "bsd_reservationcontract", "bsd_optionentry", "bsd_unit" }));
+                if (context.MessageName == "Create")
+                    UpdateUnit(enSubSale);
 
                 if (!enSubSale.Contains("bsd_type"))
                     return;
@@ -81,6 +83,17 @@ namespace Plugin_SubSale_CoOwner
             {
                 throw new InvalidPluginExecutionException(ex.Message);
             }
+        }
+
+        private void UpdateUnit(Entity enSubSale)
+        {
+            traceService.Trace("UpdateUnit");
+
+            EntityReference refUnit = (EntityReference)enSubSale["bsd_unit"];
+
+            Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
+            upUnit["bsd_issubsale"] = true;
+            service.Update(upUnit);
         }
     }
 }

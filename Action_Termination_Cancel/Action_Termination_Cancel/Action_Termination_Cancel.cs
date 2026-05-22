@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,14 @@ namespace Action_Termination_Cancel
                 upTermination["bsd_canceler"] = new EntityReference("systemuser", context.UserId);
                 upTermination["bsd_cancelreason"] = reason;
                 service.Update(upTermination);
+
+                // up unit
+                Entity enTermination = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_units" }));
+                EntityReference refUnit = (EntityReference)enTermination["bsd_units"];
+
+                Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
+                upUnit["bsd_isterminate"] = false;
+                service.Update(upUnit);
 
                 traceService.Trace("done");
             }
