@@ -7,6 +7,7 @@
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,10 +93,15 @@ namespace SaleDirectAction
                     DateTime dateNow = DateTime.Now;
                     entity2["bsd_bookingtime"] = RetrieveLocalTimeFromUTCTime(dateNow, service);
 
-                    if(context.InputParameters.Contains("Parameters") && context.InputParameters["Parameters"] != null)
+                    if(context.InputParameters.Contains("Parameters") && context.InputParameters["Parameters"] != null) // case from mobile
                     {
-                        string customterId = (string)context.InputParameters["Parameters"];
-                        entity2["bsd_customerid"] = new EntityReference("contact", Guid.Parse(customterId));
+                        string parameterBooking = (string)context.InputParameters["Parameters"];
+                        tracingService.Trace("parameterBooking: " + parameterBooking);
+                        ParameterBooking parameter = JsonConvert.DeserializeObject<ParameterBooking>(parameterBooking);
+
+                        entity2["bsd_customerid"] = !string.IsNullOrWhiteSpace(parameter.CustomerId) ? new EntityReference(parameter.CustomerEntityName, Guid.Parse(parameter.CustomerId)) : null;
+                        entity2["bsd_salesagentcompany"] = !string.IsNullOrWhiteSpace(parameter.SalesAgentCompany) ? new EntityReference("account", Guid.Parse(parameter.SalesAgentCompany)) : null;
+                        entity2["bsd_description"] = !string.IsNullOrWhiteSpace(parameter.Description) ? parameter.Description : null;
                     }
 
                     //EntityReference enfPhasesLaunch = entity1.Contains("bsd_pricelevel") ? PhasesLaunchPriceList((EntityReference)entity1["bsd_pricelevel"]) : null;
@@ -1349,5 +1355,11 @@ namespace SaleDirectAction
             return (int?)currentUserSettings.Attributes["timezonecode"];
         }
     }
-
+    public class ParameterBooking
+    {
+        public string CustomerEntityName { get; set; }
+        public string CustomerId { get; set; }
+        public string Description { get; set; }
+        public string SalesAgentCompany { get; set; }
+    }
 }
