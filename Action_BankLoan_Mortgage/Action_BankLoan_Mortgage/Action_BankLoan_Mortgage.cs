@@ -32,6 +32,13 @@ namespace Action_BankLoan_Mortgage
                 upBankLoan["bsd_mortgageapprover"] = new EntityReference("systemuser", context.UserId);
                 service.Update(upBankLoan);
 
+                // up unit
+                Entity enBankLoan = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "bsd_units" }));
+                EntityReference refUnit = (EntityReference)enBankLoan["bsd_units"];
+
+                Entity upUnit = new Entity(refUnit.LogicalName, refUnit.Id);
+                upUnit["bsd_bankloan"] = true;
+                service.Update(upUnit);
                 traceService.Trace("done");
             }
             catch (Exception ex)
