@@ -30,7 +30,7 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_queuingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_queue", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid", "bsd_discountcheck", "bsd_discountdraw",
-                "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent",
+                "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent","bsd_promotioncheck", "bsd_promotiondraw",
                 "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype", "bsd_landvaluededuction", "bsd_totalamountlessfreightaftervat"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
                 if (status != 100000010) //Signed
@@ -103,6 +103,8 @@ namespace Action_ReservationContract_ConvertToOE
 
             newOE["bsd_discountcheck"] = GetValidFieldValue(enRC, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enRC, "bsd_discountdraw");
+            newOE["bsd_promotioncheck"] = GetValidFieldValue(enRC, "bsd_promotioncheck");
+            newOE["bsd_promotiondraw"] = GetValidFieldValue(enRC, "bsd_promotiondraw");
 
             newOE["bsd_totalamountpaid"] = GetValidFieldValue(enRC, "bsd_totalamountpaid");
             newOE["bsd_totalpercent"] = GetValidFieldValue(enRC, "bsd_totalpercent");
@@ -178,7 +180,7 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, refOE);
+                    CreateNewFromItem(item, refOE, "bsd_optionentry", "bsd_reservationcontract");
                 }
             }
         }
@@ -202,19 +204,19 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, refOE);
+                    CreateNewFromItem(item, refOE, "bsd_optionentry", "bsd_reservationcontract");
                 }
             }
         }
 
-        private void CreateNewFromItem(Entity item, EntityReference refOE)
+        private void CreateNewFromItem(Entity item, EntityReference refOE, string bsd_optionentry, string field)
         {
             Entity it = new Entity(item.LogicalName);
             it = item;
             it.Attributes.Remove(item.LogicalName + "id");
             it.Attributes.Remove("ownerid");
-            it.Attributes.Remove("bsd_reservationcontract");
-            it["bsd_optionentry"] = refOE;
+            it.Attributes.Remove(field);
+            it[bsd_optionentry] = refOE;
             it.Id = Guid.NewGuid();
             service.Create(it);
         }
@@ -244,30 +246,25 @@ namespace Action_ReservationContract_ConvertToOE
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch>
-              <entity name=""bsd_promotion"">
-                <attribute name=""bsd_promotionid"" />
+              <entity name=""bsd_promotiontransaction"">
+                <attribute name=""bsd_promotiontransactionid"" />
                 <attribute name=""bsd_name"" />
+                <attribute name=""bsd_ra"" />
+                <attribute name=""ownerid"" />
                 <order attribute=""createdon"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                  <condition attribute=""bsd_ra"" operator=""eq"" value=""{target.Id}"" />
                 </filter>
-                <link-entity name=""bsd_bsd_reservationcontract_bsd_promotion"" from=""bsd_promotionid"" to=""bsd_promotionid"" intersect=""true"">
-                  <filter>
-                    <condition attribute=""bsd_reservationcontractid"" operator=""eq"" value=""{target.Id}"" />
-                  </filter>
-                </link-entity>
               </entity>
             </fetch>";
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
             {
-                EntityReferenceCollection relativeEntity = new EntityReferenceCollection();
                 foreach (var item in rs.Entities)
                 {
-                    relativeEntity.Add(new EntityReference(item.LogicalName, item.Id));
+                    CreateNewFromItem(item, refOE, "bsd_spa", "bsd_ra");
                 }
-                Relationship relationship = new Relationship("bsd_bsd_salesorder_bsd_promotion");
-                service.Associate(refOE.LogicalName, refOE.Id, relationship, relativeEntity);
             }
         }
 
@@ -290,7 +287,7 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, refOE);
+                    CreateNewFromItem(item, refOE, "bsd_optionentry", "bsd_reservationcontract");
                 }
             }
         }
@@ -314,7 +311,7 @@ namespace Action_ReservationContract_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, refOE);
+                    CreateNewFromItem(item, refOE, "bsd_optionentry", "bsd_reservationcontract");
                 }
             }
         }

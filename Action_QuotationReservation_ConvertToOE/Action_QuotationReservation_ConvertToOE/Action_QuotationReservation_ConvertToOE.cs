@@ -27,7 +27,8 @@ namespace Action_QuotationReservation_ConvertToOE
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_bookingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_opportunityid", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount", "bsd_discountcheck", "bsd_discountdraw", "bsd_maintenancefees",
-                "bsd_totalamountpaid", "bsd_customertype", "bsd_landvaluededuction", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountlessfreightaftervat"}));
+                "bsd_totalamountpaid", "bsd_customertype", "bsd_landvaluededuction", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountlessfreightaftervat",
+                    "bsd_promotioncheck", "bsd_promotiondraw"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
                 if (status != 667980008) //Deposited
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_quotationreservation"));
@@ -97,6 +98,8 @@ namespace Action_QuotationReservation_ConvertToOE
 
             newOE["bsd_discountcheck"] = GetValidFieldValue(enReservation, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enReservation, "bsd_discountdraw");
+            newOE["bsd_promotioncheck"] = GetValidFieldValue(enReservation, "bsd_promotioncheck");
+            newOE["bsd_promotiondraw"] = GetValidFieldValue(enReservation, "bsd_promotiondraw");
 
             decimal bsd_totalamountpaid = enReservation.Contains("bsd_totalamountpaid") ? ((Money)enReservation["bsd_totalamountpaid"]).Value : 0;
             decimal bsd_totalamount = enReservation.Contains("bsd_totalamount") ? ((Money)enReservation["bsd_totalamount"]).Value : 0;
@@ -173,7 +176,7 @@ namespace Action_QuotationReservation_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_reservation", refOE);
+                    CreateNewFromItem(item, "bsd_reservation", refOE, "bsd_optionentry");
                 }
             }
         }
@@ -197,19 +200,19 @@ namespace Action_QuotationReservation_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_reservation", refOE);
+                    CreateNewFromItem(item, "bsd_reservation", refOE, "bsd_optionentry");
                 }
             }
         }
 
-        private void CreateNewFromItem(Entity item, string logicalField, EntityReference refOE)
+        private void CreateNewFromItem(Entity item, string logicalField, EntityReference refOE, string bsd_optionentry)
         {
             Entity it = new Entity(item.LogicalName);
             it = item;
             it.Attributes.Remove(item.LogicalName + "id");
             it.Attributes.Remove("ownerid");
             it.Attributes.Remove(logicalField);
-            it["bsd_optionentry"] = refOE;
+            it[bsd_optionentry] = refOE;
             it.Id = Guid.NewGuid();
             service.Create(it);
         }
@@ -239,30 +242,25 @@ namespace Action_QuotationReservation_ConvertToOE
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch>
-              <entity name=""bsd_promotion"">
-                <attribute name=""bsd_promotionid"" />
+              <entity name=""bsd_promotiontransaction"">
+                <attribute name=""bsd_promotiontransactionid"" />
                 <attribute name=""bsd_name"" />
+                <attribute name=""bsd_deposit"" />
+                <attribute name=""ownerid"" />
                 <order attribute=""createdon"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                  <condition attribute=""bsd_deposit"" operator=""eq"" value=""{target.Id}"" />
                 </filter>
-                <link-entity name=""bsd_bsd_quote_bsd_promotion"" from=""bsd_promotionid"" to=""bsd_promotionid"" intersect=""true"">
-                  <filter>
-                    <condition attribute=""bsd_quoteid"" operator=""eq"" value=""{target.Id}"" />
-                  </filter>
-                </link-entity>
               </entity>
             </fetch>";
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
             {
-                EntityReferenceCollection relativeEntity = new EntityReferenceCollection();
                 foreach (var item in rs.Entities)
                 {
-                    relativeEntity.Add(new EntityReference(item.LogicalName, item.Id));
+                    CreateNewFromItem(item, "bsd_deposit", refOE, "bsd_spa");
                 }
-                Relationship relationship = new Relationship("bsd_bsd_salesorder_bsd_promotion");
-                service.Associate(refOE.LogicalName, refOE.Id, relationship, relativeEntity);
             }
         }
 
@@ -285,7 +283,7 @@ namespace Action_QuotationReservation_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_quote", refOE);
+                    CreateNewFromItem(item, "bsd_quote", refOE, "bsd_optionentry");
                 }
             }
         }
@@ -309,7 +307,7 @@ namespace Action_QuotationReservation_ConvertToOE
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_quotationreservation", refOE);
+                    CreateNewFromItem(item, "bsd_quotationreservation", refOE, "bsd_optionentry");
                 }
             }
         }
