@@ -26,7 +26,9 @@ namespace Action_QuotationReservation_ConvertToReservationContract
                 Entity enReservation = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_unitno", "bsd_projectid",
                 "bsd_phaseslaunchid", "bsd_pricelevel", "bsd_paymentscheme", "bsd_handovercondition", "bsd_taxcode", "bsd_bookingfee", "bsd_depositfee",
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_opportunityid", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
-                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount","bsd_totalamountpaid", "bsd_discountcheck", "bsd_discountdraw","bsd_opportunityid","bsd_landvaluededuction","bsd_totalamountlessfreightaftervat","bsd_maintenancefees","bsd_managementfee","bsd_waivermanafeemonth","bsd_numberofmonthspaidmf"}));
+                "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount","bsd_totalamountpaid", "bsd_discountcheck", "bsd_discountdraw",
+                    "bsd_opportunityid","bsd_landvaluededuction","bsd_totalamountlessfreightaftervat","bsd_maintenancefees","bsd_managementfee","bsd_waivermanafeemonth",
+                    "bsd_numberofmonthspaidmf", "bsd_discount", "bsd_promotion", "bsd_promotioncheck", "bsd_promotiondraw"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
 
                 EntityReference refProduct = (EntityReference)enReservation["bsd_unitno"];
@@ -84,8 +86,14 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             newOE["bsd_totaltax"] = GetValidFieldValue(enReservation, "bsd_vat");
             newOE["bsd_totalamount"] = GetValidFieldValue(enReservation, "bsd_totalamount");
             newOE["bsd_queue"] = GetValidFieldValue(enReservation, "bsd_opportunityid");
+
+            newOE["bsd_discount"] = GetValidFieldValue(enReservation, "bsd_discountamount");
+            newOE["bsd_promotion"] = GetValidFieldValue(enReservation, "bsd_promotion");
             newOE["bsd_discountcheck"] = GetValidFieldValue(enReservation, "bsd_discountcheck");
             newOE["bsd_discountdraw"] = GetValidFieldValue(enReservation, "bsd_discountdraw");
+            newOE["bsd_promotioncheck"] = GetValidFieldValue(enReservation, "bsd_promotioncheck");
+            newOE["bsd_promotiondraw"] = GetValidFieldValue(enReservation, "bsd_promotiondraw");
+
             newOE["bsd_landvaluededuction"] = GetValidFieldValue(enReservation, "bsd_landvaluededuction");
             newOE["bsd_totalamountlessfreightaftervat"] = GetValidFieldValue(enReservation, "bsd_totalamountlessfreightaftervat");
             newOE["bsd_freightamount"] = GetValidFieldValue(enReservation, "bsd_maintenancefees");
@@ -192,7 +200,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_reservation", refOE);
+                    CreateNewFromItem(item, "bsd_reservation", refOE, "bsd_reservationcontract");
                 }
             }
         }
@@ -216,19 +224,19 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_reservation", refOE);
+                    CreateNewFromItem(item, "bsd_reservation", refOE, "bsd_reservationcontract");
                 }
             }
         }
 
-        private void CreateNewFromItem(Entity item, string logicalField, EntityReference refOE)
+        private void CreateNewFromItem(Entity item, string logicalField, EntityReference refOE, string bsd_reservationcontract)
         {
             Entity it = new Entity(item.LogicalName);
             it = item;
             it.Attributes.Remove(item.LogicalName + "id");
             it.Attributes.Remove("ownerid");
             it.Attributes.Remove(logicalField);
-            it["bsd_reservationcontract"] = refOE;
+            it[bsd_reservationcontract] = refOE;
             it.Id = Guid.NewGuid();
             service.Create(it);
         }
@@ -258,30 +266,25 @@ namespace Action_QuotationReservation_ConvertToReservationContract
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch>
-              <entity name=""bsd_promotion"">
-                <attribute name=""bsd_promotionid"" />
+              <entity name=""bsd_promotiontransaction"">
+                <attribute name=""bsd_promotiontransactionid"" />
                 <attribute name=""bsd_name"" />
+                <attribute name=""bsd_deposit"" />
+                <attribute name=""ownerid"" />
                 <order attribute=""createdon"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
+                  <condition attribute=""bsd_deposit"" operator=""eq"" value=""{target.Id}"" />
                 </filter>
-                <link-entity name=""bsd_bsd_quote_bsd_promotion"" from=""bsd_promotionid"" to=""bsd_promotionid"" intersect=""true"">
-                  <filter>
-                    <condition attribute=""bsd_quoteid"" operator=""eq"" value=""{target.Id}"" />
-                  </filter>
-                </link-entity>
               </entity>
             </fetch>";
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
             {
-                EntityReferenceCollection relativeEntity = new EntityReferenceCollection();
                 foreach (var item in rs.Entities)
                 {
-                    relativeEntity.Add(new EntityReference(item.LogicalName, item.Id));
+                    CreateNewFromItem(item, "bsd_deposit", refOE, "bsd_ra");
                 }
-                Relationship relationship = new Relationship("bsd_bsd_salesorder_bsd_promotion");
-                service.Associate(refOE.LogicalName, refOE.Id, relationship, relativeEntity);
             }
         }
 
@@ -304,7 +307,7 @@ namespace Action_QuotationReservation_ConvertToReservationContract
             {
                 foreach (var item in rs.Entities)
                 {
-                    CreateNewFromItem(item, "bsd_quote", refOE);
+                    CreateNewFromItem(item, "bsd_quote", refOE, "bsd_reservationcontract");
                 }
             }
         }

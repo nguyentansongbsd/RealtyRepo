@@ -31,7 +31,8 @@ namespace Action_ReservationContract_ConvertToOE
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_queue", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_totaltax", "bsd_totalamount", "bsd_quoteid", "bsd_discountcheck", "bsd_discountdraw",
                 "bsd_freightamount", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountpaid", "bsd_totalpercent","bsd_promotioncheck", "bsd_promotiondraw",
-                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype", "bsd_landvaluededuction", "bsd_totalamountlessfreightaftervat"}));
+                "bsd_totalinterest", "bsd_totalinterestpaid", "bsd_totalinterestremaining", "bsd_customertype", "bsd_landvaluededuction", "bsd_totalamountlessfreightaftervat",
+                "bsd_promotion"}));
                 int status = enRC.Contains("statuscode") ? ((OptionSetValue)enRC["statuscode"]).Value : -99;
                 if (status != 100000010) //Signed
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_reservationcontract"));
@@ -90,6 +91,7 @@ namespace Action_ReservationContract_ConvertToOE
 
             newOE["bsd_detailamount"] = GetValidFieldValue(enRC, "bsd_detailamount");
             newOE["bsd_discount"] = GetValidFieldValue(enRC, "bsd_discountamount");
+            newOE["bsd_promotion"] = GetValidFieldValue(enRC, "bsd_promotion");
             newOE["bsd_packagesellingamount"] = GetValidFieldValue(enRC, "bsd_packagesellingamount");
             newOE["bsd_totalamountlessfreight"] = GetValidFieldValue(enRC, "bsd_totalamountlessfreight");
             newOE["bsd_totalamountlessfreightaftervat"] = GetValidFieldValue(enRC, "bsd_totalamountlessfreightaftervat");

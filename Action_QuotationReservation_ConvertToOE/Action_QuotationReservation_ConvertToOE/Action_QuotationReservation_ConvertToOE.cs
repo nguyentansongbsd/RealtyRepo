@@ -28,7 +28,7 @@ namespace Action_QuotationReservation_ConvertToOE
                 "bsd_netusablearea", "bsd_customerid", "bsd_bankaccount", "bsd_opportunityid", "bsd_salessgentcompany", "bsd_detailamount", "bsd_discountamount",
                 "bsd_packagesellingamount", "bsd_totalamountlessfreight", "bsd_vat", "bsd_totalamount", "bsd_discountcheck", "bsd_discountdraw", "bsd_maintenancefees",
                 "bsd_totalamountpaid", "bsd_customertype", "bsd_landvaluededuction", "bsd_numberofmonthspaidmf", "bsd_managementfee", "bsd_totalamountlessfreightaftervat",
-                    "bsd_promotioncheck", "bsd_promotiondraw"}));
+                    "bsd_promotioncheck", "bsd_promotiondraw", "bsd_promotion"}));
                 int status = enReservation.Contains("statuscode") ? ((OptionSetValue)enReservation["statuscode"]).Value : -99;
                 if (status != 667980008) //Deposited
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "invalid_status_quotationreservation"));
@@ -86,6 +86,7 @@ namespace Action_QuotationReservation_ConvertToOE
 
             newOE["bsd_detailamount"] = GetValidFieldValue(enReservation, "bsd_detailamount");
             newOE["bsd_discount"] = GetValidFieldValue(enReservation, "bsd_discountamount");
+            newOE["bsd_promotion"] = GetValidFieldValue(enReservation, "bsd_promotion");
             newOE["bsd_packagesellingamount"] = GetValidFieldValue(enReservation, "bsd_packagesellingamount");
             newOE["bsd_totalamountlessfreight"] = GetValidFieldValue(enReservation, "bsd_totalamountlessfreight");
             newOE["bsd_totalamountlessfreightaftervat"] = GetValidFieldValue(enReservation, "bsd_totalamountlessfreightaftervat");
