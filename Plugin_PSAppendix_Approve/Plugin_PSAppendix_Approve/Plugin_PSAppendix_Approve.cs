@@ -30,23 +30,50 @@ namespace Plugin_PSAppendix_Approve
                 if (status != 100000001)  //Approved
                     return;
 
-                EntityReference refOE = (EntityReference)enAppendix["bsd_spa"];
-                Entity upOE = new Entity(refOE.LogicalName, refOE.Id);
-                upOE["bsd_discount"] = ValidValue(enAppendix, "bsd_discountnew");
-                upOE["bsd_promotion"] = ValidValue(enAppendix, "bsd_promotionnew");
-                upOE["bsd_packagesellingamount"] = ValidValue(enAppendix, "bsd_packagesellingamountnew");
-                upOE["bsd_totalamountlessfreight"] = ValidValue(enAppendix, "bsd_totalamountlessfreightnew");
-                upOE["bsd_landvaluededuction"] = ValidValue(enAppendix, "bsd_landvaluedeductionnew");
-                upOE["bsd_totaltax"] = ValidValue(enAppendix, "bsd_totaltaxnew");
-                upOE["bsd_freightamount"] = ValidValue(enAppendix, "bsd_maintenancefeesnew");
-                upOE["bsd_totalamountlessfreightaftervat"] = ValidValue(enAppendix, "bsd_totalamountlessfreightvatnew");
-                upOE["bsd_totalamount"] = ValidValue(enAppendix, "bsd_totalamountnew");
-                upOE["bsd_paymentscheme"] = ValidValue(enAppendix, "bsd_paymentschemenew");
+                if (!enAppendix.Contains("bsd_type"))
+                    return;
+                int bsd_type = ((OptionSetValue)enAppendix["bsd_type"]).Value;
 
-                service.Update(upOE);
+                EntityReference refContract = null;
+                string logicalName = string.Empty;
+                if (bsd_type == 100000000 && enAppendix.Contains("bsd_ra"))   //Reservation Contract
+                {
+                    refContract = (EntityReference)enAppendix["bsd_ra"];
+                    logicalName = "bsd_reservationcontract";
+                }
+                else if (bsd_type == 100000001 && enAppendix.Contains("bsd_spa"))   //Option Entry
+                {
+                    refContract = (EntityReference)enAppendix["bsd_spa"];
+                    logicalName = "bsd_optionentry";
+                }
 
-                DeleteInstallment(refOE);
-                CreateInstallment(enAppendix, refOE);
+                if (refContract == null)
+                    return;
+
+                Entity upContract = new Entity(refContract.LogicalName, refContract.Id);
+                if (refContract.LogicalName == "bsd_reservationcontract")
+                {
+                    upContract["bsd_discountamount"] = ValidValue(enAppendix, "bsd_discountnew");
+                }
+                else
+                {
+                    upContract["bsd_discount"] = ValidValue(enAppendix, "bsd_discountnew");
+                }
+
+                upContract["bsd_promotion"] = ValidValue(enAppendix, "bsd_promotionnew");
+                upContract["bsd_packagesellingamount"] = ValidValue(enAppendix, "bsd_packagesellingamountnew");
+                upContract["bsd_totalamountlessfreight"] = ValidValue(enAppendix, "bsd_totalamountlessfreightnew");
+                upContract["bsd_landvaluededuction"] = ValidValue(enAppendix, "bsd_landvaluedeductionnew");
+                upContract["bsd_totaltax"] = ValidValue(enAppendix, "bsd_totaltaxnew");
+                upContract["bsd_freightamount"] = ValidValue(enAppendix, "bsd_maintenancefeesnew");
+                upContract["bsd_totalamountlessfreightaftervat"] = ValidValue(enAppendix, "bsd_totalamountlessfreightvatnew");
+                upContract["bsd_totalamount"] = ValidValue(enAppendix, "bsd_totalamountnew");
+                upContract["bsd_paymentscheme"] = ValidValue(enAppendix, "bsd_paymentschemenew");
+
+                service.Update(upContract);
+
+                DeleteInstallment(refContract, logicalName);
+                CreateInstallment(enAppendix, refContract, logicalName);
 
                 traceService.Trace("done");
             }
@@ -62,7 +89,7 @@ namespace Plugin_PSAppendix_Approve
         }
 
 
-        private void DeleteInstallment(EntityReference refOE)
+        private void DeleteInstallment(EntityReference refContract, string logicalName)
         {
             traceService.Trace("vào DeleteInstallment");
 
@@ -72,7 +99,7 @@ namespace Plugin_PSAppendix_Approve
                 <attribute name=""bsd_paymentschemedetailid"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
-                  <condition attribute=""bsd_optionentry"" operator=""eq"" value=""{refOE.Id}"" />
+                  <condition attribute=""{logicalName}"" operator=""eq"" value=""{refContract.Id}"" />
                 </filter>
               </entity>
             </fetch>";
@@ -86,7 +113,7 @@ namespace Plugin_PSAppendix_Approve
             }
         }
 
-        private void CreateInstallment(Entity enAppendix, EntityReference refOE)
+        private void CreateInstallment(Entity enAppendix, EntityReference refContract, string logicalName)
         {
             traceService.Trace("vào CreateInstallment");
 
@@ -108,7 +135,7 @@ namespace Plugin_PSAppendix_Approve
                     item.Attributes.Remove(item.LogicalName + "id");
                     item.Attributes.Remove("ownerid");
                     item.Attributes.Remove(enAppendix.LogicalName);
-                    item["bsd_optionentry"] = refOE;
+                    item[logicalName] = refContract;
                     item.Id = Guid.NewGuid();
                     it = item;
                     service.Create(it);

@@ -46,14 +46,35 @@ namespace Action_PSAppendix_PSGen
                     throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_payment_scheme"));
                 EntityReference refPS = (EntityReference)enAppendix["bsd_paymentschemenew"];
 
-                EntityReference refOE = (EntityReference)enAppendix["bsd_spa"];
-                Entity enOE = service.Retrieve(refOE.LogicalName, refOE.Id, new ColumnSet(true));
+                int bsd_type = ((OptionSetValue)enAppendix["bsd_type"]).Value;
+                string logicalName = string.Empty;
+                string logicalNameUnit = string.Empty;
+                string logicalNamePL = string.Empty;
+                if (bsd_type == 100000000 && enAppendix.Contains("bsd_ra"))   //Reservation Contract
+                {
+                    logicalName = "bsd_ra";
+                    logicalNameUnit = "bsd_unitno";
+                    logicalNamePL = "bsd_phaseslaunchid";
+                }
+                else if (bsd_type == 100000001 && enAppendix.Contains("bsd_spa"))   //Option Entry
+                {
+                    logicalName = "bsd_spa";
+                    logicalNameUnit = "bsd_unitnumber";
+                    logicalNamePL = "bsd_phaseslaunch";
+                }
+
+                EntityReference refContract = (EntityReference)enAppendix[logicalName];
+                Entity enContract = service.Retrieve(refContract.LogicalName, refContract.Id, new ColumnSet(true));
+
+                if (!enContract.Contains(logicalNameUnit))
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitinformation"));
+                EntityReference refUnit = (EntityReference)enContract[logicalNameUnit];
 
                 Entity enPS = service.Retrieve(refPS.LogicalName, refPS.Id, new ColumnSet(new string[] { "bsd_interestratemaster", "bsd_name",
                     "bsd_constructionprogress", "bsd_hasconstructionprogress" }));
                 bool bsd_hasconstructionprogress = enPS.Contains("bsd_hasconstructionprogress") ? (bool)enPS["bsd_hasconstructionprogress"] : false;
                 if (bsd_hasconstructionprogress)
-                    CheckProgressBlock(enOE, enPS);
+                    CheckProgressBlock(refUnit, enPS);
 
                 Entity interate = service.Retrieve(((EntityReference)enPS["bsd_interestratemaster"]).LogicalName, ((EntityReference)enPS["bsd_interestratemaster"]).Id,
                         new ColumnSet(new string[] { "bsd_gracedays", "bsd_depositinterest", "bsd_basecontractinterest" }));
@@ -63,11 +84,11 @@ namespace Action_PSAppendix_PSGen
 
 
 
-                EntityReference refPL = (EntityReference)enOE["bsd_phaseslaunch"];
+                EntityReference refPL = (EntityReference)enContract[logicalNamePL];
                 Entity enPL = service.Retrieve(refPL.LogicalName, refPL.Id, new ColumnSet(new string[] { "bsd_depositamount" }));
                 decimal depositAmountPL = enPL.Contains("bsd_depositamount") ? ((Money)enPL["bsd_depositamount"]).Value : 0;
 
-                GenPaymentScheme(ref enAppendix, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday, depositInterest, baseContractInterest, depositAmountPL, enOE);//cao tầng
+                GenPaymentScheme(ref enAppendix, enPS, 100000002, phiBaoTriPaid, ref listCreateIns, graceday, depositInterest, baseContractInterest, depositAmountPL, enContract, refUnit);//cao tầng
 
                 if (listCreateIns.Count > 0)
                     BulkCreate(listCreateIns);
@@ -95,13 +116,13 @@ namespace Action_PSAppendix_PSGen
 
                 decimal totalAmountPaid = 0;
                 decimal depositFeePaid = 0;
-                if (enOE.Contains("bsd_totalamountpaid"))
+                if (enContract.Contains("bsd_totalamountpaid"))
                 {
-                    totalAmountPaid = ((Money)enOE["bsd_totalamountpaid"]).Value;
+                    totalAmountPaid = ((Money)enContract["bsd_totalamountpaid"]).Value;
 
-                    if (enOE.Contains("bsd_depositfee"))
+                    if (enContract.Contains("bsd_depositfee"))
                     {
-                        decimal depositFee = ((Money)enOE["bsd_depositfee"]).Value;
+                        decimal depositFee = ((Money)enContract["bsd_depositfee"]).Value;
                         depositFeePaid = totalAmountPaid - depositFee < 0 ? totalAmountPaid : depositFee;
                     }
                 }
@@ -121,7 +142,7 @@ namespace Action_PSAppendix_PSGen
         }
 
         private void GenPaymentScheme(ref Entity enAppendix, Entity enPS, int type, decimal phiBaoTriPaid, ref List<Entity> listCreateIns, int graceday, decimal depositInterest,
-            decimal baseContractInterest, decimal depositAmountPL, Entity enOE)
+            decimal baseContractInterest, decimal depositAmountPL, Entity enContract, EntityReference refUnit)
         {
             traceS.Trace("vào GenPaymentScheme");
             decimal sumper = 0;
@@ -195,7 +216,7 @@ namespace Action_PSAppendix_PSGen
 
                 if (i_dueCalMethod == 100000002 && !gotEstimateDate) //Estimate handove date
                 {
-                    d_estimate = get_EstimatehandoverDate(enOE);
+                    d_estimate = get_EstimatehandoverDate(enContract, refUnit);
                     gotEstimateDate = true;
                     traceS.Trace($"d_estimate {d_estimate}");
                 }
@@ -205,7 +226,7 @@ namespace Action_PSAppendix_PSGen
                     CreatePaymentPhase(enPS, ref orderNumber, listInsMaster.Entities[i], enAppendix, amountCalcIns, f_ESmaintenancefees, f_ESmanagementfee,
                         bsd_managementfee, bsd_freightamount, type, ref sumper, ref sumamount, isLastIns, phiBaoTriPaid, graceday, typeGen,
                         ref cntInsValueNull, ref sumValueNotNull, ref indexInsValueNull, ref valuePer, ref listCreateIns, listInsMaster, wordTemplateList,
-                        ref isSPA, depositInterest, baseContractInterest, depositAmountPL, vatAmount, netSellingPrice, enOE);
+                        ref isSPA, depositInterest, baseContractInterest, depositAmountPL, vatAmount, netSellingPrice, enContract);
                 }
                 else if (i_dueCalMethod == 100000000 || i_dueCalMethod == 100000002 || i_dueCalMethod == 100000003) // fixx
                 {
@@ -230,7 +251,7 @@ namespace Action_PSAppendix_PSGen
         bool f_ESmanagementfee, decimal bsd_managementfee, decimal bsd_maintenancefees, int typePrice, ref decimal sumper, ref decimal sumamount, bool isLastIns,
         decimal phiBaoTriPaid, int graceday, int typeGen, ref int cntInsValueNull, ref decimal sumValueNotNull, ref int indexInsValueNull, ref decimal valuePer,
         ref List<Entity> listCreateIns, EntityCollection listInsMaster, EntityCollection wordTemplateList, ref bool isSPA, decimal depositInterest,
-        decimal baseContractInterest, decimal depositAmountPL, decimal vatAmount, decimal netSellingPrice, Entity enOE)
+        decimal baseContractInterest, decimal depositAmountPL, decimal vatAmount, decimal netSellingPrice, Entity enContract)
         {
             traceS.Trace("vào CreatePaymentPhase");
             orderNumber++;
@@ -296,7 +317,7 @@ namespace Action_PSAppendix_PSGen
             else  //EDA
                 tmp["bsd_interestpercent"] = depositInterest;
 
-            tmp["bsd_duedate"] = calculateDuedate(enOE, enIns, listCreateIns, listInsMaster, orderNumber == 1);
+            tmp["bsd_duedate"] = calculateDuedate(enContract, enIns, listCreateIns, listInsMaster, orderNumber == 1);
 
             tmp["bsd_calendartype"] = enIns.Contains("bsd_calendartype") ? enIns["bsd_calendartype"] : null;
             tmp["bsd_waiverinterest"] = new Money(0);
@@ -534,7 +555,7 @@ namespace Action_PSAppendix_PSGen
             //traceS.Trace("ra CreatePaymentPhase_fixDate");
         }
 
-        private DateTime calculateDuedate(Entity enOE, Entity enIns, List<Entity> listCreateIns, EntityCollection listInsMaster, bool isFirstIns)
+        private DateTime calculateDuedate(Entity enContract, Entity enIns, List<Entity> listCreateIns, EntityCollection listInsMaster, bool isFirstIns)
         {
             traceS.Trace("calculateDuedate đầu function");
             bool flag = false;
@@ -542,9 +563,18 @@ namespace Action_PSAppendix_PSGen
 
             if (isFirstIns)
             {
-                if (!enOE.Contains("bsd_date"))
-                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_gendate"));
-                date = CalcDate(enIns, (DateTime)enOE["bsd_date"], ref flag);
+                if (enContract.LogicalName == "bsd_salesorder")
+                {
+                    if (!enContract.Contains("bsd_date"))
+                        throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_gendate"));
+                    date = CalcDate(enIns, (DateTime)enContract["bsd_date"], ref flag);
+                }
+                else if (enContract.LogicalName == "bsd_reservationcontract")
+                {
+                    if (!enContract.Contains("bsd_racontractsigndate"))
+                        throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_gendate"));
+                    date = CalcDate(enIns, (DateTime)enContract["bsd_racontractsigndate"], ref flag);
+                }
             }
             else
             {
@@ -603,18 +633,15 @@ namespace Action_PSAppendix_PSGen
             return date;
         }
 
-        private DateTime get_EstimatehandoverDate(Entity enOE)
+        private DateTime get_EstimatehandoverDate(Entity enContract, EntityReference refUnit)
         {
-            if (!enOE.Contains("bsd_unitnumber"))
-                throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitinformation"));
-
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch top=""1"">
               <entity name=""bsd_product"">
                 <attribute name=""bsd_estimatehandoverdate"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
-                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{((EntityReference)enOE["bsd_unitnumber"]).Id}"" />
+                  <condition attribute=""bsd_productid"" operator=""eq"" value=""{refUnit.Id}"" />
                   <condition attribute=""bsd_estimatehandoverdate"" operator=""not-null"" />
                 </filter>
               </entity>
@@ -623,13 +650,24 @@ namespace Action_PSAppendix_PSGen
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
                 return (DateTime)rs.Entities[0]["bsd_estimatehandoverdate"];
             else
-                return get_EstimateFromProject(enOE);
+                return get_EstimateFromProject(enContract);
         }
 
-        private DateTime get_EstimateFromProject(Entity enOE)
+        private DateTime get_EstimateFromProject(Entity enContract)
         {
-            if (!enOE.Contains("bsd_project"))
-                throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_project"));
+            EntityReference refProject = null;
+            if (enContract.LogicalName == "bsd_salesorder")
+            {
+                if (!enContract.Contains("bsd_project"))
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_project"));
+                refProject = (EntityReference)enContract["bsd_project"];
+            }
+            else if (enContract.LogicalName == "bsd_reservationcontract")
+            {
+                if (!enContract.Contains("bsd_projectid"))
+                    throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_project"));
+                refProject = (EntityReference)enContract["bsd_projectid"];
+            }
 
             var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
             <fetch top=""1"">
@@ -637,7 +675,7 @@ namespace Action_PSAppendix_PSGen
                 <attribute name=""bsd_estimatehandoverdate"" />
                 <filter>
                   <condition attribute=""statecode"" operator=""eq"" value=""0"" />
-                  <condition attribute=""bsd_projectid"" operator=""eq"" value=""{((EntityReference)enOE["bsd_project"]).Id}"" />
+                  <condition attribute=""bsd_projectid"" operator=""eq"" value=""{refProject.Id}"" />
                   <condition attribute=""bsd_estimatehandoverdate"" operator=""not-null"" />
                 </filter>
               </entity>
@@ -1103,7 +1141,7 @@ namespace Action_PSAppendix_PSGen
             }
         }
 
-        private void CheckProgressBlock(Entity enOE, Entity enPS)
+        private void CheckProgressBlock(EntityReference refUnit, Entity enPS)
         {
             traceS.Trace("CheckProgressBlock");
 
@@ -1113,10 +1151,6 @@ namespace Action_PSAppendix_PSGen
                 return;
             EntityReference refBlockCP = (EntityReference)enCP["bsd_block"];
 
-            if (!enOE.Contains("bsd_unitnumber"))
-                throw new InvalidPluginExecutionException(MessageProvider.GetMessage(service, context, "no_unitinformation"));
-
-            EntityReference refUnit = (EntityReference)enOE["bsd_unitnumber"];
             Entity enUnit = service.Retrieve(refUnit.LogicalName, refUnit.Id, new ColumnSet(new string[] { "bsd_blocknumber" }));
             if (!enUnit.Contains("bsd_blocknumber"))
                 return;
