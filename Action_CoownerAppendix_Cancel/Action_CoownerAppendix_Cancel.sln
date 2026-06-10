@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_CoownerAppendix_Cancel", "Action_CoownerAppendix_Cancel\Action_CoownerAppendix_Cancel.csproj", "{098E48EF-DDD1-414E-8844-1A72C74F60D6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{098E48EF-DDD1-414E-8844-1A72C74F60D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{098E48EF-DDD1-414E-8844-1A72C74F60D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{098E48EF-DDD1-414E-8844-1A72C74F60D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{098E48EF-DDD1-414E-8844-1A72C74F60D6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8584FE1C-B164-4D2B-9FE9-A0B90949FA6B}
+	EndGlobalSection
+EndGlobal

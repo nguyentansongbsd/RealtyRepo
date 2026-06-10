@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_CoownerAppendix_Approve", "Plugin_CoownerAppendix_Approve\Plugin_CoownerAppendix_Approve.csproj", "{D28A4EF5-0CA7-4A41-B84C-9141DF8C8A01}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D28A4EF5-0CA7-4A41-B84C-9141DF8C8A01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D28A4EF5-0CA7-4A41-B84C-9141DF8C8A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D28A4EF5-0CA7-4A41-B84C-9141DF8C8A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D28A4EF5-0CA7-4A41-B84C-9141DF8C8A01}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D719374C-6EFD-49C0-8BCB-522306524208}
+	EndGlobalSection
+EndGlobal
