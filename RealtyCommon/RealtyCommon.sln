@@ -37,8 +37,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin_MilestoneChangeReque
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_PSAppendix_PSGen", "..\Action_PSAppendix_PSGen\Action_PSAppendix_PSGen\Action_PSAppendix_PSGen.csproj", "{2E9A6CB2-336F-4D33-915C-ADF3B2A842DC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_UpdateDueDate_Approve", "..\Action_UpdateDueDate_Approve\Action_UpdateDueDate_Approve\Action_UpdateDueDate_Approve.csproj", "{002818C2-7DA9-4A77-8A1B-572F8DE63458}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		RealtyCommon\RealtyCommon.projitems*{002818c2-7da9-4a77-8a1b-572f8de63458}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{08679a9a-49fc-496c-9353-229b80135930}*SharedItemsImports = 13
 		RealtyCommon\RealtyCommon.projitems*{0a0a66ef-51dd-4b11-877d-0ee6680ac26d}*SharedItemsImports = 4
 		RealtyCommon\RealtyCommon.projitems*{0cc58e5a-0312-48ab-916b-da09a27d1515}*SharedItemsImports = 4
@@ -126,6 +129,10 @@ Global
 		{2E9A6CB2-336F-4D33-915C-ADF3B2A842DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E9A6CB2-336F-4D33-915C-ADF3B2A842DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E9A6CB2-336F-4D33-915C-ADF3B2A842DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{002818C2-7DA9-4A77-8A1B-572F8DE63458}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{002818C2-7DA9-4A77-8A1B-572F8DE63458}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{002818C2-7DA9-4A77-8A1B-572F8DE63458}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{002818C2-7DA9-4A77-8A1B-572F8DE63458}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
