@@ -50,17 +50,11 @@ namespace Plugin_UpdateDueDateDetail_CreateUpdate
                 if ("Create".Equals(context.MessageName))
                 {
                     ForCreate(enDetail, enContract, logicalName, ref upDetail);
-                    return;
                 }
-
-                if (!enDetail.Contains("bsd_installmentnumber") && enDetail.Contains("bsd_installment"))
+                else
                 {
-                    EntityReference refIns = (EntityReference)enDetail["bsd_installment"];
-                    Entity enIns = service.Retrieve(refIns.LogicalName, refIns.Id, new ColumnSet(new string[] { "bsd_ordernumber" }));
-                    upDetail["bsd_installmentnumber"] = enIns.Contains("bsd_ordernumber") ? enIns["bsd_ordernumber"] : null;
+                    ForUpdate(enDetail, enContract, logicalName, ref upDetail);
                 }
-
-                service.Update(upDetail);
 
                 traceService.Trace("done");
             }
@@ -99,6 +93,21 @@ namespace Plugin_UpdateDueDateDetail_CreateUpdate
                     enDetail["bsd_installment"] = upDetail["bsd_installment"];
                     enDetail["bsd_duedateold"] = upDetail["bsd_duedateold"];
                 }
+            }
+            service.Update(upDetail);
+
+            CheckContract(enDetail, enContract, logicalName);
+        }
+
+        private void ForUpdate(Entity enDetail, Entity enContract, string logicalName, ref Entity upDetail)
+        {
+            traceService.Trace("ForUpdate");
+
+            if (!enDetail.Contains("bsd_installmentnumber") && enDetail.Contains("bsd_installment"))
+            {
+                EntityReference refIns = (EntityReference)enDetail["bsd_installment"];
+                Entity enIns = service.Retrieve(refIns.LogicalName, refIns.Id, new ColumnSet(new string[] { "bsd_ordernumber" }));
+                upDetail["bsd_installmentnumber"] = enIns.Contains("bsd_ordernumber") ? enIns["bsd_ordernumber"] : null;
             }
             service.Update(upDetail);
 
