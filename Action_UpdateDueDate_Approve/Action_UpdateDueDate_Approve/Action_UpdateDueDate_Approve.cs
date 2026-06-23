@@ -37,6 +37,10 @@ namespace Action_UpdateDueDate_Approve
                     <filter>
                       <condition attribute=""bsd_updateduedate"" operator=""eq"" value=""{refUpdateDueDate.Id}"" />
                     </filter>
+                    <link-entity name=""bsd_paymentschemedetail"" from=""bsd_paymentschemedetailid"" to=""bsd_installment"" alias=""ins"">
+                      <attribute name=""statuscode"" />
+                      <attribute name=""bsd_ordernumber"" />
+                    </link-entity>
                   </entity>
                 </fetch>";
                 EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
@@ -56,13 +60,6 @@ namespace Action_UpdateDueDate_Approve
                         x => ((EntityReference)x["bsd_installment"]).Id,
                         x => RetrieveLocalTimeFromUTCTime((DateTime)x["bsd_duedatenew"], service)
                     );
-
-                    Dictionary<Guid, DateTime> newDueDateMap2 = rs.Entities
-                        .Where(x => x.Contains("bsd_installment") && x.Contains("bsd_duedatenew"))
-                        .ToDictionary(
-                            x => ((EntityReference)x["bsd_installment"]).Id,
-                            x => (DateTime)x["bsd_duedatenew"]
-                        );
 
                     foreach (Entity enDetail in rs.Entities)
                     {
@@ -115,6 +112,31 @@ namespace Action_UpdateDueDate_Approve
         private void CheckContract(Entity enDetail, Entity enContract, string logicalName, Dictionary<Guid, DateTime> newDueDateMap)
         {
             traceService.Trace("CheckContract");
+            //1. Chỉ import thành công các HĐ chưa thanh lý
+            int status = enContract.Contains("statuscode") ? ((OptionSetValue)enContract["statuscode"]).Value : -99;
+            if ("bsd_reservationcontract".Equals(enContract.LogicalName))
+            {
+                if (status == 100000004) //Terminedted
+                    throw new InvalidPluginExecutionException("Hợp đồng đã thanh lý. Không thể thực hiện thao tác.");
+            }
+            else
+            {
+                if (status == 100000014) //Terminated
+                    throw new InvalidPluginExecutionException("Hợp đồng đã thanh lý. Không thể thực hiện thao tác.");
+            }
+
+            string contractName = enContract.Contains("bsd_name") ? (string)enContract["bsd_name"] : string.Empty;
+
+            // check đợt paid
+            if (enDetail.Contains("ins.statuscode") && enDetail["ins.statuscode"] != null)
+            {
+                int statusCode = ((OptionSetValue)((AliasedValue)enDetail["ins.statuscode"]).Value).Value;
+                if (statusCode == 100000001)    //Paid
+                {
+                    int? bsd_ordernumber = enDetail.Contains("ins.bsd_ordernumber") ? (int?)((AliasedValue)enDetail["ins.bsd_ordernumber"]).Value : null;
+                    throw new InvalidPluginExecutionException($"Mã hợp đồng '{contractName}' có Đợt '{bsd_ordernumber}' đã thanh toán hoàn tất. Không thể cập nhật ngày đến hạn.");
+                }
+            }
 
             //  4. DueDate Đợt n mới > DueDate đợt n cũ
             if (enDetail.Contains("bsd_duedateold") && enDetail.Contains("bsd_duedatenew") &&
@@ -123,10 +145,10 @@ namespace Action_UpdateDueDate_Approve
 
             //  2. Kiểm tra ngày đến hạn đợt n có lớn hơn đợt n -1
             //  3. Kiểm tra ngày đến hạn đợt n có nhỏ hơn đợt n+1
-            CheckInsDueDate(enContract, logicalName, newDueDateMap);
+            CheckInsDueDate(enContract, contractName, logicalName, newDueDateMap);
         }
 
-        private void CheckInsDueDate(Entity enContract, string logicalName, Dictionary<Guid, DateTime> newDueDateMap)
+        private void CheckInsDueDate(Entity enContract, string contractName, string logicalName, Dictionary<Guid, DateTime> newDueDateMap)
         {
             traceService.Trace("CheckInsDueDate");
 
@@ -163,7 +185,6 @@ namespace Action_UpdateDueDate_Approve
                     {
                         traceService.Trace("" + newListIns[i].DueDate.Date);
 
-                        string contractName = enContract.Contains("bsd_name") ? (string)enContract["bsd_name"] : string.Empty;
                         string currentName = (string)newListIns[i].Name;
                         string nextName = (string)newListIns[i + 1].Name;
 

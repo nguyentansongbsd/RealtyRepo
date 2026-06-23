@@ -94,8 +94,10 @@ namespace Plugin_UpdateDueDateDetail_CreateUpdate
                 EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
                 if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
                 {
-                    enDetail["bsd_installment"] = rs[0].ToEntityReference();
-                    enDetail["bsd_duedateold"] = rs[0].Contains("bsd_duedate") ? rs[0]["bsd_duedate"] : null;
+                    upDetail["bsd_installment"] = rs[0].ToEntityReference();
+                    upDetail["bsd_duedateold"] = rs[0].Contains("bsd_duedate") ? rs[0]["bsd_duedate"] : null;
+                    enDetail["bsd_installment"] = upDetail["bsd_installment"];
+                    enDetail["bsd_duedateold"] = upDetail["bsd_duedateold"];
                 }
             }
             service.Update(upDetail);
@@ -134,21 +136,32 @@ namespace Plugin_UpdateDueDateDetail_CreateUpdate
             CheckDuplicateIns(enDetail, enMaster, refIns);
 
             //5. Đợt update không phải là đợt bàn giao/đợt cuối
-            Entity enIns = service.Retrieve(refIns.LogicalName, refIns.Id, new ColumnSet(new string[] { "bsd_pinkbookhandover", "bsd_lastinstallment", "bsd_ordernumber", "bsd_duedate" }));
+            Entity enIns = service.Retrieve(refIns.LogicalName, refIns.Id, new ColumnSet(new string[] { "bsd_pinkbookhandover", "bsd_lastinstallment", "bsd_ordernumber",
+                "bsd_duedate", "statuscode" }));
+            string contractName = enContract.Contains("bsd_name") ? (string)enContract["bsd_name"] : string.Empty;
+
+            // check đợt paid
+            int statusIns = enIns.Contains("statuscode") ? ((OptionSetValue)enIns["statuscode"]).Value : -99;
+            if (statusIns == 100000001) //Paid
+            {
+                int? bsd_ordernumber = enIns.Contains("bsd_ordernumber") ? (int?)enIns["bsd_ordernumber"] : null;
+                throw new InvalidPluginExecutionException($"Mã hợp đồng '{contractName}' có Đợt '{bsd_ordernumber}' đã thanh toán hoàn tất. Không thể cập nhật ngày đến hạn.");
+            }
+
             if (enIns.Contains("bsd_pinkbookhandover") && (bool)enIns["bsd_pinkbookhandover"])
                 throw new InvalidPluginExecutionException("Đợt cập nhật đang thuộc đợt bàn giao. Không thể thực hiện cập nhật");
 
             if (enIns.Contains("bsd_lastinstallment") && (bool)enIns["bsd_lastinstallment"])
                 throw new InvalidPluginExecutionException("Đợt cập nhật đang thuộc đợt cuối. Không thể thực hiện cập nhật");
 
-            //4. DueDate Đợt n mới > DueDate đợt n cũ
+            //4. DueDate Đợt n mới <= DueDate đợt n cũ
             if (enDetail.Contains("bsd_duedateold") && enDetail.Contains("bsd_duedatenew") &&
                 ((DateTime)enDetail["bsd_duedateold"]).Date >= ((DateTime)enDetail["bsd_duedatenew"]).Date)
                 throw new InvalidPluginExecutionException("Ngày đến hạn mới không được nhỏ hơn hoặc bằng ngày đến hạn cũ.");
 
             //  2. Ngày đến hạn đợt nhỏ hơn đợt trước nó
             //  3.Ngày đến hạn đợt lớn hơn đợt sau nó
-            CheckInsDueDate(enDetail, enContract, logicalName, refIns);
+            CheckInsDueDate(enDetail, contractName, enContract, logicalName, refIns);
         }
 
         private void CheckDuplicateIns(Entity enDetail, Entity enMaster, EntityReference refIns)
@@ -171,7 +184,7 @@ namespace Plugin_UpdateDueDateDetail_CreateUpdate
                 throw new InvalidPluginExecutionException("Trùng đợt, vui lòng kiểm tra lại.");
         }
 
-        private void CheckInsDueDate(Entity enDetail, Entity enContract, string logicalName, EntityReference refIns)
+        private void CheckInsDueDate(Entity enDetail, string contractName, Entity enContract, string logicalName, EntityReference refIns)
         {
             traceService.Trace("CheckInsDueDate");
 
@@ -191,22 +204,25 @@ namespace Plugin_UpdateDueDateDetail_CreateUpdate
             EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
             if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
             {
-                for (int i = 0; i < rs.Entities.Count - 1; i++)
+                var newListIns = rs.Entities
+                .Select(x => new
                 {
-                    var items = rs.Entities;
-                    DateTime currentDate = RetrieveLocalTimeFromUTCTime((DateTime)items[i]["bsd_duedate"], service).Date;
-                    DateTime nextDate = RetrieveLocalTimeFromUTCTime((DateTime)items[i + 1]["bsd_duedate"], service).Date;
+                    Id = x.Id,
+                    Order = x["bsd_ordernumber"],
+                    Name = x["bsd_name"],
+                    DueDate = refIns.Id == x.Id ? RetrieveLocalTimeFromUTCTime((DateTime)enDetail["bsd_duedatenew"], service) : RetrieveLocalTimeFromUTCTime((DateTime)x["bsd_duedate"], service)
+                })
+                .OrderBy(x => x.Order)
+                .ToList();
 
-                    if (refIns.Id == rs.Entities[i].Id)
-                        currentDate = ((DateTime)enDetail["bsd_duedatenew"]).Date;
-
-                    if (currentDate > nextDate)
+                for (int i = 0; i < newListIns.Count - 1; i++)
+                {
+                    if (newListIns[i].DueDate.Date > newListIns[i + 1].DueDate.Date)
                     {
-                        traceService.Trace("" + RetrieveLocalTimeFromUTCTime((DateTime)items[i + 1]["bsd_duedate"], service));
+                        traceService.Trace("" + newListIns[i].DueDate.Date);
 
-                        string contractName = enContract.Contains("bsd_name") ? (string)enContract["bsd_name"] : string.Empty;
-                        string currentName = items[i].Contains("bsd_name") ? (string)items[i]["bsd_name"] : string.Empty;
-                        string nextName = items[i + 1].Contains("bsd_name") ? (string)items[i + 1]["bsd_name"] : string.Empty;
+                        string currentName = (string)newListIns[i].Name;
+                        string nextName = (string)newListIns[i + 1].Name;
 
                         throw new InvalidPluginExecutionException($"Mã hợp đồng '{contractName}' có ngày đến hạn của '{currentName}' đang lớn hơn '{nextName}'. Vui lòng kiểm tra thông tin.");
                     }
