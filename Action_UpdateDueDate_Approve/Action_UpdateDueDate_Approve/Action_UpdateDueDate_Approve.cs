@@ -69,13 +69,13 @@ namespace Action_UpdateDueDate_Approve
                         {
                             logicalName = "bsd_reservationcontract";
                             EntityReference refRA = (EntityReference)enDetail["bsd_ra"];
-                            enContract = service.Retrieve(refRA.LogicalName, refRA.Id, new ColumnSet(new string[] { "bsd_name" }));
+                            enContract = service.Retrieve(refRA.LogicalName, refRA.Id, new ColumnSet(new string[] { "bsd_name", "statuscode" }));
                         }
                         else
                         {
                             logicalName = "bsd_optionentry";
                             EntityReference refSPA = (EntityReference)enDetail["bsd_spa"];
-                            enContract = service.Retrieve(refSPA.LogicalName, refSPA.Id, new ColumnSet(new string[] { "bsd_name" }));
+                            enContract = service.Retrieve(refSPA.LogicalName, refSPA.Id, new ColumnSet(new string[] { "bsd_name", "statuscode" }));
                         }
 
                         CheckContract(enDetail, enContract, logicalName, newDueDateMap);
