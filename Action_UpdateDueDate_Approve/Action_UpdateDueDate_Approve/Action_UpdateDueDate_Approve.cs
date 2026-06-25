@@ -11,94 +11,49 @@ namespace Action_UpdateDueDate_Approve
 {
     public class Action_UpdateDueDate_Approve : IPlugin
     {
+        IPluginExecutionContext context = null;
         IOrganizationService service = null;
         ITracingService traceService = null;
         void IPlugin.Execute(IServiceProvider serviceProvider)
         {
             try
             {
-                IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+                context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
                 IOrganizationServiceFactory factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
                 service = factory.CreateOrganizationService(context.UserId);
                 traceService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
                 traceService.Trace("start");
 
+                string step = context.InputParameters.Contains("step") && !string.IsNullOrEmpty((string)context.InputParameters["step"]) ?
+                            (string)context.InputParameters["step"] : string.Empty;
+                Guid userId = context.InputParameters.Contains("userId") && !string.IsNullOrEmpty((string)context.InputParameters["userId"]) ?
+                                Guid.Parse((string)context.InputParameters["userId"]) : context.UserId;
+                traceService.Trace($"userId: {userId} || {step}");
+                service = factory.CreateOrganizationService(userId);
+
                 EntityReference refUpdateDueDate = (EntityReference)context.InputParameters["Target"];
-
-                var fetchXml = $@"<?xml version=""1.0"" encoding=""utf-16""?>
-                <fetch>
-                  <entity name=""bsd_updateduedatedetail"">
-                    <attribute name=""bsd_updateduedatedetailid"" />
-                    <attribute name=""bsd_ra"" />
-                    <attribute name=""bsd_spa"" />
-                    <attribute name=""bsd_installment"" />
-                    <attribute name=""bsd_duedateold"" />
-                    <attribute name=""bsd_duedatenew"" />
-                    <filter>
-                      <condition attribute=""bsd_updateduedate"" operator=""eq"" value=""{refUpdateDueDate.Id}"" />
-                    </filter>
-                    <link-entity name=""bsd_paymentschemedetail"" from=""bsd_paymentschemedetailid"" to=""bsd_installment"" alias=""ins"">
-                      <attribute name=""statuscode"" />
-                      <attribute name=""bsd_ordernumber"" />
-                    </link-entity>
-                  </entity>
-                </fetch>";
-                EntityCollection rs = service.RetrieveMultiple(new FetchExpression(fetchXml));
-                if (rs != null && rs.Entities != null && rs.Entities.Count > 0)
+                switch (step)
                 {
-                    //  trùng đợt 
-                    var duplicateInstallments = rs.Entities
-                                                .Where(e => e.Contains("bsd_installment") && e["bsd_installment"] != null)
-                                                .GroupBy(e => ((EntityReference)e["bsd_installment"]).Id)
-                                                .Where(g => g.Count() > 1);
-                    if (duplicateInstallments.Any())
-                        throw new InvalidPluginExecutionException("Trùng đợt, vui lòng kiểm tra lại.");
+                    case "b1":
+                        Step_B1(refUpdateDueDate);
+                        break;
 
-                    Dictionary<Guid, DateTime> newDueDateMap = rs.Entities
-                    .Where(x => x.Contains("bsd_installment") && x.Contains("bsd_duedatenew"))
-                    .ToDictionary(
-                        x => ((EntityReference)x["bsd_installment"]).Id,
-                        x => RetrieveLocalTimeFromUTCTime((DateTime)x["bsd_duedatenew"], service)
-                    );
+                    case "b2":
+                        Step_B2();
+                        break;
 
-                    foreach (Entity enDetail in rs.Entities)
-                    {
-                        string logicalName = string.Empty;
-                        Entity enContract = null;
-                        if (enDetail.Contains("bsd_ra"))
-                        {
-                            logicalName = "bsd_reservationcontract";
-                            EntityReference refRA = (EntityReference)enDetail["bsd_ra"];
-                            enContract = service.Retrieve(refRA.LogicalName, refRA.Id, new ColumnSet(new string[] { "bsd_name", "statuscode" }));
-                        }
-                        else
-                        {
-                            logicalName = "bsd_optionentry";
-                            EntityReference refSPA = (EntityReference)enDetail["bsd_spa"];
-                            enContract = service.Retrieve(refSPA.LogicalName, refSPA.Id, new ColumnSet(new string[] { "bsd_name", "statuscode" }));
-                        }
+                    case "error":
+                        Step_Error();
+                        break;
 
-                        CheckContract(enDetail, enContract, logicalName, newDueDateMap);
-                    }
-
-                    foreach (var enDetail in rs.Entities)
-                    {
-                        Entity upDetail = new Entity(enDetail.LogicalName, enDetail.Id);
-                        upDetail["statuscode"] = new OptionSetValue(100000000); //Approved
-                        service.Update(upDetail);
-
-                        UpdateNewDueDate(enDetail, newDueDateMap);
-                    }
+                    default:
+                        Entity upUpdateDueDate2 = new Entity(refUpdateDueDate.LogicalName, refUpdateDueDate.Id);
+                        upUpdateDueDate2["statuscode"] = new OptionSetValue(100000000); //Approved
+                        upUpdateDueDate2["bsd_powerautomate"] = false;
+                        upUpdateDueDate2["bsd_paprocess"] = null;
+                        service.Update(upUpdateDueDate2);
+                        break;
                 }
-                else
-                {
-                    //  1. Update Duedate master phải tồn tại update Duedate detail
-                    throw new InvalidPluginExecutionException("Không có chi tiết cập nhật ngày đến hạn. Vui lòng kiểm tra lại thông tin.");
-                }
-
-                Entity upUpdateDueDate = new Entity(refUpdateDueDate.LogicalName, refUpdateDueDate.Id);
-                upUpdateDueDate["statuscode"] = new OptionSetValue(100000000); //Approved
-                service.Update(upUpdateDueDate);
 
                 traceService.Trace("done");
             }
@@ -108,8 +63,75 @@ namespace Action_UpdateDueDate_Approve
             }
         }
 
+        private void Step_B1(EntityReference refUpdateDueDate)
+        {
+            traceService.Trace("Step_B1");
 
-        private void CheckContract(Entity enDetail, Entity enContract, string logicalName, Dictionary<Guid, DateTime> newDueDateMap)
+            string paProcess = context.InputParameters.Contains("paProcess") && !string.IsNullOrEmpty((string)context.InputParameters["paProcess"]) ?
+                (string)context.InputParameters["paProcess"] : string.Empty;
+
+            Entity enUpdateDueDate = service.Retrieve(refUpdateDueDate.LogicalName, refUpdateDueDate.Id, new ColumnSet(new string[] { "bsd_powerautomate", "bsd_paprocess" }));
+            bool isPA = enUpdateDueDate.Contains("bsd_powerautomate") ? (bool)enUpdateDueDate["bsd_powerautomate"] : false;
+            if (isPA && enUpdateDueDate.Contains("bsd_paprocess") && (string)enUpdateDueDate["bsd_paprocess"] != paProcess)
+                throw new InvalidPluginExecutionException("Record này đang được thực hiện ở tiến trình khác. Vui lòng kiểm tra lại.");
+
+            Entity upUpdateDueDate = new Entity(refUpdateDueDate.LogicalName, refUpdateDueDate.Id);
+            upUpdateDueDate["bsd_powerautomate"] = true;
+            upUpdateDueDate["bsd_paprocess"] = paProcess;
+            service.Update(upUpdateDueDate);
+        }
+
+        private void Step_B2()
+        {
+            traceService.Trace("Step_B2");
+
+            string updateDueDateDetailId = context.InputParameters.Contains("updateDueDateDetailId") && !string.IsNullOrEmpty((string)context.InputParameters["updateDueDateDetailId"]) ?
+                                (string)context.InputParameters["updateDueDateDetailId"] : string.Empty;
+            Entity enDetail = service.Retrieve("bsd_updateduedatedetail", Guid.Parse(updateDueDateDetailId), new ColumnSet(new string[] { "bsd_ra", "bsd_spa",
+                                                "bsd_installment", "bsd_duedateold", "bsd_duedatenew"}));
+
+            string logicalName = string.Empty;
+            Entity enContract = null;
+            if (enDetail.Contains("bsd_ra"))
+            {
+                logicalName = "bsd_reservationcontract";
+                EntityReference refRA = (EntityReference)enDetail["bsd_ra"];
+                enContract = service.Retrieve(refRA.LogicalName, refRA.Id, new ColumnSet(new string[] { "bsd_name", "statuscode" }));
+            }
+            else
+            {
+                logicalName = "bsd_optionentry";
+                EntityReference refSPA = (EntityReference)enDetail["bsd_spa"];
+                enContract = service.Retrieve(refSPA.LogicalName, refSPA.Id, new ColumnSet(new string[] { "bsd_name", "statuscode" }));
+            }
+
+            EntityReference refIns = (EntityReference)enDetail["bsd_installment"];
+            DateTime newDate = RetrieveLocalTimeFromUTCTime((DateTime)enDetail["bsd_duedatenew"], service);
+
+            CheckContract(enDetail, enContract, logicalName, refIns, newDate);
+            UpdateNewDueDate(refIns, newDate);
+
+            Entity upDetail = new Entity(enDetail.LogicalName, enDetail.Id);
+            upDetail["statuscode"] = new OptionSetValue(100000000); //Approved
+            service.Update(upDetail);
+        }
+
+        private void Step_Error()
+        {
+            traceService.Trace("Step_Error");
+
+            string detailId = context.InputParameters.Contains("updateDueDateDetailId") && !string.IsNullOrEmpty((string)context.InputParameters["updateDueDateDetailId"]) ?
+                    (string)context.InputParameters["updateDueDateDetailId"] : string.Empty;
+            string error = context.InputParameters.Contains("error") && !string.IsNullOrEmpty((string)context.InputParameters["error"]) ?
+                    (string)context.InputParameters["error"] : string.Empty;
+
+            Entity upDetailError = new Entity("bsd_updateduedatedetail", Guid.Parse(detailId));
+            upDetailError["bsd_error"] = error;
+            service.Update(upDetailError);
+        }
+
+
+        private void CheckContract(Entity enDetail, Entity enContract, string logicalName, EntityReference refIns, DateTime newDate)
         {
             traceService.Trace("CheckContract");
             //1. Chỉ import thành công các HĐ chưa thanh lý
@@ -128,14 +150,12 @@ namespace Action_UpdateDueDate_Approve
             string contractName = enContract.Contains("bsd_name") ? (string)enContract["bsd_name"] : string.Empty;
 
             // check đợt paid
-            if (enDetail.Contains("ins.statuscode") && enDetail["ins.statuscode"] != null)
+            Entity enIns = service.Retrieve(refIns.LogicalName, refIns.Id, new ColumnSet(new string[] { "statuscode", "bsd_ordernumber" }));
+            int statusCode = ((OptionSetValue)enIns["statuscode"]).Value;
+            if (statusCode == 100000001)    //Paid
             {
-                int statusCode = ((OptionSetValue)((AliasedValue)enDetail["ins.statuscode"]).Value).Value;
-                if (statusCode == 100000001)    //Paid
-                {
-                    int? bsd_ordernumber = enDetail.Contains("ins.bsd_ordernumber") ? (int?)((AliasedValue)enDetail["ins.bsd_ordernumber"]).Value : null;
-                    throw new InvalidPluginExecutionException($"Mã hợp đồng '{contractName}' có Đợt '{bsd_ordernumber}' đã thanh toán hoàn tất. Không thể cập nhật ngày đến hạn.");
-                }
+                int? bsd_ordernumber = enIns.Contains("bsd_ordernumber") ? (int?)enIns["bsd_ordernumber"] : null;
+                throw new InvalidPluginExecutionException($"Mã hợp đồng '{contractName}' có Đợt '{bsd_ordernumber}' đã thanh toán hoàn tất. Không thể cập nhật ngày đến hạn.");
             }
 
             //  4. DueDate Đợt n mới > DueDate đợt n cũ
@@ -145,10 +165,10 @@ namespace Action_UpdateDueDate_Approve
 
             //  2. Kiểm tra ngày đến hạn đợt n có lớn hơn đợt n -1
             //  3. Kiểm tra ngày đến hạn đợt n có nhỏ hơn đợt n+1
-            CheckInsDueDate(enContract, contractName, logicalName, newDueDateMap);
+            CheckInsDueDate(enContract, contractName, logicalName, refIns, newDate);
         }
 
-        private void CheckInsDueDate(Entity enContract, string contractName, string logicalName, Dictionary<Guid, DateTime> newDueDateMap)
+        private void CheckInsDueDate(Entity enContract, string contractName, string logicalName, EntityReference refIns, DateTime newDate)
         {
             traceService.Trace("CheckInsDueDate");
 
@@ -174,12 +194,12 @@ namespace Action_UpdateDueDate_Approve
                         Id = x.Id,
                         Order = x["bsd_ordernumber"],
                         Name = x["bsd_name"],
-                        DueDate = newDueDateMap.ContainsKey(x.Id) ? newDueDateMap[x.Id] : RetrieveLocalTimeFromUTCTime((DateTime)x["bsd_duedate"], service)
+                        DueDate = refIns.Id == x.Id ? newDate : RetrieveLocalTimeFromUTCTime((DateTime)x["bsd_duedate"], service)
                     })
                     .OrderBy(x => x.Order)
                     .ToList();
 
-                for (int i = 0; i < newListIns.Count - 1; i++)
+                for (int i = 0; i < rs.Entities.Count - 1; i++)
                 {
                     if (newListIns[i].DueDate.Date > newListIns[i + 1].DueDate.Date)
                     {
@@ -189,22 +209,14 @@ namespace Action_UpdateDueDate_Approve
                         string nextName = (string)newListIns[i + 1].Name;
 
                         throw new InvalidPluginExecutionException($"Mã hợp đồng '{contractName}' có ngày đến hạn của '{currentName}' đang lớn hơn '{nextName}'. Vui lòng kiểm tra thông tin.");
-
                     }
                 }
             }
         }
 
-        private void UpdateNewDueDate(Entity enDetail, Dictionary<Guid, DateTime> newDueDateMap)
+        private void UpdateNewDueDate(EntityReference refIns, DateTime newDate)
         {
             traceService.Trace("UpdateNewDueDate");
-
-            EntityReference refIns = (EntityReference)enDetail["bsd_installment"];
-
-            if (refIns == null || !newDueDateMap.ContainsKey(refIns.Id))
-                return;
-
-            DateTime newDate = newDueDateMap[refIns.Id];
 
             Entity updateIns = new Entity(refIns.LogicalName, refIns.Id);
             updateIns["bsd_duedate"] = newDate;
