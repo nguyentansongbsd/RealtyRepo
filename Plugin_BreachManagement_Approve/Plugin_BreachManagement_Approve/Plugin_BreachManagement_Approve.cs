@@ -27,7 +27,7 @@ namespace Plugin_BreachManagement_Approve
                 if (context.Depth > 2) return;
 
                 Entity target = (Entity)context.InputParameters["Target"];
-                Entity enBreachManagement = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_spa", "bsd_violatortype", "bsd_totalamount" }));
+                Entity enBreachManagement = service.Retrieve(target.LogicalName, target.Id, new ColumnSet(new string[] { "statuscode", "bsd_spa", "bsd_violatortype", "bsd_totalamount", "bsd_installment" }));
                 int status = enBreachManagement.Contains("statuscode") ? ((OptionSetValue)enBreachManagement["statuscode"]).Value : -99;
                 if (status == 100000000)  //Confirm
                 {
@@ -35,13 +35,22 @@ namespace Plugin_BreachManagement_Approve
                 }
                 else if (status == 100000005)  //Complete
                 {
+                    EntityReference refSPA = (EntityReference)enBreachManagement["bsd_spa"];
+                    Entity enSPA = service.Retrieve(refSPA.LogicalName, refSPA.Id, new ColumnSet(new string[] { "bsd_unitnumber", "bsd_customerid", "bsd_project", "bsd_totalamountpaid" }));
+                    EntityReference refUnit = (EntityReference)enSPA["bsd_unitnumber"];
+
                     int bsd_violatortype = enBreachManagement.Contains("bsd_violatortype") ? ((OptionSetValue)enBreachManagement["bsd_violatortype"]).Value : -99;
                     if (bsd_violatortype == 100000000)   //Khách hàng
                     {
-                        EntityReference SPA = (EntityReference)enBreachManagement["bsd_spa"];
-                        Entity upSPA = new Entity(SPA.LogicalName, SPA.Id);
+                        CreateMiscellaneous(enBreachManagement, refSPA, refUnit);
+
+                        Entity upSPA = new Entity(refSPA.LogicalName, refSPA.Id);
                         upSPA["bsd_miscellaneous"] = enBreachManagement.Contains("bsd_totalamount") ? enBreachManagement["bsd_totalamount"] : null;
                         service.Update(upSPA);
+                    }
+                    else if (bsd_violatortype == 100000001)   //Chủ đầu tư
+                    {
+                        CreateRefund(enBreachManagement, enSPA, refUnit);
                     }
                 }
 
@@ -119,6 +128,42 @@ namespace Plugin_BreachManagement_Approve
                     throw new InvalidPluginExecutionException(ex.Message);
                 }
             }
+        }
+
+        private void CreateMiscellaneous(Entity enBM, EntityReference refSPA, EntityReference refUnit)
+        {
+            traceService.Trace("CreateMiscellaneous");
+
+            Entity newMisc = new Entity("bsd_miscellaneous");
+            newMisc["bsd_name"] = $"Breach Management Miscellaneous - {refUnit.Name}";
+            newMisc["bsd_spa"] = refSPA;
+            newMisc["bsd_breachmanagement"] = enBM.ToEntityReference();
+            newMisc["bsd_installment"] = enBM.Contains("bsd_installment") ? enBM["bsd_installment"] : null;
+            newMisc["bsd_amount"] = enBM.Contains("bsd_totalamount") ? enBM["bsd_totalamount"] : null;
+
+            newMisc.Id = Guid.NewGuid();
+            service.Create(newMisc);
+        }
+
+        private void CreateRefund(Entity enBM, Entity enSPA, EntityReference refUnit)
+        {
+            traceService.Trace("CreateRefund");
+
+            Entity newRefund = new Entity("bsd_refund");
+            newRefund["bsd_name"] = $"Breach Management Refund-{refUnit.Name}";
+            newRefund["bsd_optionentry"] = enSPA.ToEntityReference();
+            newRefund["bsd_breachmanagement"] = enBM.ToEntityReference();
+            newRefund["bsd_customer"] = enSPA.Contains("bsd_customerid") ? enSPA["bsd_customerid"] : null;
+            newRefund["bsd_project"] = enSPA.Contains("bsd_project") ? enSPA["bsd_project"] : null;
+            newRefund["bsd_refundtype"] = new OptionSetValue(100000004);    //Breach Refund
+            newRefund["bsd_unitno"] = refUnit;
+            newRefund["bsd_paymentactualtime"] = DateTime.UtcNow;
+            newRefund["bsd_totalamountpaid"] = enSPA.Contains("bsd_totalamountpaid") ? enSPA["bsd_totalamountpaid"] : null;
+            newRefund["bsd_refundableamount"] = enSPA.Contains("bsd_totalamountpaid") ? enSPA["bsd_totalamountpaid"] : null;
+            newRefund["bsd_source"] = new OptionSetValue(100000002);
+
+            newRefund.Id = Guid.NewGuid();
+            service.Create(newRefund);
         }
     }
 }
