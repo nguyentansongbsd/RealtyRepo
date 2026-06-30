@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33423.256
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action_Miscellaneous_Cancel", "Action_Miscellaneous_Cancel\Action_Miscellaneous_Cancel.csproj", "{8D5EABDD-CDA3-4BF7-94ED-C75B442116FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8D5EABDD-CDA3-4BF7-94ED-C75B442116FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D5EABDD-CDA3-4BF7-94ED-C75B442116FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D5EABDD-CDA3-4BF7-94ED-C75B442116FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D5EABDD-CDA3-4BF7-94ED-C75B442116FE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C35F1EB1-9C95-4514-90A4-439B1DED17DB}
+	EndGlobalSection
+EndGlobal
